@@ -99,18 +99,6 @@ export class WebhookWorker extends WorkerHost {
                 });
                 this.eventEmitter.emit('appointment.confirmed', appointment);
                 this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
-              } else if (appointment && appointment.status === 'CANCELLED') {
-                // EDGE CASE: Patient misclicked cancel, then clicked confirm an hour later. 
-                // We CANNOT auto-confirm because the slot might have been given away.
-                await this.prisma.notification.create({
-                  data: {
-                    tenantId: appointment.tenantId,
-                    title: 'Urgent: Conflicting Patient Action',
-                    message: `${appointment.patient.name} tried to CONFIRM an appointment they previously CANCELLED. Please call them immediately to clarify if they are coming!`,
-                    type: 'ERROR'
-                  }
-                });
-                this.logger.warn(`Patient tried to confirm a cancelled appointment ${reminder.appointmentId}`);
               }
             } else if (messagePayload === 'REQUEST_RESCHEDULE' || messagePayload === '2' || messagePayload === 'RESCHEDULE') {
               const appointment = await this.prisma.appointment.findUnique({
