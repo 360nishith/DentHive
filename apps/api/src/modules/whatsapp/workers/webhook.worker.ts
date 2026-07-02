@@ -135,11 +135,30 @@ export class WebhookWorker extends WorkerHost {
               }
               this.logger.log(`Patient requested reschedule for Appointment ${reminder.appointmentId}`);
             } else if (messagePayload === 'CANCEL_APPOINTMENT' || messagePayload === '3' || messagePayload === 'CANCEL') {
-              const updatedAppts = await this.prisma.appointment.updateMany({
-                where: { id: reminder.appointmentId, status: 'SCHEDULED' }, 
-                data: { status: 'CANCELLED' }
+              const appointment = await this.prisma.appointment.findUnique({
+                where: { id: reminder.appointmentId },
+                include: { patient: true }
               });
-              this.logger.log(`Patient cancelled Appointment ${reminder.appointmentId}. Journey is now automatically Stalled.`);
+
+              if (appointment) {
+                const updatedAppts = await this.prisma.appointment.updateMany({
+                  where: { id: reminder.appointmentId, status: 'SCHEDULED' }, 
+                  data: { status: 'CANCELLED' }
+                });
+
+                if (updatedAppts.count > 0) {
+                  // Create a global Notification for all staff/admins
+                  await this.prisma.notification.create({
+                    data: {
+                      tenantId: appointment.tenantId,
+                      title: 'Appointment Cancelled',
+                      message: `${appointment.patient.name} cancelled their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}. A slot is now open.`,
+                      type: 'ERROR'
+                    }
+                  });
+                  this.logger.log(`Patient cancelled Appointment ${reminder.appointmentId}. Notification sent.`);
+                }
+              }
             }
           }
         }
