@@ -34,7 +34,7 @@ export class OnboardingService {
     try {
       const result = await this.prisma.$transaction(async (tx: any) => {
         const tenant = await tx.tenant.create({
-          data: { status: 'ACTIVE' }
+          data: { status: 'TRIAL' }
         });
 
         let ownerRole = await tx.role.findUnique({ where: { name: 'OWNER' } });
