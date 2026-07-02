@@ -27,6 +27,9 @@ export class WhatsAppListenerService {
       minute: '2-digit'
     });
 
+    const tenant = await this.whatsappService['prisma'].tenant.findUnique({ where: { id: appointment.tenantId } });
+    const clinicName = tenant?.name || 'our clinic';
+
     try {
       await this.whatsappService.sendMessage(
         appointment.tenantId,
@@ -34,10 +37,10 @@ export class WhatsAppListenerService {
         patient.phoneNumber,
         'appointment_confirmation',
         [
-          { type: 'body', parameters: [{ type: 'text', text: patient.name }, { type: 'text', text: date }] }
+          { type: 'body', parameters: [{ type: 'text', text: patient.name }, { type: 'text', text: date }, { type: 'text', text: clinicName }] }
         ]
       );
-      this.logger.log(`Queued appointment confirmation for ${patient.name}`);
+      this.logger.log(`Queued appointment confirmation for ${patient.name} at ${clinicName}`);
     } catch (error) {
       this.logger.error(`Failed to queue appointment confirmation`, error);
     }
@@ -49,6 +52,9 @@ export class WhatsAppListenerService {
     
     if (!patient || !patient.phoneNumber) return;
 
+    const tenant = await this.whatsappService['prisma'].tenant.findUnique({ where: { id: payment.tenantId } });
+    const clinicName = tenant?.name || 'our clinic';
+
     try {
       await this.whatsappService.sendMessage(
         payment.tenantId,
@@ -58,11 +64,12 @@ export class WhatsAppListenerService {
         [
           { type: 'body', parameters: [
             { type: 'text', text: patient.name }, 
-            { type: 'text', text: payment.amount.toString() }
+            { type: 'text', text: payment.amount.toString() },
+            { type: 'text', text: clinicName }
           ]}
         ]
       );
-      this.logger.log(`Queued payment receipt for ${patient.name}`);
+      this.logger.log(`Queued payment receipt for ${patient.name} at ${clinicName}`);
     } catch (error) {
       this.logger.error(`Failed to queue payment receipt`, error);
     }
