@@ -15,7 +15,7 @@ export class ReminderService {
 
   @OnEvent('appointment.created')
   async handleAppointmentCreated(appointment: any) {
-    await this.schedule24HourReminder(appointment.tenantId, appointment.id, appointment.scheduledStart);
+    await this.scheduleSameDayReminder(appointment.tenantId, appointment.id, appointment.scheduledStart);
   }
 
   @OnEvent('appointment.updated')
@@ -41,12 +41,12 @@ export class ReminderService {
       this.logger.log(`Rescheduled: Cancelled old reminders for appointment ${updated.id}`);
       
       // Schedule new reminder
-      await this.schedule24HourReminder(updated.tenantId, updated.id, updated.scheduledStart);
+      await this.scheduleSameDayReminder(updated.tenantId, updated.id, updated.scheduledStart);
     }
   }
 
   // Triggered by the AppointmentCreatedEvent
-  async schedule24HourReminder(tenantId: string, appointmentId: string, startTime: Date) {
+  async scheduleSameDayReminder(tenantId: string, appointmentId: string, startTime: Date) {
     // We want the reminder at 9:00 AM IST (India Standard Time) on the day of the appointment.
     // 1. Shift the UTC time by +5.5 hours to get the local IST time representation
     const istTime = new Date(startTime.getTime() + (5.5 * 60 * 60 * 1000));
@@ -65,7 +65,7 @@ export class ReminderService {
       data: {
         tenantId, // Explicitly pass tenantId if ALS isn't strictly overriding
         appointmentId,
-        type: '24_HOUR',
+        type: 'SAME_DAY_MORNING',
         status: 'PENDING',
         scheduledFor: reminderTime,
         whatsappMessageId: 'PENDING_' + require('crypto').randomUUID() // Placeholder until actual send
@@ -73,6 +73,6 @@ export class ReminderService {
     });
 
     await this.reminderQueue.add('send-reminder', { reminderId: reminder.id, tenantId }, { delay });
-    this.logger.log(`Scheduled 24-hr reminder for appointment ${appointmentId}`);
+    this.logger.log(`Scheduled 9:00 AM Same-Day reminder for appointment ${appointmentId}`);
   }
 }

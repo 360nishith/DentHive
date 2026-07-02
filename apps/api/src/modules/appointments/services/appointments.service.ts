@@ -101,7 +101,7 @@ export class AppointmentsService {
         data: {
           tenantId,
           appointmentId,
-          type: '24_HOUR',
+          type: 'SAME_DAY_MORNING',
           status: 'PENDING',
           scheduledFor: new Date(),
           whatsappMessageId: 'TEST_' + require('crypto').randomUUID()
