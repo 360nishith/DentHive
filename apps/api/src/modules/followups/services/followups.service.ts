@@ -112,6 +112,7 @@ export class FollowUpsService {
       include: {
         patient: true,
         template: true,
+        tenant: true,
         stages: {
           include: {
             templateStage: true,
@@ -158,6 +159,8 @@ export class FollowUpsService {
       return {
         patientId: j.patient.id,
         patientName: j.patient.name,
+        patientPhone: j.patient.phoneNumber,
+        clinicName: j.tenant.name,
         treatmentName: j.template?.name || 'Custom Journey',
         lastCompletedStage: lastCompleted,
         daysStalled,

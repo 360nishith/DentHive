@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card } from '../../../components/ui/Card';
-import { PhoneCall, CheckCircle2, XCircle, Clock, Loader2, ArrowRight, Calendar, AlertTriangle } from 'lucide-react';
+import { PhoneCall, CheckCircle2, XCircle, Clock, Loader2, ArrowRight, Calendar, AlertTriangle, MessageCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { useRouter } from 'next/navigation';
 import api from '../../../lib/axios';
@@ -20,6 +20,7 @@ const formatDate = (dateStr: string) => {
 
 export default function FollowUpsPage() {
   const router = useRouter();
+
   const [activeTab, setActiveTab] = useState<'logs' | 'stalled'>('logs');
   const [items, setItems] = useState<any[]>([]);
   const [stalledItems, setStalledItems] = useState<any[]>([]);
@@ -71,6 +72,19 @@ export default function FollowUpsPage() {
     } catch (e) {
       alert('Failed to reschedule');
     }
+  };
+
+  const handleWhatsAppNudge = (item: any) => {
+    if (!item.patientPhone) return alert('No phone number on record for this patient.');
+    
+    // Remove non-numeric characters for WhatsApp link
+    let phoneStr = item.patientPhone.replace(/\D/g, '');
+    if (phoneStr.length === 10) phoneStr = '91' + phoneStr;
+
+    // Use the exact user requested template
+    const text = `Hello ${item.patientName}, this is ${item.clinicName}. We noticed you haven't booked your next visit for your ${item.treatmentName} yet. Please let us know when you are free so we can finish your treatment`;
+    
+    window.open(`https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const getStatusBadge = (status: string) => {
@@ -224,9 +238,14 @@ export default function FollowUpsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => setRescheduleApt(item)}>
-                        <Calendar className="w-4 h-4 mr-1.5" /> Reschedule
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleWhatsAppNudge(item)}>
+                          <MessageCircle className="w-4 h-4 mr-1.5" /> Nudge
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => setRescheduleApt(item)}>
+                          <Calendar className="w-4 h-4 mr-1.5" /> Reschedule
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
