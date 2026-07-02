@@ -23,6 +23,7 @@ export default function FollowUpsPage() {
   const [activeTab, setActiveTab] = useState<'logs' | 'stalled'>('logs');
   const [items, setItems] = useState<any[]>([]);
   const [stalledItems, setStalledItems] = useState<any[]>([]);
+  const [stalledSort, setStalledSort] = useState<'newest' | 'oldest'>('newest');
   const [loading, setLoading] = useState(true);
   
   // Reschedule state
@@ -172,10 +173,18 @@ export default function FollowUpsPage() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-amber-50">
+          <div className="px-6 py-4 border-b border-slate-100 bg-amber-50 flex justify-between items-center">
             <h3 className="text-amber-800 font-semibold text-sm flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" /> Stalled Patients (Not done with treatment & no future appointment scheduled)
             </h3>
+            <select
+              value={stalledSort}
+              onChange={(e) => setStalledSort(e.target.value as 'newest' | 'oldest')}
+              className="text-xs border-amber-200 bg-white text-amber-900 rounded-md shadow-sm focus:border-amber-500 focus:ring-amber-500"
+            >
+              <option value="newest">Recently Stalled</option>
+              <option value="oldest">Longest Stalled</option>
+            </select>
           </div>
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -195,7 +204,7 @@ export default function FollowUpsPage() {
                   </td>
                 </tr>
               ) : (
-                stalledItems.map((item: any, idx: number) => (
+                [...stalledItems].sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled).map((item: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-semibold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => router.push(`/patients/${item.patientId}`)}>
