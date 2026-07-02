@@ -87,18 +87,31 @@ export class WebhookWorker extends WorkerHost {
           if (reminder) {
             // 3. State Transition
             if (messagePayload === 'CONFIRM_NEXT_VISIT' || messagePayload === '1' || messagePayload === 'CONFIRM') {
-              const updatedAppts = await this.prisma.appointment.updateMany({
-                where: { id: reminder.appointmentId, status: 'SCHEDULED' }, 
-                data: { status: 'CONFIRMED' }
+              const appointment = await this.prisma.appointment.findUnique({
+                where: { id: reminder.appointmentId },
+                include: { patient: true }
               });
-              if (updatedAppts.count > 0) {
-                const appointment = await this.prisma.appointment.findUnique({
-                  where: { id: reminder.appointmentId },
-                  include: { patient: true }
+
+              if (appointment && appointment.status === 'SCHEDULED') {
+                await this.prisma.appointment.update({
+                  where: { id: reminder.appointmentId }, 
+                  data: { status: 'CONFIRMED' }
                 });
                 this.eventEmitter.emit('appointment.confirmed', appointment);
+                this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
+              } else if (appointment && appointment.status === 'CANCELLED') {
+                // EDGE CASE: Patient misclicked cancel, then clicked confirm an hour later. 
+                // We CANNOT auto-confirm because the slot might have been given away.
+                await this.prisma.notification.create({
+                  data: {
+                    tenantId: appointment.tenantId,
+                    title: 'Urgent: Conflicting Patient Action',
+                    message: `${appointment.patient.name} tried to CONFIRM an appointment they previously CANCELLED. Please call them immediately to clarify if they are coming!`,
+                    type: 'ERROR'
+                  }
+                });
+                this.logger.warn(`Patient tried to confirm a cancelled appointment ${reminder.appointmentId}`);
               }
-              this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
             } else if (messagePayload === 'REQUEST_RESCHEDULE' || messagePayload === '2' || messagePayload === 'RESCHEDULE') {
               const appointment = await this.prisma.appointment.findUnique({
                 where: { id: reminder.appointmentId },
