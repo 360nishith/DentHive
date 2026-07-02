@@ -1,0 +1,424 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// IDENTITY & ACCESS MODULE
+// -----------------------------------------------------------------------------
+
+model Tenant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(255)
+  subdomain String   @unique @db.VarChar(100)
+  upiVpa          String?  @db.VarChar(255)
+  waPhoneNumberId String?  @db.VarChar(100)
+  waAccessToken   String?  @db.Text
+  waAppSecret     String?  @db.Text
+  status          String   @default("ACTIVE") @db.VarChar(50)
+  
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  users               User[]
+  patients            Patient[]
+  treatmentTemplates  TreatmentTemplate[]
+  treatmentJourneys   TreatmentJourney[]
+  subscriptions       Subscription[]
+  files               File[]
+  appointments        Appointment[]
+  payments            Payment[]
+  whatsappMessages    WhatsAppMessage[]
+  auditLogs           AuditLog[]
+  followUps           FollowUp[]
+  recallLists         RecallList[]
+  treatmentStages     TreatmentStage[]
+  appointmentReminders AppointmentReminder[]
+  notifications       Notification[]
+
+  @@index([subdomain])
+  @@map("tenants")
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+  userId    String?  @db.Uuid
+  title     String   @db.VarChar(255)
+  message   String   @db.Text
+  type      String   @default("INFO") @db.VarChar(50)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, userId])
+  @@map("notifications")
+}
+
+model Role {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique @db.VarChar(50) // DENTIST, ASSISTANT
+  
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @db.Uuid
+  roleId       String   @db.Uuid
+  authId       String?  @unique @db.VarChar(255)
+  firstName    String?  @db.VarChar(100)
+  lastName     String?  @db.VarChar(100)
+  email        String?  @unique @db.VarChar(255)
+  phoneNumber  String   @unique @db.VarChar(20)
+  passwordHash String   @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  status       String   @default("ACTIVE") @db.VarChar(50)
+
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+  deletedAt    DateTime? @db.Timestamptz
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  auditLogs    AuditLog[]
+  notifications Notification[]
+
+  @@index([tenantId, email])
+  @@index([tenantId, phoneNumber])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// PATIENT MANAGEMENT MODULE
+// -----------------------------------------------------------------------------
+
+model Patient {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @db.Uuid
+  name              String   @db.VarChar(255)
+  phoneNumber       String   @db.VarChar(20)
+  whatsappOptIn     Boolean  @default(false)
+  gender            String?  @db.VarChar(20)
+  dateOfBirth       DateTime? @db.Date
+  preferredLanguage String   @default("en") @db.VarChar(10)
+  status            String   @default("ACTIVE") @db.VarChar(50)
+
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+  deletedAt         DateTime? @db.Timestamptz
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  files             File[]
+  treatmentJourneys TreatmentJourney[]
+  appointments      Appointment[]
+  whatsappMessages  WhatsAppMessage[]
+  recallLists       RecallList[]
+
+  @@unique([tenantId, phoneNumber])
+  @@index([tenantId, name])
+  @@map("patients")
+}
+
+model File {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  patientId  String   @db.Uuid
+  fileUrl    String   @db.VarChar(1024)
+  fileType   String   @db.VarChar(50) // IMAGE, PDF
+  
+  uploadedAt DateTime @default(now()) @db.Timestamptz
+  deletedAt  DateTime? @db.Timestamptz
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, patientId])
+  @@map("files")
+}
+
+// -----------------------------------------------------------------------------
+// CLINICAL CONFIGURATION MODULE
+// -----------------------------------------------------------------------------
+
+model TreatmentTemplate {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @db.Uuid
+  name          String   @db.VarChar(255)
+  estimatedCost Int      @default(0)
+
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+  deletedAt     DateTime? @db.Timestamptz
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  stages        TemplateStage[]
+  journeys      TreatmentJourney[]
+
+  @@index([tenantId, name])
+  @@map("treatment_templates")
+}
+
+model TemplateStage {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  templateId          String   @db.Uuid
+  sequenceOrder       Int
+  name                String   @db.VarChar(255)
+  defaultIntervalDays Int      @default(0)
+
+  createdAt           DateTime @default(now()) @db.Timestamptz
+  updatedAt           DateTime @updatedAt @db.Timestamptz
+  deletedAt           DateTime? @db.Timestamptz
+
+  template            TreatmentTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  treatmentStages     TreatmentStage[]
+
+  @@unique([templateId, sequenceOrder])
+  @@map("template_stages")
+}
+
+// -----------------------------------------------------------------------------
+// JOURNEY & STAGE EXECUTION MODULE
+// -----------------------------------------------------------------------------
+
+model TreatmentJourney {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @db.Uuid
+  patientId      String   @db.Uuid
+  templateId     String?  @db.Uuid
+  currentStageId String?  @db.Uuid
+  status         String   @db.VarChar(50) // ACTIVE, STALLED, COMPLETED, SUSPENDED
+  totalCost      Int      @default(0)
+
+  startedAt      DateTime @default(now()) @db.Timestamptz
+  completedAt    DateTime? @db.Timestamptz
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+  deletedAt      DateTime? @db.Timestamptz
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient        Patient           @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  template       TreatmentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  
+  // To avoid relation cycle errors or ambiguity, we specify the relation name
+  currentStage   TreatmentStage?   @relation("CurrentStage", fields: [currentStageId], references: [id], onDelete: SetNull)
+  stages         TreatmentStage[]  @relation("JourneyStages")
+  payments       Payment[]
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, status])
+  @@map("treatment_journeys")
+}
+
+model TreatmentStage {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @db.Uuid
+  journeyId       String   @db.Uuid
+  templateStageId String?  @db.Uuid
+  name            String   @db.VarChar(255)
+  cost            Int      @default(0)
+  sequenceOrder   Int
+  status          String   @db.VarChar(50) // PENDING, COMPLETED
+
+  completedAt     DateTime? @db.Timestamptz
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+  deletedAt       DateTime? @db.Timestamptz
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  journey         TreatmentJourney  @relation("JourneyStages", fields: [journeyId], references: [id], onDelete: Cascade)
+  templateStage   TemplateStage?    @relation(fields: [templateStageId], references: [id], onDelete: SetNull)
+  
+  appointments    Appointment[]
+  followUps       FollowUp[]
+  currentFor      TreatmentJourney[] @relation("CurrentStage")
+
+  @@index([tenantId, journeyId])
+  @@index([tenantId, status])
+  @@map("treatment_stages")
+}
+
+// -----------------------------------------------------------------------------
+// SCHEDULING & AUTOMATION MODULE
+// -----------------------------------------------------------------------------
+
+model Appointment {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String   @db.Uuid
+  patientId        String   @db.Uuid
+  treatmentStageId String   @db.Uuid
+  scheduledStart   DateTime @db.Timestamptz
+  scheduledEnd     DateTime @db.Timestamptz
+  status           String   @db.VarChar(50) // SCHEDULED, CONFIRMED, CHECKED_IN, COMPLETED, NO_SHOW, CANCELLED
+
+  createdAt        DateTime @default(now()) @db.Timestamptz
+  updatedAt        DateTime @updatedAt @db.Timestamptz
+  deletedAt        DateTime? @db.Timestamptz
+
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient          Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  treatmentStage   TreatmentStage @relation(fields: [treatmentStageId], references: [id], onDelete: Restrict)
+  appointmentReminders AppointmentReminder[]
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, scheduledStart])
+  @@map("appointments")
+}
+
+model AppointmentReminder {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @db.Uuid
+  appointmentId     String   @db.Uuid
+  whatsappMessageId String   @unique @db.VarChar(255)
+  type              String   @db.VarChar(50) // 24_HOUR, SAME_DAY, FOLLOW_UP
+  status            String   @db.VarChar(50) // PENDING, SENT, FAILED
+  scheduledFor      DateTime @db.Timestamptz
+  
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+
+  tenant            Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  appointment       Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, scheduledFor])
+  @@map("appointment_reminders")
+}
+
+model FollowUp {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  stageId    String   @db.Uuid
+  triggerAt  DateTime @db.Timestamptz
+  nudgeType  String   @db.VarChar(50) // POST_OP, MISSED_APPT
+  status     String   @default("PENDING") @db.VarChar(50) // PENDING, PROCESSED, CANCELLED
+
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+  deletedAt  DateTime? @db.Timestamptz
+
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  stage      TreatmentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, triggerAt])
+  @@map("follow_ups")
+}
+
+model RecallList {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  patientId  String   @db.Uuid
+  recallDate DateTime @db.Date
+  reason     String   @db.VarChar(255)
+  status     String   @default("PENDING") @db.VarChar(50)
+
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+  deletedAt  DateTime? @db.Timestamptz
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient    Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, status, recallDate])
+  @@map("recall_lists")
+}
+
+// -----------------------------------------------------------------------------
+// FINANCIAL & COMMUNICATION MODULE
+// -----------------------------------------------------------------------------
+
+model Payment {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @db.Uuid
+  journeyId     String   @db.Uuid
+  amount        Int
+  status        String   @db.VarChar(50) // PENDING, SUCCESS, FAILED, REFUNDED
+  paymentMethod String   @db.VarChar(50) // UPI, CASH, CARD
+  
+  recordedAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+  deletedAt     DateTime? @db.Timestamptz
+
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  journey       TreatmentJourney @relation(fields: [journeyId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, journeyId])
+  @@map("payments")
+}
+
+model WhatsAppMessage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  patientId  String   @db.Uuid
+  direction  String   @db.VarChar(10) // INBOUND, OUTBOUND
+  status     String   @db.VarChar(50) // SENT, DELIVERED, READ, FAILED, RECEIVED
+  payload    Json     @db.JsonB
+  
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+  deletedAt  DateTime? @db.Timestamptz
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient    Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, patientId])
+  // Note: GIN index on payload requires raw SQL in Prisma or DB-level execution.
+  @@map("whatsapp_messages")
+}
+
+// -----------------------------------------------------------------------------
+// SAAS & SECURITY MODULE
+// -----------------------------------------------------------------------------
+
+model Subscription {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String   @db.Uuid
+  planTier         String   @db.VarChar(50) // LITE, GROWTH, ENTERPRISE
+  razorpaySubId    String?  @unique @db.VarChar(255)
+  status           String   @db.VarChar(50) // ACTIVE, PAST_DUE, CANCELLED
+  currentPeriodEnd DateTime @db.Timestamptz
+  cancelAtPeriodEnd Boolean @default(false)
+
+  createdAt        DateTime @default(now()) @db.Timestamptz
+  updatedAt        DateTime @updatedAt @db.Timestamptz
+  deletedAt        DateTime? @db.Timestamptz
+
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  userId     String   @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @db.VarChar(50)
+  entityId   String   @db.Uuid
+  changes    Json?    @db.JsonB
+  
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+model WebhookLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId   String   @unique @db.VarChar(255)
+  processedAt DateTime @db.Timestamptz
+
+  @@map("webhook_logs")
+}

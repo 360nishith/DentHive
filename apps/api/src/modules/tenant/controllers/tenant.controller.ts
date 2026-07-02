@@ -1,0 +1,59 @@
+import { Controller, Post, Get, Patch, Body, Req, UseGuards } from '@nestjs/common';
+import { TenantService } from '../services/tenant.service';
+import { AuthGuard } from '@nestjs/passport';
+
+@Controller('tenant')
+export class TenantController {
+  constructor(private readonly tenantService: TenantService) {}
+
+  @Post()
+  @UseGuards(AuthGuard('jwt-onboarding')) // Allow users without a tenantId to hit this
+  async createClinic(@Req() req: any, @Body() body: any) {
+    // The user's Supabase UUID is extracted from the JWT
+    return this.tenantService.createClinic(req.user.id, body);
+  }
+
+  @Get()
+  @UseGuards(AuthGuard('jwt')) // Must be fully onboarded (have tenantId)
+  async getMyClinic(@Req() req: any) {
+    return this.tenantService.getMyClinic(req.user.tenantId, req.user.email);
+  }
+
+  @Patch()
+  @UseGuards(AuthGuard('jwt'))
+  async updateClinic(@Req() req: any, @Body() body: any) {
+    // Only allow admins to update the clinic settings
+    if (req.user.role !== 'ADMIN') {
+      throw new Error('Unauthorized');
+    }
+    return this.tenantService.updateClinic(req.user.tenantId, {
+      name: body.name,
+      upiVpa: body.upiVpa,
+      waPhoneNumberId: body.waPhoneNumberId,
+      waAccessToken: body.waAccessToken,
+      waAppSecret: body.waAppSecret
+    });
+  }
+
+  @Get('notifications')
+  @UseGuards(AuthGuard('jwt'))
+  async getNotifications(@Req() req: any) {
+    return this.tenantService.getNotifications(req.user.tenantId, req.user.id);
+  }
+
+  @Patch('notifications/read-all')
+  @UseGuards(AuthGuard('jwt'))
+  async markNotificationsRead(@Req() req: any) {
+    return this.tenantService.markNotificationsRead(req.user.tenantId, req.user.id);
+  }
+
+  @Get('export')
+  @UseGuards(AuthGuard('jwt'))
+  async exportData(@Req() req: any) {
+    // Only allow admins to export data
+    if (req.user.role !== 'ADMIN') {
+      throw new Error('Unauthorized');
+    }
+    return this.tenantService.exportData(req.user.tenantId);
+  }
+}
