@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { AppointmentsService } from './services/appointments.service';
 import { ReminderService } from './services/reminder.service';
+import { NoShowCronService } from './services/no-show.cron';
 import { WhatsappRemindersProcessor } from './workers/whatsapp-reminders.processor';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TenantModule } from '../tenant/tenant.module';
@@ -18,6 +19,6 @@ import { TenantModule } from '../tenant/tenant.module';
     }),
   ],
   controllers: [AppointmentsController],
-  providers: [AppointmentsService, ReminderService, WhatsappRemindersProcessor, PrismaService],
+  providers: [AppointmentsService, ReminderService, NoShowCronService, WhatsappRemindersProcessor, PrismaService],
 })
 export class AppointmentsModule {}
