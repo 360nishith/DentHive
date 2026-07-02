@@ -225,8 +225,8 @@ export default function AppointmentsPage() {
                   </h2>
                   <div id={isToday ? "tour-appt-cards" : undefined} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {apts.map((apt: any) => (
-                      <Card key={apt.id} className={`p-5 hover:shadow-md transition-shadow relative overflow-hidden group ${isToday ? 'border-emerald-100' : ''}`}>
-                        <div className={`absolute top-0 left-0 w-1 h-full ${isToday ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                      <Card key={apt.id} className={`p-5 hover:shadow-md transition-shadow relative overflow-hidden group ${isToday ? 'border-emerald-100' : ''} ${apt.status === 'CANCELLED' ? 'opacity-60 bg-slate-50 grayscale' : ''}`}>
+                        <div className={`absolute top-0 left-0 w-1 h-full ${apt.status === 'CANCELLED' ? 'bg-slate-400' : isToday ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                         
                         <div className="flex justify-between items-start mb-3">
                           <div className="font-bold text-slate-900 text-lg flex items-center">
@@ -235,6 +235,8 @@ export default function AppointmentsPage() {
                           </div>
                           {apt.status === 'RESCHEDULE_REQUESTED' ? (
                             <Badge variant="destructive" className="animate-pulse bg-red-100 text-red-700 border-red-200 hover:bg-red-200">Reschedule Req.</Badge>
+                          ) : apt.status === 'CANCELLED' ? (
+                            <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-300">Cancelled</Badge>
                           ) : (
                             <Badge variant="default" className="bg-indigo-50 text-indigo-700 border-indigo-100">Scheduled</Badge>
                           )}
@@ -258,36 +260,41 @@ export default function AppointmentsPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <Button id={isToday ? "tour-msg-btn" : undefined} variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleSendMessage(apt.patient.phoneNumber)}>
-                            <MessageSquare className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">MSG</span>
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-amber-600 border-amber-200 hover:bg-amber-50" 
-                            onClick={() => setRescheduleApt(apt)}
-                            disabled={tenantStatus === 'READ_ONLY'}
-                          >
-                            <Calendar className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Shift</span>
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-red-600 border-red-200 hover:bg-red-50" 
-                            title="Cancel Appointment"
-                            disabled={tenantStatus === 'READ_ONLY'}
-                            onClick={async () => {
-                              if (!confirm("Simulate patient cancelling today's appointment? They will be moved to Stalled Patients.")) return;
-                              try {
-                                await api.patch(`/appointments/${apt.id}`, { status: 'CANCELLED' });
-                                fetchAppointments();
-                              } catch (e) {}
-                            }}
-                          >
-                            <XCircle className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Cancel</span>
-                          </Button>
-                        </div>
+                        {apt.status !== 'CANCELLED' && (
+                          <div className="grid grid-cols-3 gap-2">
+                            <Button id={isToday ? "tour-msg-btn" : undefined} variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleSendMessage(apt.patient.phoneNumber)}>
+                              <MessageSquare className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">MSG</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-amber-600 border-amber-200 hover:bg-amber-50" 
+                              onClick={() => setRescheduleApt(apt)}
+                              disabled={tenantStatus === 'READ_ONLY'}
+                            >
+                              <Calendar className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Shift</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600 border-red-200 hover:bg-red-50" 
+                              title="Cancel Appointment"
+                              disabled={tenantStatus === 'READ_ONLY'}
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to cancel this appointment?')) {
+                                  try {
+                                    await api.patch(`/appointments/${apt.id}`, { status: 'CANCELLED' });
+                                    fetchAppointments();
+                                  } catch (e) {
+                                    alert('Failed to cancel');
+                                  }
+                                }
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Cancel</span>
+                            </Button>
+                          </div>
+                        )}
                       </Card>
                     ))}
                   </div>
