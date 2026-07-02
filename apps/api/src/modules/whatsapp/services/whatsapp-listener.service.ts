@@ -8,70 +8,7 @@ export class WhatsAppListenerService {
 
   constructor(private readonly whatsappService: WhatsAppService) {}
 
-  @OnEvent('appointment.confirmed')
-  async handleAppointmentConfirmed(appointment: any) {
-    this.logger.log(`Handling appointment.confirmed event for appointment ${appointment.id}`);
-    
-    const patient = appointment.patient;
-    if (!patient || !patient.phoneNumber) {
-      this.logger.warn(`Patient phone number missing for appointment ${appointment.id}`);
-      return;
-    }
-
-    // Format the date nicely
-    const date = new Date(appointment.scheduledStart).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-
-    const tenant = await this.whatsappService['prisma'].tenant.findUnique({ where: { id: appointment.tenantId } });
-    const clinicName = tenant?.name || 'our clinic';
-
-    try {
-      await this.whatsappService.sendMessage(
-        appointment.tenantId,
-        appointment.patientId,
-        patient.phoneNumber,
-        'appointment_confirmation',
-        [
-          { type: 'body', parameters: [{ type: 'text', text: patient.name }, { type: 'text', text: date }, { type: 'text', text: clinicName }] }
-        ]
-      );
-      this.logger.log(`Queued appointment confirmation for ${patient.name} at ${clinicName}`);
-    } catch (error) {
-      this.logger.error(`Failed to queue appointment confirmation`, error);
-    }
-  }
-
-  @OnEvent('payment.collected')
-  async handlePaymentCollected({ payment, journey, patient }: any) {
-    this.logger.log(`Handling payment.collected event for payment ${payment.id}`);
-    
-    if (!patient || !patient.phoneNumber) return;
-
-    const tenant = await this.whatsappService['prisma'].tenant.findUnique({ where: { id: payment.tenantId } });
-    const clinicName = tenant?.name || 'our clinic';
-
-    try {
-      await this.whatsappService.sendMessage(
-        payment.tenantId,
-        patient.id,
-        patient.phoneNumber,
-        'payment_receipt',
-        [
-          { type: 'body', parameters: [
-            { type: 'text', text: patient.name }, 
-            { type: 'text', text: payment.amount.toString() },
-            { type: 'text', text: clinicName }
-          ]}
-        ]
-      );
-      this.logger.log(`Queued payment receipt for ${patient.name} at ${clinicName}`);
-    } catch (error) {
-      this.logger.error(`Failed to queue payment receipt`, error);
-    }
-  }
+  // Removed automatic appointment_confirmation and payment_receipt templates
+  // Per founder's request, WhatsApp messages should only be sent via the 9:00 AM Cron Job 
+  // and the explicit UPI payment button.
 }
