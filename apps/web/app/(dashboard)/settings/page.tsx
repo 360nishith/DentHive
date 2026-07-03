@@ -18,7 +18,10 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing'>('profile');
   const [waConnected, setWaConnected] = useState(false);
   const [staff, setStaff] = useState<any[]>([]);
-  const [prices, setPrices] = useState({ standard: 2499, discounted: 1999 });
+  const [prices, setPrices] = useState({ 
+    standard: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || 2499), 
+    discounted: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || 1999) 
+  });
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +51,12 @@ export default function SettingsPage() {
     Promise.all([
       api.get('/tenant'),
       api.get('/users'),
-      api.get('/billing/prices').catch(() => ({ data: { standard: 2499, discounted: 1999 } }))
+      api.get('/billing/prices').catch(() => ({ 
+        data: { 
+          standard: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || 2499), 
+          discounted: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || 1999) 
+        } 
+      }))
     ]).then(([tenantRes, usersRes, pricesRes]) => {
       if (tenantRes.data) {
         setTenant(tenantRes.data);
