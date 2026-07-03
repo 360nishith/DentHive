@@ -56,7 +56,7 @@ export class BillingCronService {
     // 2. Check Expired Subscriptions (30 days after payment)
     const expiredSubscriptions = await this.prisma.subscription.findMany({
       where: {
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'HALTED'] },
         currentPeriodEnd: { lte: new Date() }
       }
     });
