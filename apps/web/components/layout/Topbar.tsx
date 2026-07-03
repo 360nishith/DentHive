@@ -105,7 +105,7 @@ export function Topbar() {
   }, []);
 
   return (
-    <header className="flex flex-col z-10 sticky top-0">
+    <header className="flex flex-col z-50 sticky top-0">
       {tenantStatus === 'READ_ONLY' && !isSubscribed && (
         <div className="bg-red-500 text-white text-xs font-semibold px-4 py-2 text-center w-full shadow-sm">
           {subDaysLeft === 0 ? 'Your subscription has expired.' : 'Your free trial has expired.'} You are in Read-Only mode. <a href="/settings" className="underline hover:text-red-100 ml-1">Renew Now</a>
