@@ -468,10 +468,10 @@ export default function SettingsPage() {
                         <p className="text-[13px] text-indigo-700 mt-1 leading-snug">
                           Switch to the <strong>BYOS Plan</strong>. Use your own clinic's phone number for patient communications and your monthly subscription will automatically drop to <strong>₹{prices.discounted}/month</strong>! Contact our team for a one-time seamless Meta integration setup.
                         </p>
-                        <div className="flex items-center gap-3 mt-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3">
                           <Button 
                             size="sm"
-                            className="bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold h-8 shadow-sm" 
+                            className="bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold h-8 shadow-sm justify-center w-full sm:w-auto" 
                             onClick={() => window.open('https://wa.me/916361953329?text=Hi! I want to request the Done-For-You WhatsApp BYOS setup for my clinic.', '_blank')}
                           >
                             Request 1-on-1 Setup
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-xs font-bold h-8" 
+                            className="bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-xs font-bold h-8 justify-center w-full sm:w-auto" 
                             onClick={() => setActiveTab('whatsapp')}
                           >
                             I have my own keys

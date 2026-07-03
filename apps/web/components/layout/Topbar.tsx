@@ -229,8 +229,13 @@ export function Topbar() {
 
       {/* Mobile Navigation Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col lg:hidden animate-in slide-in-from-left-4 duration-200">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 bg-white">
+        <div className="fixed inset-0 z-[100] flex lg:hidden">
+          <div 
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+          <div className="relative flex flex-col w-[280px] bg-white h-full animate-in slide-in-from-left-8 duration-300 shadow-xl">
+            <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 bg-white">
             <div className="flex items-center">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg shadow-sm border border-slate-100 mr-3" />
               <span className="font-bold text-slate-900">DentHive</span>
@@ -293,6 +298,7 @@ export function Topbar() {
               Log Out
             </button>
           </div>
+        </div>
         </div>
       )}
     </header>

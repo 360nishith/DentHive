@@ -148,7 +148,8 @@ export default function FollowUpsPage() {
         </div>
       ) : activeTab === 'logs' ? (
         <Card className="overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-200">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
@@ -183,7 +184,8 @@ export default function FollowUpsPage() {
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -200,7 +202,8 @@ export default function FollowUpsPage() {
               <option value="oldest">Longest Stalled</option>
             </select>
           </div>
-          <table className="min-w-full divide-y divide-slate-200">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
@@ -251,7 +254,8 @@ export default function FollowUpsPage() {
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </Card>
       )}
 
