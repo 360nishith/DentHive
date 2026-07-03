@@ -208,34 +208,34 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Manage your clinic preferences and billing.</p>
       </div>
 
-      <div className="flex gap-8">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8">
         {/* Sidebar */}
-        <div className="w-64 flex-shrink-0">
-          <nav id="tour-settings-nav" className="space-y-1">
+        <div className="w-full md:w-64 flex-shrink-0">
+          <nav id="tour-settings-nav" className="flex overflow-x-auto md:flex-col space-x-2 md:space-x-0 md:space-y-1 pb-2 md:pb-0 hide-scrollbar">
             <button 
               onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
             >
               <Building2 className="w-4 h-4" /> Clinic Profile
             </button>
             <button 
               id="tour-settings-staff-btn"
               onClick={() => setActiveTab('staff')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'staff' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'staff' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
             >
               <Users className="w-4 h-4" /> Staff & Team
             </button>
             <button 
               id="tour-settings-wa-btn"
               onClick={() => setActiveTab('whatsapp')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'whatsapp' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'whatsapp' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
             >
               <MessageSquare className="w-4 h-4" /> WhatsApp API
             </button>
             <button 
               id="tour-settings-billing-btn"
               onClick={() => setActiveTab('billing')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
             >
               <CreditCard className="w-4 h-4" /> Billing & Plan
             </button>
