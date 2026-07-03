@@ -32,6 +32,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   const [paymentTarget, setPaymentTarget] = useState<{journeyId: string, name: string} | null>(null);
   const [billingData, setBillingData] = useState<Record<string, any>>({});
   const [editingStage, setEditingStage] = useState<{journeyId: string, stageId: string | null, name: string, cost: number} | null>(null);
+  const [advancingStageId, setAdvancingStageId] = useState<string | null>(null);
 
   // Edit profile state
   const [editingProfile, setEditingProfile] = useState(false);
@@ -488,20 +489,39 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                   )}
                                   <Button
                                     size="sm"
-                                    className="h-7 text-[10px] px-2 flex-1"
-                                    disabled={tenantStatus === 'READ_ONLY'}
+                                    className="h-7 text-[10px] px-2 flex-1 relative overflow-hidden"
+                                    disabled={tenantStatus === 'READ_ONLY' || advancingStageId === stage.id}
                                     onClick={async () => {
+                                      setAdvancingStageId(stage.id);
                                       try {
                                         await api.post(`/journeys/${journey.id}/advance`, {
                                           currentStageOrder: stage.sequenceOrder
                                         });
-                                        fetchPatientData();
+                                        // Optimistically update locally before fetch completes
+                                        setJourneys(journeys.map(j => {
+                                          if (j.id === journey.id) {
+                                            const updatedStages = j.stages.map((s: any) => 
+                                              s.id === stage.id ? { ...s, status: 'COMPLETED' } : s
+                                            );
+                                            return { ...j, stages: updatedStages };
+                                          }
+                                          return j;
+                                        }));
+                                        await fetchPatientData();
                                       } catch (err) {
                                         console.error('Failed to advance stage', err);
+                                      } finally {
+                                        setAdvancingStageId(null);
                                       }
                                     }}
                                   >
-                                    ✓ Done
+                                    {advancingStageId === stage.id ? (
+                                      <div className="flex items-center justify-center">
+                                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
+                                      </div>
+                                    ) : (
+                                      <>✓ Done</>
+                                    )}
                                   </Button>
                                 </div>
                               )}
