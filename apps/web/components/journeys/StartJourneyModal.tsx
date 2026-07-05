@@ -21,8 +21,7 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
   // "Create New Protocol" panel
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newCost, setNewCost] = useState('');
-  const [newStages, setNewStages] = useState([{ name: '', intervalDays: '0' }]);
+  const [newStages, setNewStages] = useState([{ name: '', intervalDays: '0', cost: '' }]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -80,7 +79,7 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
     }
   };
 
-  const addStage = () => setNewStages([...newStages, { name: '', intervalDays: '0' }]);
+  const addStage = () => setNewStages([...newStages, { name: '', intervalDays: '0', cost: '' }]);
   const removeStage = (i: number) => setNewStages(newStages.filter((_, idx) => idx !== i));
   const updateStage = (i: number, field: string, val: string) => {
     const updated = [...newStages];
@@ -94,18 +93,22 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
     setCreating(true);
     setCreateError('');
     try {
+      // Calculate total cost from stages
+      const totalCost = newStages.reduce((sum, s) => sum + (parseInt(s.cost) || 0), 0);
+
       // Create the template with stages
       const res = await api.post('/journey-templates', {
         name: newName.trim(),
-        estimatedCost: parseInt(newCost) || 0,
+        estimatedCost: totalCost,
         stages: newStages.map((s, i) => ({
           sequenceOrder: i + 1,
           name: s.name.trim(),
           defaultIntervalDays: 0,
+          cost: parseInt(s.cost) || 0,
         })),
       });
-      setNewName(''); setNewCost('');
-      setNewStages([{ name: '', intervalDays: '0' }]);
+      setNewName('');
+      setNewStages([{ name: '', intervalDays: '0', cost: '' }]);
       setShowCreate(false);
       setSelectedTemplate(res.data.id);
       await fetchTemplates();
@@ -219,17 +222,6 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Estimated Cost (₹)</label>
-                <input
-                  type="number"
-                  value={newCost}
-                  onChange={e => setNewCost(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-semibold text-slate-600">Stages *</label>
                   <button
@@ -252,6 +244,13 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
                         className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
                         placeholder="Stage name"
                       />
+                      <input
+                        type="number"
+                        value={stage.cost}
+                        onChange={e => updateStage(i, 'cost', e.target.value)}
+                        className="w-24 px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        placeholder="Cost (₹)"
+                      />
                       {newStages.length > 1 && (
                         <button type="button" onClick={() => removeStage(i)} className="text-slate-300 hover:text-red-500 transition-colors">
                           <X className="w-4 h-4" />
@@ -260,6 +259,13 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
                     </div>
                   ))}
                   </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-sm font-semibold text-slate-600">Total Estimated Cost:</span>
+                <span className="text-sm font-bold text-slate-900">
+                  ₹{newStages.reduce((sum, s) => sum + (parseInt(s.cost) || 0), 0).toLocaleString()}
+                </span>
               </div>
 
               <Button

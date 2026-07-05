@@ -8,17 +8,24 @@ import { PrismaService } from '../../../prisma/prisma.service';
 export class TemplatesService {
   constructor(private prisma: PrismaService) {}
 
-  async createTemplate(tenantId: string, data: { name: string; estimatedCost: number; stages?: { sequenceOrder: number; name: string; defaultIntervalDays: number }[] }) {
+  async createTemplate(tenantId: string, data: { name: string; estimatedCost?: number; stages?: { sequenceOrder: number; name: string; defaultIntervalDays: number; cost?: number }[] }) {
+    // Auto-calculate estimatedCost from stages
+    let calculatedEstimatedCost = data.estimatedCost || 0;
+    if (data.stages && data.stages.length > 0) {
+      calculatedEstimatedCost = data.stages.reduce((sum, stage) => sum + (stage.cost || 0), 0);
+    }
+
     return this.prisma.treatmentTemplate.create({
       data: {
         tenantId,
         name: data.name,
-        estimatedCost: data.estimatedCost || 0,
+        estimatedCost: calculatedEstimatedCost,
         stages: data.stages && data.stages.length > 0 ? {
           create: data.stages.map(s => ({
             sequenceOrder: s.sequenceOrder,
             name: s.name,
             defaultIntervalDays: s.defaultIntervalDays || 0,
+            cost: s.cost || 0,
           }))
         } : undefined,
       },

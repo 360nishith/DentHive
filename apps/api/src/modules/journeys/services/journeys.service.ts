@@ -29,13 +29,12 @@ export class JourneysService {
 
       // If we have a template, initialize its stages
       if (template && template.stages.length > 0) {
-        const stageCost = Math.round(template.estimatedCost / template.stages.length);
         const stagesToCreate = template.stages.map((ts, index) => ({
           tenantId,
           journeyId: journey.id,
           templateStageId: ts.id,
           name: ts.name,
-          cost: stageCost,
+          cost: ts.cost || 0,
           sequenceOrder: index + 1,
           status: 'PENDING'
         }));
