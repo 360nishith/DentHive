@@ -88,6 +88,13 @@ export default function FollowUpsPage() {
   };
 
   const getStatusBadge = (status: string) => {
+    if (status === 'READ') {
+      return (
+        <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold shadow-sm">
+          <CheckCircle2 className="w-3 h-3" /> Read
+        </span>
+      );
+    }
     if (status === 'PROCESSED' || status === 'DELIVERED') {
       return (
         <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
