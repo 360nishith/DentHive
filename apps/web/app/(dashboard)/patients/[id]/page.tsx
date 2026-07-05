@@ -463,9 +463,9 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                               )}
 
                               {isCurrent && (
-                                <div className="mt-3 flex flex-row gap-1.5 w-full">
+                                <div className="mt-3 flex flex-col gap-1.5 w-full items-center">
                                   {isScheduled ? (
-                                    <div className="flex gap-1 items-center flex-1">
+                                    <div className="flex gap-1 items-center w-full justify-center">
                                       <Badge variant="secondary" className="text-[10px] flex-1 justify-center">📅 Booked</Badge>
                                       <button
                                         className="text-indigo-500 hover:text-indigo-700"
@@ -480,7 +480,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="h-7 text-[10px] px-2 flex-1"
+                                      className="h-7 text-[10px] px-2 w-full"
                                       onClick={() => setSchedulingStage({ id: stage.id, name: stage.name })}
                                       disabled={tenantStatus === 'READ_ONLY'}
                                     >
@@ -489,7 +489,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                   )}
                                   <Button
                                     size="sm"
-                                    className="h-7 text-[10px] px-2 flex-1 relative overflow-hidden"
+                                    className="h-7 text-[10px] px-2 w-full relative overflow-hidden"
                                     disabled={tenantStatus === 'READ_ONLY' || advancingStageId === stage.id}
                                     onClick={async () => {
                                       setAdvancingStageId(stage.id);
