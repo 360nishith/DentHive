@@ -55,7 +55,7 @@ export class WebhookWorker extends WorkerHost {
       if (value.messages && value.messages.length > 0) {
         for (const msg of value.messages) {
           const inboundMessageId = msg.id;
-          const replyContextId = msg.context?.message_id; // the outgoing message they replied to
+          const replyContextId = msg.context?.id; // the outgoing message they replied to
           
           let messagePayload = '';
           if (msg.type === 'interactive' && msg.interactive?.button_reply) {
