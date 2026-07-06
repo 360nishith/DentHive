@@ -28,7 +28,7 @@ export class OutboundWorker extends WorkerHost {
           return;
         }
 
-        const response = await this.metaApi.sendTemplateMessage(dbMsg.tenantId, to, template, 'en_US', components);
+        const response = await this.metaApi.sendTemplateMessage(dbMsg.tenantId, to, template, 'en', components);
         
         // Update DB record with the Meta message ID and status
         await this.prisma.whatsAppMessage.update({

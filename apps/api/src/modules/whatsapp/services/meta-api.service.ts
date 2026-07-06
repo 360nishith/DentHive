@@ -17,7 +17,7 @@ export class MetaApiService {
     return cleaned;
   }
 
-  async sendTemplateMessage(tenantId: string, to: string, templateName: string, languageCode: string = 'en_US', components: any[] = []) {
+  async sendTemplateMessage(tenantId: string, to: string, templateName: string, languageCode: string = 'en', components: any[] = []) {
     const formattedTo = this.formatPhone(to);
     let finalPhoneId = this.phoneNumberId;
     let finalToken = this.accessToken;
