@@ -23,6 +23,7 @@ export class BillingCronService {
     const expiredTenants = await this.prisma.tenant.findMany({
       where: {
         status: 'TRIAL',
+        subdomain: { not: 'nishith' },
         createdAt: {
           lte: expirationDate
         }
@@ -57,6 +58,7 @@ export class BillingCronService {
     const expiredSubscriptions = await this.prisma.subscription.findMany({
       where: {
         status: { in: ['ACTIVE', 'HALTED'] },
+        tenant: { subdomain: { not: 'nishith' } },
         currentPeriodEnd: { lte: new Date() }
       }
     });
