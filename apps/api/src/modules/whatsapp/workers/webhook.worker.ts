@@ -80,8 +80,17 @@ export class WebhookWorker extends WorkerHost {
           }
 
           // 2. Deterministic Appointment Resolution via whatsappMessageId
+          // First find the message in our DB using the Meta ID
+          const dbMsg = await this.prisma.whatsAppMessage.findFirst({
+            where: {
+              payload: { path: ['metaMessageId'], equals: replyContextId }
+            }
+          });
+
+          if (!dbMsg) continue;
+
           const reminder = await this.prisma.appointmentReminder.findFirst({
-            where: { whatsappMessageId: replyContextId }
+            where: { whatsappMessageId: dbMsg.id }
           });
 
           if (reminder) {
