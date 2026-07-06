@@ -34,7 +34,7 @@ export class WhatsAppService {
       components
     }, {
       attempts: 3,
-      backoff: { type: 'exponential', delay: 2000 }
+      backoff: { type: 'exponential', delay: 300000 } // Starts at 5 minutes, then 10 mins
     });
 
     return { success: true, messageId: messageRecord.id };
@@ -68,6 +68,9 @@ export class WhatsAppService {
       messageId: messageRecord.id,
       to: patient.phoneNumber,
       text: textMsg
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 300000 } // Starts at 5 minutes, then 10 mins
     });
 
     return { success: true, messageId: messageRecord.id };
