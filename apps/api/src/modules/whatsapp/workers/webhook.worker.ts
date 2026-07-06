@@ -60,6 +60,8 @@ export class WebhookWorker extends WorkerHost {
           let messagePayload = '';
           if (msg.type === 'interactive' && msg.interactive?.button_reply) {
             messagePayload = msg.interactive.button_reply.id || msg.interactive.button_reply.title; // e.g. CONFIRM_NEXT_VISIT or "Confirm"
+          } else if (msg.type === 'button' && msg.button) {
+            messagePayload = msg.button.payload || msg.button.text; // Template Quick Reply buttons
           } else if (msg.type === 'text') {
             messagePayload = msg.text.body?.trim(); // '1' or '2'
           }
