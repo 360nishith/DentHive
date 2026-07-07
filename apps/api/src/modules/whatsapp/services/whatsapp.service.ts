@@ -49,7 +49,7 @@ export class WhatsAppService {
     const upiLink = `upi://pay?pa=${tenant.upiVpa}&pn=${encodeURIComponent(tenant.name)}&am=${amount}&cu=INR`;
     const textMsg = `Hi ${patient.name}, please click the link below to pay ₹${amount} for your recent treatment (${journeyName}) at ${tenant.name}.\n\n${upiLink}`;
     
-    // Push raw text message for the payment link
+    // Push message record to DB
     const messageRecord = await this.prisma.whatsAppMessage.create({
       data: {
         tenantId,
@@ -57,20 +57,30 @@ export class WhatsAppService {
         direction: 'OUTBOUND',
         status: 'PENDING',
         payload: { 
-          type: 'text',
-          text: textMsg,
+          type: 'template',
+          template: 'payment_request',
           to: patient.phoneNumber 
         },
       }
     });
 
-    await this.whatsappQueue.add('send-text', {
+    // Send to outbound queue
+    await this.whatsappQueue.add('send-template', {
       messageId: messageRecord.id,
       to: patient.phoneNumber,
-      text: textMsg
+      template: 'payment_request',
+      components: [
+        { type: 'body', parameters: [
+          { type: 'text', text: patient.name },
+          { type: 'text', text: amount.toString() },
+          { type: 'text', text: journeyName },
+          { type: 'text', text: tenant.name },
+          { type: 'text', text: upiLink || 'N/A' }
+        ]}
+      ]
     }, {
       attempts: 3,
-      backoff: { type: 'exponential', delay: 300000 } // Starts at 5 minutes, then 10 mins
+      backoff: { type: 'exponential', delay: 300000 }
     });
 
     return { success: true, messageId: messageRecord.id };
