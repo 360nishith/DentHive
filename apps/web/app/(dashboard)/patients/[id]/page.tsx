@@ -433,7 +433,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                     </div>
 
                     {/* Stage Timeline */}
-                    <div className="mt-6 relative w-full overflow-x-auto pb-4">
+                    <div className={`mt-6 relative w-full overflow-x-auto pb-4 ${journey.status === 'CANCELLED' ? 'opacity-60 grayscale pointer-events-none' : ''}`}>
                       <div className="absolute top-4 left-0 w-[200%] h-0.5 bg-slate-100 rounded-full" />
                       <div className="relative flex gap-8 px-4 min-w-max">
                         {journey.stages.map((stage: any, idx: number) => {
@@ -465,7 +465,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                 </div>
                               )}
 
-                              {isCurrent && journey.status !== 'COMPLETED' && (
+                              {isCurrent && journey.status === 'ACTIVE' && (
                                 <div className="mt-3 flex flex-col gap-1.5 w-full items-center">
                                   {isScheduled ? (
                                     <div className="flex gap-1 items-center w-full justify-center">
