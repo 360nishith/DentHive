@@ -143,9 +143,9 @@ export class PaymentService {
         where: { tenantId, status: 'SUCCESS' },
         _sum: { amount: true },
       }),
-      // Journeys with balance due — check ALL statuses, not just ACTIVE
+      // Journeys with balance due — exclude CANCELLED (aborted) journeys
       this.prisma.treatmentJourney.findMany({
-        where: { tenantId },
+        where: { tenantId, status: { not: 'CANCELLED' } },
         include: {
           payments: { where: { status: 'SUCCESS' } },
           patient: { select: { name: true, phoneNumber: true } },
