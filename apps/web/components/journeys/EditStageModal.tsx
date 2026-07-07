@@ -24,7 +24,7 @@ export function EditStageModal({ isOpen, onClose, journeyId, stageId, initialNam
   useEffect(() => {
     if (isOpen) {
       setName(initialName || '');
-      setCost(initialCost ? initialCost.toString() : '0');
+      setCost(initialCost ? initialCost.toString() : '');
       setError('');
     }
   }, [isOpen, initialName, initialCost]);
@@ -104,7 +104,7 @@ export function EditStageModal({ isOpen, onClose, journeyId, stageId, initialNam
             <input
               autoFocus
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => setName(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="e.g. Consultation"
             />
