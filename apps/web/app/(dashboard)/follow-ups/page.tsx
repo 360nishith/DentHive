@@ -30,6 +30,7 @@ export default function FollowUpsPage() {
   // Reschedule state
   const [rescheduleApt, setRescheduleApt] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('10:00');
 
   const loadData = async () => {
     setLoading(true);
@@ -52,12 +53,13 @@ export default function FollowUpsPage() {
   }, []);
 
   const handleReschedule = async () => {
-    if (!newDate || !rescheduleApt) return;
+    if (!newDate || !newTime || !rescheduleApt) return;
     try {
+      const [hours, minutes] = newTime.split(':').map(Number);
       const start = new Date(newDate);
-      start.setHours(10, 0, 0, 0); 
+      start.setHours(hours, minutes, 0, 0); 
       const end = new Date(newDate);
-      end.setHours(11, 0, 0, 0);
+      end.setHours(hours + 1, minutes, 0, 0);
       
       // We will create a new appointment for the current stalled stage
       await api.post('/appointments', {
@@ -273,12 +275,20 @@ export default function FollowUpsPage() {
             <h3 className="text-lg font-bold text-slate-900 mb-4">Reschedule Patient</h3>
             <p className="text-sm text-slate-500 mb-4">Select a new date to bring {rescheduleApt.patientName} back in.</p>
             
-            <input 
-              type="date" 
-              className="w-full border border-slate-200 rounded-lg p-3 mb-6 outline-none focus:ring-2 focus:ring-indigo-500"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-            />
+            <div className="flex gap-2 mb-6">
+              <input 
+                type="date" 
+                className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+              />
+              <input 
+                type="time" 
+                className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+              />
+            </div>
             
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => setRescheduleApt(null)}>Cancel</Button>

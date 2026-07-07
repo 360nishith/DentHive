@@ -174,6 +174,7 @@ export class JourneysService {
     const stages = await this.prisma.treatmentStage.findMany({ where: { journeyId, tenantId }, select: { id: true } });
     const stageIds = stages.map(s => s.id);
 
+    await this.prisma.payment.deleteMany({ where: { journeyId, status: { not: 'SUCCESS' } } });
     await this.prisma.appointment.deleteMany({ where: { treatmentStageId: { in: stageIds } } });
     await this.prisma.treatmentStage.deleteMany({ where: { journeyId, tenantId } });
     return this.prisma.treatmentJourney.deleteMany({ where: { id: journeyId, tenantId } });
