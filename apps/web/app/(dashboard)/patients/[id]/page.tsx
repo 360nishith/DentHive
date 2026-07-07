@@ -420,8 +420,9 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                             try {
                               await api.delete(`/journeys/${journey.id}`);
                               fetchPatientData();
-                            } catch (err) {
+                            } catch (err: any) {
                               console.error(err);
+                              alert(err.response?.data?.message || 'Failed to delete journey');
                             }
                           }}
                         >
@@ -462,7 +463,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                 </div>
                               )}
 
-                              {isCurrent && (
+                              {isCurrent && journey.status !== 'COMPLETED' && (
                                 <div className="mt-3 flex flex-col gap-1.5 w-full items-center">
                                   {isScheduled ? (
                                     <div className="flex gap-1 items-center w-full justify-center">
