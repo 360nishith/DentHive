@@ -96,81 +96,73 @@ export class WebhookWorker extends WorkerHost {
           });
 
           if (reminder) {
+            const appointment = await this.prisma.appointment.findUnique({
+              where: { id: reminder.appointmentId },
+              include: { patient: true }
+            });
+
+            if (!appointment) continue;
+
+            // FIRST PRESS IS FINAL PRESS: Ignore any button press if the appointment is already confirmed, rescheduled, or cancelled
+            if (appointment.status !== 'SCHEDULED') {
+              this.logger.log(`Ignoring button press ${messagePayload}. Appointment ${appointment.id} is already ${appointment.status}`);
+              continue;
+            }
+
             // 3. State Transition
             if (messagePayload === 'CONFIRM_NEXT_VISIT' || messagePayload === '1' || messagePayload === 'CONFIRM') {
-              const appointment = await this.prisma.appointment.findUnique({
-                where: { id: reminder.appointmentId },
-                include: { patient: true }
+              await this.prisma.appointment.update({
+                where: { id: reminder.appointmentId }, 
+                data: { status: 'CONFIRMED' }
               });
-
-              if (appointment && appointment.status === 'SCHEDULED') {
-                await this.prisma.appointment.update({
-                  where: { id: reminder.appointmentId }, 
-                  data: { status: 'CONFIRMED' }
-                });
-                this.eventEmitter.emit('appointment.confirmed', appointment);
-                this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
-              }
-            } else if (messagePayload === 'REQUEST_RESCHEDULE' || messagePayload === '2' || messagePayload === 'RESCHEDULE') {
-              const appointment = await this.prisma.appointment.findUnique({
-                where: { id: reminder.appointmentId },
-                include: { patient: true }
-              });
+              this.eventEmitter.emit('appointment.confirmed', appointment);
+              this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
               
-              if (appointment) {
-                // 1. Update appointment status to trigger UI alerts and Stalled Logic
-                await this.prisma.appointment.update({
-                  where: { id: reminder.appointmentId },
-                  data: { status: 'RESCHEDULE_REQUESTED' }
-                });
-
-                // 2. Create a Reschedule Request FollowUp
-                await this.prisma.followUp.create({
-                  data: {
-                    tenantId: appointment.tenantId,
-                    stageId: appointment.treatmentStageId,
-                    triggerAt: new Date(),
-                    nudgeType: 'RESCHEDULE_REQ',
-                    status: 'PENDING'
-                  }
-                });
-
-                // 3. Create a global Notification for all staff/admins
-                await this.prisma.notification.create({
-                  data: {
-                    tenantId: appointment.tenantId,
-                    title: 'Reschedule Requested',
-                    message: `${appointment.patient.name} requested to reschedule their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}.`,
-                    type: 'WARNING'
-                  }
-                });
-              }
-              this.logger.log(`Patient requested reschedule for Appointment ${reminder.appointmentId}`);
-            } else if (messagePayload === 'CANCEL_APPOINTMENT' || messagePayload === '3' || messagePayload === 'CANCEL') {
-              const appointment = await this.prisma.appointment.findUnique({
+            } else if (messagePayload === 'REQUEST_RESCHEDULE' || messagePayload === '2' || messagePayload === 'RESCHEDULE') {
+              // 1. Update appointment status to trigger UI alerts and Stalled Logic
+              await this.prisma.appointment.update({
                 where: { id: reminder.appointmentId },
-                include: { patient: true }
+                data: { status: 'RESCHEDULE_REQUESTED' }
               });
 
-              if (appointment) {
-                const updatedAppts = await this.prisma.appointment.updateMany({
-                  where: { id: reminder.appointmentId, status: 'SCHEDULED' }, 
-                  data: { status: 'CANCELLED' }
-                });
-
-                if (updatedAppts.count > 0) {
-                  // Create a global Notification for all staff/admins
-                  await this.prisma.notification.create({
-                    data: {
-                      tenantId: appointment.tenantId,
-                      title: 'Appointment Cancelled',
-                      message: `${appointment.patient.name} cancelled their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}. A slot is now open.`,
-                      type: 'ERROR'
-                    }
-                  });
-                  this.logger.log(`Patient cancelled Appointment ${reminder.appointmentId}. Notification sent.`);
+              // 2. Create a Reschedule Request FollowUp
+              await this.prisma.followUp.create({
+                data: {
+                  tenantId: appointment.tenantId,
+                  stageId: appointment.treatmentStageId,
+                  triggerAt: new Date(),
+                  nudgeType: 'RESCHEDULE_REQ',
+                  status: 'PENDING'
                 }
-              }
+              });
+
+              // 3. Create a global Notification for all staff/admins
+              await this.prisma.notification.create({
+                data: {
+                  tenantId: appointment.tenantId,
+                  title: 'Reschedule Requested',
+                  message: `${appointment.patient.name} requested to reschedule their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}.`,
+                  type: 'WARNING'
+                }
+              });
+              this.logger.log(`Patient requested reschedule for Appointment ${reminder.appointmentId}`);
+              
+            } else if (messagePayload === 'CANCEL_APPOINTMENT' || messagePayload === '3' || messagePayload === 'CANCEL') {
+              await this.prisma.appointment.update({
+                where: { id: reminder.appointmentId }, 
+                data: { status: 'CANCELLED' }
+              });
+
+              // Create a global Notification for all staff/admins
+              await this.prisma.notification.create({
+                data: {
+                  tenantId: appointment.tenantId,
+                  title: 'Appointment Cancelled',
+                  message: `${appointment.patient.name} cancelled their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}. A slot is now open.`,
+                  type: 'ERROR'
+                }
+              });
+              this.logger.log(`Patient cancelled Appointment ${reminder.appointmentId}. Notification sent.`);
             }
           }
         }
