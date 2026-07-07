@@ -326,6 +326,9 @@ export default function Dashboard() {
                           {appt.status === 'RESCHEDULE_REQUESTED' && (
                             <Badge variant="destructive" className="animate-pulse bg-red-100 text-red-700 border-red-200 hover:bg-red-200">Reschedule Req.</Badge>
                           )}
+                          {appt.status === 'CONFIRMED' && (
+                            <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200">Confirmed</Badge>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2 mt-3 sm:mt-0">

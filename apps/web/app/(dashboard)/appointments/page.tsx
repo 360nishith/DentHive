@@ -238,6 +238,8 @@ export default function AppointmentsPage() {
                             <Badge variant="destructive" className="animate-pulse bg-red-100 text-red-700 border-red-200 hover:bg-red-200">Reschedule Req.</Badge>
                           ) : apt.status === 'CANCELLED' ? (
                             <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-300">Cancelled</Badge>
+                          ) : apt.status === 'CONFIRMED' ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200">Confirmed</Badge>
                           ) : (
                             <Badge variant="default" className="bg-indigo-50 text-indigo-700 border-indigo-100">Scheduled</Badge>
                           )}
