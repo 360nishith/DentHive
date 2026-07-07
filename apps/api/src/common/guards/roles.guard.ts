@@ -2,11 +2,11 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { Reflector } from '@nestjs/core';
 import { REQUIRE_PERMISSIONS } from '../decorators/permissions.decorator';
 
-// Role to Permission Mapping
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   ADMIN: ['CREATE_USER', 'CREATE_PATIENT', 'EDIT_PATIENT', 'DELETE_PATIENT', 'VIEW_BILLING', 'EDIT_CLINIC', 'VIEW_CALENDAR', 'CREATE_APPOINTMENT', 'COLLECT_PAYMENT'],
   DOCTOR: ['CREATE_PATIENT', 'EDIT_PATIENT', 'VIEW_CALENDAR', 'CREATE_APPOINTMENT'],
   FRONT_DESK: ['CREATE_PATIENT', 'VIEW_CALENDAR', 'CREATE_APPOINTMENT', 'COLLECT_PAYMENT'],
+  STAFF: ['CREATE_PATIENT', 'EDIT_PATIENT', 'VIEW_CALENDAR', 'CREATE_APPOINTMENT', 'COLLECT_PAYMENT'],
 };
 
 @Injectable()

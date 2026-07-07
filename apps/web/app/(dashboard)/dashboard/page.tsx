@@ -61,9 +61,9 @@ export default function Dashboard() {
       try {
         const today = new Date().toISOString().split('T')[0];
         // If staff, don't fetch revenue to avoid 403
-        const pRes = api.get('/patients?limit=1');
-        const stalledRes = api.get('/followups/stalled');
-        const apptRes = api.get(`/appointments?start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`);
+        const pRes = api.get('/patients?limit=1').catch(() => ({ data: { meta: { total: 0 } } }));
+        const stalledRes = api.get('/followups/stalled').catch(() => ({ data: [] }));
+        const apptRes = api.get(`/appointments?start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`).catch(() => ({ data: [] }));
         
         let revRes: any = { data: {} };
         const activeRole = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
