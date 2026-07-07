@@ -136,7 +136,10 @@ export class JourneysService {
         });
 
         await tx.appointment.updateMany({
-          where: { treatmentStageId: currentStage.id, status: 'SCHEDULED' },
+          where: { 
+            treatmentStageId: currentStage.id, 
+            status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULE_REQUESTED'] } 
+          },
           data: { status: 'COMPLETED' }
         });
       }

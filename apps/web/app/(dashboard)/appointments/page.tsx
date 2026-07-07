@@ -63,7 +63,8 @@ export default function AppointmentsPage() {
       
       await api.patch(`/appointments/${rescheduleApt.id}`, {
         scheduledStart: start.toISOString(),
-        scheduledEnd: end.toISOString()
+        scheduledEnd: end.toISOString(),
+        status: 'SCHEDULED'
       });
       setRescheduleApt(null);
       fetchAppointments();
