@@ -11,7 +11,7 @@ export class PatientsService {
   async create(tenantId: string, dto: CreatePatientDto) {
     // Phone Deduplication (Scoped by Tenant intrinsically via ALS)
     const existing = await this.prisma.patient.findFirst({
-      where: { phoneNumber: dto.phone },
+      where: { tenantId, phoneNumber: dto.phone },
     });
 
     if (existing) {
