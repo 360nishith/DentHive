@@ -11,10 +11,11 @@ interface ScheduleAppointmentModalProps {
   patientId: string;
   stageId: string | null;
   stageName: string;
+  aptId?: string;
   onScheduled: () => void;
 }
 
-export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, stageName, onScheduled }: ScheduleAppointmentModalProps) {
+export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, stageName, aptId, onScheduled }: ScheduleAppointmentModalProps) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,12 +36,22 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
     const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour duration
 
     try {
-      await api.post('/appointments', {
-        patientId,
-        treatmentStageId: stageId,
-        scheduledStart: startDateTime.toISOString(),
-        scheduledEnd: endDateTime.toISOString()
-      });
+      if (aptId) {
+        // Shifting an existing appointment
+        await api.patch(`/appointments/${aptId}`, {
+          scheduledStart: startDateTime.toISOString(),
+          scheduledEnd: endDateTime.toISOString(),
+          status: 'SCHEDULED' // Reset status just like the shift button does
+        });
+      } else {
+        // Creating a new appointment
+        await api.post('/appointments', {
+          patientId,
+          treatmentStageId: stageId,
+          scheduledStart: startDateTime.toISOString(),
+          scheduledEnd: endDateTime.toISOString()
+        });
+      }
       onScheduled();
       onClose();
     } catch (err: any) {

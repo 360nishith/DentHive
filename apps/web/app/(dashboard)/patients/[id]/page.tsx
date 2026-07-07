@@ -180,6 +180,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         patientId={patient.id}
         stageId={schedulingStage?.id || null}
         stageName={schedulingStage?.name || ''}
+        aptId={schedulingStage?.aptId}
         onScheduled={fetchPatientData}
       />
       <PaymentModal
@@ -438,7 +439,8 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                         {journey.stages.map((stage: any, idx: number) => {
                           const isComplete = stage.status === 'COMPLETED';
                           const isCurrent = journey.currentStageId === stage.id;
-                          const isScheduled = appointments.some(a => a.treatmentStageId === stage.id && a.status !== 'CANCELLED');
+                          const activeApt = appointments.find(a => a.treatmentStageId === stage.id && a.status !== 'CANCELLED');
+                          const isScheduled = !!activeApt;
                           return (
                             <div key={stage.id} className="flex flex-col items-center relative z-10 w-[120px]">
                               <button 
@@ -471,7 +473,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                                       <button
                                         className="text-indigo-500 hover:text-indigo-700"
                                         title="Reschedule"
-                                        onClick={() => setSchedulingStage({ id: stage.id, name: stage.name })}
+                                        onClick={() => setSchedulingStage({ id: stage.id, name: stage.name, aptId: activeApt.id })}
                                         disabled={tenantStatus === 'READ_ONLY'}
                                       >
                                         <Pencil className="w-3 h-3" />
