@@ -41,7 +41,6 @@ export function PaymentModal({ isOpen, onClose, journeyId, journeyName, onPaymen
     api.get(`/billing/payments/journey/${journeyId}`)
       .then(res => {
         setSummary(res.data);
-        if (res.data?.balance > 0) setAmount(String(res.data.balance));
       })
       .catch(console.error)
       .finally(() => setLoading(false));
