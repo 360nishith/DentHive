@@ -271,4 +271,30 @@ export class TenantService {
 
     return { csv: csvContent };
   }
+
+  async resetDemoData(tenantId: string) {
+    // SECURITY: This forcefully wipes all operational data but retains clinic settings, templates, and staff.
+    // Order of deletion is critical due to foreign key constraints.
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Delete deep dependencies
+      await tx.payment.deleteMany({ where: { tenantId } });
+      await tx.appointmentReminder.deleteMany({ where: { tenantId } });
+      await tx.appointment.deleteMany({ where: { tenantId } });
+      await tx.followUp.deleteMany({ where: { tenantId } });
+      await tx.whatsappMessage.deleteMany({ where: { tenantId } });
+
+      // 2. Delete middle dependencies
+      await tx.treatmentStage.deleteMany({ where: { tenantId } });
+      await tx.treatmentJourney.deleteMany({ where: { tenantId } });
+      await tx.recallList.deleteMany({ where: { tenantId } });
+      await tx.file.deleteMany({ where: { tenantId } });
+
+      // 3. Delete root operational records
+      await tx.patient.deleteMany({ where: { tenantId } });
+      await tx.notification.deleteMany({ where: { tenantId } });
+      await tx.auditLog.deleteMany({ where: { tenantId } });
+
+      return { success: true, message: 'Demo data completely wiped.' };
+    });
+  }
 }

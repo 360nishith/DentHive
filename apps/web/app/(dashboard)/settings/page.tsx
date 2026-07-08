@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Building, Building2, Settings as SettingsIcon, Settings, CreditCard, MessageSquare, Users, Loader2, Link2, CheckCircle2, Save, Plus, Download } from 'lucide-react';
+import { Building, Building2, Settings as SettingsIcon, Settings, CreditCard, MessageSquare, Users, Loader2, Link2, CheckCircle2, Save, Plus, Download, AlertOctagon } from 'lucide-react';
 import api from '../../../lib/axios';
+import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -15,13 +16,15 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState({ name: '', upiVpa: '', waPhoneNumberId: '', waAccessToken: '', waAppSecret: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing' | 'danger'>('profile');
+  const [userEmail, setUserEmail] = useState('');
   const [waConnected, setWaConnected] = useState(false);
   const [staff, setStaff] = useState<any[]>([]);
   const [prices, setPrices] = useState({ 
     standard: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || 2499), 
     discounted: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || 1999) 
   });
+  const [wiping, setWiping] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,6 +51,10 @@ export default function SettingsPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) setUserEmail(session.user.email);
+    });
+
     Promise.all([
       api.get('/tenant'),
       api.get('/users'),
@@ -162,6 +169,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetDemo = async () => {
+    const confirmation = prompt('DANGER: This will instantly wipe ALL patients, appointments, and revenue from the database. It cannot be undone. Type "RESET" to confirm.');
+    if (confirmation !== 'RESET') {
+      if (confirmation) alert('Confirmation failed. Data was not wiped.');
+      return;
+    }
+    
+    setWiping(true);
+    try {
+      await api.delete('/tenant/demo-data');
+      alert('Demo data wiped successfully. The dashboard is now clean.');
+      window.location.reload();
+    } catch (e: any) {
+      alert('Failed to wipe demo data: ' + (e.response?.data?.message || e.message));
+    } finally {
+      setWiping(false);
+    }
+  };
+
   const handleSubscribe = async () => {
     setSubscribing(true);
     try {
@@ -239,6 +265,14 @@ export default function SettingsPage() {
             >
               <CreditCard className="w-4 h-4" /> Billing & Plan
             </button>
+            {userEmail === 'nishithdharmaraj@gmail.com' && (
+              <button 
+                onClick={() => setActiveTab('danger')}
+                className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'danger' ? 'bg-red-50 text-red-700' : 'text-red-600 hover:bg-red-50 hover:text-red-700'}`}
+              >
+                <AlertOctagon className="w-4 h-4" /> Danger Zone
+              </button>
+            )}
           </nav>
         </div>
 
@@ -527,6 +561,33 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Billing History</h3>
                 <div className="text-center py-6 text-slate-500 text-sm">
                   No previous invoices found.
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'danger' && userEmail === 'nishithdharmaraj@gmail.com' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <Card className="p-6 border-red-200 bg-red-50/30">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-red-100 text-red-600 rounded-lg">
+                    <AlertOctagon className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-bold text-red-900">Reset Demo Data</h2>
+                    <p className="text-sm text-red-700 mt-1 mb-4">
+                      This action will permanently delete all operational data from your clinic (Patients, Appointments, WhatsApp Logs, Revenue, and Follow-ups). 
+                      It will NOT delete your templates, staff accounts, or clinic settings. This is specifically for clearing out dummy data after a sales demo.
+                    </p>
+                    <Button 
+                      onClick={handleResetDemo}
+                      disabled={wiping}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                    >
+                      {wiping ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {wiping ? 'Wiping Database...' : 'Factory Reset Operational Data'}
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </div>
