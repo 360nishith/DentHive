@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../lib/axios';
 import { Button } from '../ui/Button';
 import { X, CalendarDays } from 'lucide-react';
@@ -20,6 +20,35 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
   const [time, setTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  useEffect(() => {
+    if (!date) {
+      setExistingAppointments([]);
+      return;
+    }
+    
+    const fetchAppointments = async () => {
+      setLoadingAppointments(true);
+      try {
+        const start = new Date(date);
+        const end = new Date(date);
+        end.setDate(end.getDate() + 1);
+        const res = await api.get('/appointments', {
+          params: { start: start.toISOString(), end: end.toISOString() }
+        });
+        setExistingAppointments(res.data || []);
+      } catch (err) {
+        console.error('Failed to fetch day appointments', err);
+      } finally {
+        setLoadingAppointments(false);
+      }
+    };
+    
+    fetchAppointments();
+  }, [date]);
 
   if (!isOpen || !stageId) return null;
 
@@ -120,6 +149,40 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
                 />
               </div>
             </div>
+
+            {/* Existing Appointments Panel */}
+            {date && (
+              <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wide">
+                  Existing Bookings on {new Date(date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </div>
+                <div className="p-2 max-h-[160px] overflow-y-auto">
+                  {loadingAppointments ? (
+                    <div className="text-center p-4 text-xs text-slate-500">Loading schedule...</div>
+                  ) : existingAppointments.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {existingAppointments.filter(a => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW').sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()).map(apt => (
+                        <div key={apt.id} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${aptId === apt.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200'}`}>
+                          <div className="text-xs font-bold text-slate-700 w-[60px] shrink-0 text-center bg-slate-100 rounded py-1">
+                            {new Date(apt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-900 truncate">
+                              {apt.patient?.name || 'Unknown'} {aptId === apt.id && <span className="text-[10px] text-indigo-500 ml-1">(This slot)</span>}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">{apt.treatmentStage?.name || 'Treatment'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg">
+                      Schedule is completely free!
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 flex justify-end space-x-3">
