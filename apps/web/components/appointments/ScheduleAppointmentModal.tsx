@@ -148,13 +148,28 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Time</label>
-                <input 
-                  type="time"
+                <select
                   required
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                />
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
+                >
+                  {Array.from({ length: 24 * 4 }).map((_, i) => {
+                    const h = Math.floor(i / 4);
+                    const m = (i % 4) * 15;
+                    const hh = String(h).padStart(2, '0');
+                    const mm = String(m).padStart(2, '0');
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                    const displayHH = String(displayH).padStart(2, '0');
+                    return (
+                      <option key={`${hh}:${mm}`} value={`${hh}:${mm}`}>
+                        {`${displayHH}:${mm} ${ampm}`}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
 
