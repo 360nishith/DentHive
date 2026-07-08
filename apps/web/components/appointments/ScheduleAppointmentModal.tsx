@@ -17,7 +17,8 @@ interface ScheduleAppointmentModalProps {
 
 export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, stageName, aptId, onScheduled }: ScheduleAppointmentModalProps) {
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [time12, setTime12] = useState('10:00');
+  const [ampm, setAmpm] = useState('AM');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   
@@ -62,14 +63,19 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || !time) return;
+    if (!date || !time12) return;
 
     setSubmitting(true);
     setError('');
 
-    // Combine date and time to ISO strings (simplified for this MVP)
-    // A robust system would handle timezones properly.
-    const startDateTime = new Date(`${date}T${time}:00`);
+    // Combine date and time to ISO strings
+    const [hh, mm] = time12.split(':');
+    let hour = parseInt(hh, 10);
+    if (ampm === 'PM' && hour !== 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+    const time24 = `${String(hour).padStart(2, '0')}:${mm}`;
+    
+    const startDateTime = new Date(`${date}T${time24}:00`);
     const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour duration
 
     try {
@@ -145,31 +151,40 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                 />
-              </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Time</label>
-                <select
-                  required
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
-                >
-                  {Array.from({ length: 24 * 4 }).map((_, i) => {
-                    const h = Math.floor(i / 4);
-                    const m = (i % 4) * 15;
-                    const hh = String(h).padStart(2, '0');
-                    const mm = String(m).padStart(2, '0');
-                    const ampm = h >= 12 ? 'PM' : 'AM';
-                    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-                    const displayHH = String(displayH).padStart(2, '0');
-                    return (
-                      <option key={`${hh}:${mm}`} value={`${hh}:${mm}`}>
-                        {`${displayHH}:${mm} ${ampm}`}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    required
+                    value={time12}
+                    onChange={(e) => setTime12(e.target.value)}
+                    className="w-2/3 px-3 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2rem` }}
+                  >
+                    {Array.from({ length: 12 * 4 }).map((_, i) => {
+                      const h = Math.floor(i / 4);
+                      const m = (i % 4) * 15;
+                      const displayH = h === 0 ? 12 : h;
+                      const hh = String(displayH).padStart(2, '0');
+                      const mm = String(m).padStart(2, '0');
+                      return (
+                        <option key={`${hh}:${mm}`} value={`${hh}:${mm}`}>
+                          {`${hh}:${mm}`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  
+                  <select
+                    required
+                    value={ampm}
+                    onChange={(e) => setAmpm(e.target.value)}
+                    className="w-1/3 px-2 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none text-center"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
             </div>
 
