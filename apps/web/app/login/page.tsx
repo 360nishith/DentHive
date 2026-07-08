@@ -9,6 +9,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Save remember me preference before login so Supabase's custom storage picks it up
+    localStorage.setItem('denthive_remember_me', rememberMe.toString());
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -30,7 +34,6 @@ export default function LoginPage() {
     }
 
     if (data.session) {
-      localStorage.setItem('supabase.auth.token', JSON.stringify(data));
       router.push('/dashboard');
     }
   };
@@ -91,7 +94,12 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between text-sm font-medium">
             <label className="flex items-center space-x-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" 
+              />
               <span className="text-slate-600">Remember me</span>
             </label>
             <Link href="/forgot-password" className="text-primary-600 hover:text-primary-700 hover:underline">Forgot password?</Link>
