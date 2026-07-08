@@ -333,7 +333,7 @@ export default function Dashboard() {
                   </div>
                 )}
                 {todayAppointments.map((appt, idx) => {
-                  const timeStr = new Date(appt.scheduledStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const timeStr = new Date(appt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
                   return (
                     <div key={idx} className="p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors flex items-center justify-between">
                       <div>

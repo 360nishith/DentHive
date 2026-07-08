@@ -573,7 +573,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <div key={apt.id} className="p-5 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors">
                     <div>
                       <div className="font-bold text-slate-900">
-                        {new Date(apt.scheduledStart).toLocaleDateString('en-GB')} at {new Date(apt.scheduledStart).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {new Date(apt.scheduledStart).toLocaleDateString('en-GB')} at {new Date(apt.scheduledStart).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true})}
                       </div>
                       <div className="text-sm text-slate-500 mt-0.5">
                         {apt.treatmentStage?.templateStage?.name}

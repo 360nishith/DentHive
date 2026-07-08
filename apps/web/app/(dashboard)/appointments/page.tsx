@@ -233,7 +233,7 @@ export default function AppointmentsPage() {
                         <div className="flex justify-between items-start mb-3">
                           <div className="font-bold text-slate-900 text-lg flex items-center">
                             <Clock className={`w-4 h-4 mr-1.5 ${isToday ? 'text-emerald-500' : 'text-indigo-500'}`} />
-                            {new Date(apt.scheduledStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(apt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                           </div>
                           {apt.status === 'RESCHEDULE_REQUESTED' ? (
                             <Badge variant="destructive" className="animate-pulse bg-red-100 text-red-700 border-red-200 hover:bg-red-200">Reschedule Req.</Badge>

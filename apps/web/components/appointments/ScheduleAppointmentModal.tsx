@@ -172,7 +172,7 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
                       {existingAppointments.filter(a => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW').sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()).map(apt => (
                         <div key={apt.id} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${aptId === apt.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200'}`}>
                           <div className="text-xs font-bold text-slate-700 w-[60px] shrink-0 text-center bg-slate-100 rounded py-1">
-                            {new Date(apt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(apt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-slate-900 truncate">
