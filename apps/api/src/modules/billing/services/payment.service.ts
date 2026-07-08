@@ -117,8 +117,16 @@ export class PaymentService {
 
   async getRevenueStats(tenantId: string) {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Force revenue boundaries to align with Indian Standard Time (IST)
+    const tzOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(now.getTime() + tzOffsetMs);
+    
+    const startOfDayIstStr = `${nowIst.getUTCFullYear()}-${String(nowIst.getUTCMonth() + 1).padStart(2, '0')}-${String(nowIst.getUTCDate()).padStart(2, '0')}T00:00:00.000+05:30`;
+    const startOfDay = new Date(startOfDayIstStr);
+    
+    const startOfMonthIstStr = `${nowIst.getUTCFullYear()}-${String(nowIst.getUTCMonth() + 1).padStart(2, '0')}-01T00:00:00.000+05:30`;
+    const startOfMonth = new Date(startOfMonthIstStr);
 
     const [
       todayPayments, 

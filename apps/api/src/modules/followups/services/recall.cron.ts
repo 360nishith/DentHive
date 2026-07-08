@@ -13,7 +13,7 @@ export class RecallCronService {
     @InjectQueue('whatsapp') private whatsappQueue: Queue
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  @Cron(CronExpression.EVERY_DAY_AT_8AM, { timeZone: 'Asia/Kolkata' })
   async handleRecallCron() {
     this.logger.log('Starting daily recall job...');
     

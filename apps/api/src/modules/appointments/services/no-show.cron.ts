@@ -12,13 +12,16 @@ export class NoShowCronService {
    * The "Auto-No-Show" Sweeper
    * Runs every night at Midnight to catch patients who didn't show up.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'Asia/Kolkata' })
   async processMissedAppointments() {
     this.logger.log('🌙 Midnight Sweep: Checking for missed appointments from yesterday...');
 
     const now = new Date();
-    // Get midnight of today (e.g. 00:00:00). Anything before this is considered "yesterday or older"
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Get midnight of today (e.g. 00:00:00) in IST.
+    const tzOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(now.getTime() + tzOffsetMs);
+    const startOfTodayIstStr = `${nowIst.getUTCFullYear()}-${String(nowIst.getUTCMonth() + 1).padStart(2, '0')}-${String(nowIst.getUTCDate()).padStart(2, '0')}T00:00:00.000+05:30`;
+    const startOfToday = new Date(startOfTodayIstStr);
 
     // 1. Find all ghost appointments
     const ghostAppts = await this.prisma.appointment.findMany({
