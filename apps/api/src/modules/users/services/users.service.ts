@@ -9,6 +9,13 @@ export class UsersService {
     private revocationService: JwtRevocationService
   ) {}
 
+  async getMe(authId: string) {
+    return this.prisma.user.findUnique({
+      where: { authId },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true }
+    });
+  }
+
   async listStaff(tenantId: string) {
     return this.prisma.user.findMany({
       where: { tenantId, status: 'ACTIVE' },

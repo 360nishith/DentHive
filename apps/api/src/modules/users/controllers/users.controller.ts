@@ -10,6 +10,11 @@ import { TenantStatusGuard } from '../../../common/guards/tenant-status.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('me')
+  async getMe(@Req() req: any) {
+    return this.usersService.getMe(req.user.id);
+  }
+
   @Get()
   async listStaff(@Req() req: any) {
     return this.usersService.listStaff(req.user.tenantId);

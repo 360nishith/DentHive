@@ -91,11 +91,16 @@ export function Topbar() {
         } else if (meta?.role) {
           setUserRole(meta.role);
         }
-        if (first || last) {
-          setInitials(`${first.charAt(0)}${last.charAt(0)}`.toUpperCase());
-        } else if (session.user.email) {
-          setInitials(session.user.email.charAt(0).toUpperCase());
-        }
+        api.get('/users/me').then(meRes => {
+          const { firstName, lastName } = meRes.data || {};
+          if (firstName || lastName) {
+            setInitials(`${(firstName || '').charAt(0)}${(lastName || '').charAt(0)}`.toUpperCase());
+          } else if (session.user.email) {
+            setInitials(session.user.email.charAt(0).toUpperCase());
+          }
+        }).catch(() => {
+          if (session.user.email) setInitials(session.user.email.charAt(0).toUpperCase());
+        });
         
         // Fetch notifications if logged in
         fetchNotifications();

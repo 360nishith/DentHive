@@ -42,12 +42,31 @@ export default function Dashboard() {
       if (session?.user) {
         const meta = session.user.user_metadata;
         const appMeta = session.user.app_metadata;
-        const first = meta?.first_name || meta?.firstName || session.user.email?.split('@')[0] || 'Doctor';
-        setUserName(first);
+        let activeRole = 'ADMIN';
         if (appMeta?.role) {
+          activeRole = appMeta.role;
           setUserRole(appMeta.role);
         } else if (meta?.role) {
+          activeRole = meta.role;
           setUserRole(meta.role);
+        }
+
+        try {
+          if (activeRole === 'STAFF') {
+            setUserName('Staff');
+          } else {
+            // It's the Doctor / Admin
+            const meRes = await api.get('/users/me');
+            if (meRes.data?.firstName) {
+              setUserName(`Dr. ${meRes.data.firstName}`);
+            } else {
+              const fallback = session.user.email?.split('@')[0] || 'Doctor';
+              setUserName(`Dr. ${fallback.charAt(0).toUpperCase() + fallback.slice(1)}`);
+            }
+          }
+        } catch (e) {
+          const fallback = session.user.email?.split('@')[0] || 'Doctor';
+          setUserName(`Dr. ${fallback.charAt(0).toUpperCase() + fallback.slice(1)}`);
         }
       }
 
