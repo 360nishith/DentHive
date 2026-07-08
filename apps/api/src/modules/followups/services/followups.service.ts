@@ -128,7 +128,7 @@ export class FollowUpsService {
       // If any stage has an active appointment in the future, it's not stalled
       const hasScheduledAppt = j.stages.some(s => 
         s.appointments.some(a => 
-          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED' || a.status === 'RESCHEDULE_REQUESTED') && 
+          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && 
           new Date(a.scheduledStart).getTime() >= new Date().setHours(0,0,0,0)
         )
       );
