@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import { ScheduleAppointmentModal } from '../../../components/appointments/ScheduleAppointmentModal';
 
 export default function AppointmentsPage() {
   const router = useRouter();
@@ -372,24 +373,19 @@ export default function AppointmentsPage() {
               <input 
                 type="date" 
                 className="flex-1 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-              />
-              <input 
-                type="time" 
-                className="w-32 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setRescheduleApt(null)}>Cancel</Button>
-              <Button className="flex-1 bg-indigo-600 text-white" onClick={handleReschedule}>Confirm</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      {/* Reschedule Modal */}
+      <ScheduleAppointmentModal
+        isOpen={!!rescheduleApt}
+        onClose={() => setRescheduleApt(null)}
+        patientId={rescheduleApt?.patientId || ''}
+        stageId={rescheduleApt?.treatmentStageId || null}
+        stageName={rescheduleApt?.treatmentStage?.name || 'Custom Stage'}
+        aptId={rescheduleApt?.id}
+        onScheduled={() => {
+          fetchAppointments();
+          setRescheduleApt(null);
+        }}
+      />
     </div>
   );
 }

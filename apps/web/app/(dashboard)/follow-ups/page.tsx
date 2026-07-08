@@ -6,6 +6,7 @@ import { PhoneCall, CheckCircle2, XCircle, Clock, Loader2, ArrowRight, Calendar,
 import { Button } from '../../../components/ui/Button';
 import { useRouter } from 'next/navigation';
 import api from '../../../lib/axios';
+import { ScheduleAppointmentModal } from '../../../components/appointments/ScheduleAppointmentModal';
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('en-IN', {
@@ -236,6 +237,7 @@ export default function FollowUpsPage() {
                       <div className="font-semibold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => router.push(`/patients/${item.patientId}`)}>
                         {item.patientName}
                       </div>
+                      <div className="text-xs text-slate-500 mt-0.5">{item.patientPhone}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900 font-medium">{item.treatmentName}</div>
@@ -269,34 +271,17 @@ export default function FollowUpsPage() {
       )}
 
       {/* Reschedule Modal Overlay */}
-      {rescheduleApt && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <Card className="p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Reschedule Patient</h3>
-            <p className="text-sm text-slate-500 mb-4">Select a new date to bring {rescheduleApt.patientName} back in.</p>
-            
-            <div className="flex gap-2 mb-6">
-              <input 
-                type="date" 
-                className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-              />
-              <input 
-                type="time" 
-                className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setRescheduleApt(null)}>Cancel</Button>
-              <Button className="flex-1 bg-indigo-600 text-white" onClick={handleReschedule}>Confirm</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <ScheduleAppointmentModal
+        isOpen={!!rescheduleApt}
+        onClose={() => setRescheduleApt(null)}
+        patientId={rescheduleApt?.patientId || ''}
+        stageId={rescheduleApt?.currentStageId || null}
+        stageName={rescheduleApt?.treatmentName || 'Custom Stage'}
+        onScheduled={() => {
+          loadData();
+          setRescheduleApt(null);
+        }}
+      />
     </div>
   );
 }
