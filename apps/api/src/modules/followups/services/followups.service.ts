@@ -125,9 +125,12 @@ export class FollowUpsService {
     });
 
     const stalled = activeJourneys.filter(j => {
-      // If any stage has a SCHEDULED appointment in the future, it's not stalled
+      // If any stage has an active appointment in the future, it's not stalled
       const hasScheduledAppt = j.stages.some(s => 
-        s.appointments.some(a => a.status === 'SCHEDULED' && new Date(a.scheduledStart).getTime() >= new Date().setHours(0,0,0,0))
+        s.appointments.some(a => 
+          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED' || a.status === 'RESCHEDULE_REQUESTED') && 
+          new Date(a.scheduledStart).getTime() >= new Date().setHours(0,0,0,0)
+        )
       );
       return !hasScheduledAppt;
     });
