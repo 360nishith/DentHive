@@ -281,7 +281,7 @@ export class TenantService {
       await tx.appointmentReminder.deleteMany({ where: { tenantId } });
       await tx.appointment.deleteMany({ where: { tenantId } });
       await tx.followUp.deleteMany({ where: { tenantId } });
-      await tx.whatsappMessage.deleteMany({ where: { tenantId } });
+      await tx.whatsAppMessage.deleteMany({ where: { tenantId } });
 
       // 2. Delete middle dependencies
       await tx.treatmentStage.deleteMany({ where: { tenantId } });
