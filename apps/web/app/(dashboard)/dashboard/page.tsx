@@ -342,6 +342,11 @@ export default function Dashboard() {
                           <p className="text-xs text-slate-500">
                             {appt.treatmentStage?.name || 'Custom Stage'} • {timeStr}
                           </p>
+                          {appt.patient?.whatsappOptIn === false && (
+                            <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-slate-200" title="Manual Call Required">
+                              No WhatsApp
+                            </Badge>
+                          )}
                           {appt.status === 'RESCHEDULE_REQUESTED' && (
                             <Badge variant="destructive" className="animate-pulse bg-red-100 text-red-700 border-red-200 hover:bg-red-200">Reschedule Req.</Badge>
                           )}

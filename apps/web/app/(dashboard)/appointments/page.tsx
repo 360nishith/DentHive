@@ -255,6 +255,11 @@ export default function AppointmentsPage() {
                             <Phone className="w-4 h-4 mr-2 text-slate-400" />
                             {apt.patient.phoneNumber}
                           </div>
+                          {apt.patient.whatsappOptIn === false && (
+                            <Badge variant="secondary" className="mt-1 bg-slate-100 text-slate-500 border-slate-200" title="Manual Call Required">
+                              No WhatsApp
+                            </Badge>
+                          )}
                         </div>
 
                         <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 mb-4">

@@ -151,6 +151,7 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                 />
+              </div>
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Time</label>
                 <div className="flex gap-2">
@@ -227,7 +228,7 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
             <Button variant="ghost" onClick={onClose} type="button">
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || !date || !time}>
+            <Button type="submit" disabled={submitting || !date || !time12}>
               {submitting ? 'Scheduling...' : 'Confirm Booking'}
             </Button>
           </div>

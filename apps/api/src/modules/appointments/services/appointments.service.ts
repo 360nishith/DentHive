@@ -61,7 +61,7 @@ export class AppointmentsService {
         }
       },
       include: {
-        patient: { select: { name: true, phoneNumber: true } },
+        patient: { select: { id: true, name: true, phoneNumber: true, whatsappOptIn: true } },
         treatmentStage: { include: { templateStage: true } }
       },
       orderBy: { scheduledStart: 'asc' }
