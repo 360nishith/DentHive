@@ -39,7 +39,15 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
         const res = await api.get('/appointments', {
           params: { start: start.toISOString(), end: end.toISOString() }
         });
-        setExistingAppointments(res.data || []);
+        
+        // Filter out completed and cancelled appointments to exactly match the Calendar view
+        const activeApts = (res.data || []).filter((a: any) => 
+          a.status === 'SCHEDULED' || 
+          a.status === 'RESCHEDULE_REQUESTED' || 
+          a.status === 'CONFIRMED'
+        );
+        
+        setExistingAppointments(activeApts);
       } catch (err) {
         console.error('Failed to fetch day appointments', err);
       } finally {
