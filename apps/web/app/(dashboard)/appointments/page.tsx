@@ -362,17 +362,6 @@ export default function AppointmentsPage() {
         </Card>
       </div>
 
-      {/* Reschedule Modal Overlay */}
-      {rescheduleApt && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <Card className="p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Reschedule Appointment</h3>
-            <p className="text-sm text-slate-500 mb-4">Select a new date for {rescheduleApt.patient?.name}'s {rescheduleApt.treatmentStage?.name || 'Custom Stage'}.</p>
-            
-            <div className="flex gap-4 mb-6">
-              <input 
-                type="date" 
-                className="flex-1 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500"
       {/* Reschedule Modal */}
       <ScheduleAppointmentModal
         isOpen={!!rescheduleApt}

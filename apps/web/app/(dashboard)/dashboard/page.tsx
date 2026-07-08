@@ -80,8 +80,8 @@ export default function Dashboard() {
           outstanding: revRes.data?.outstandingTotal || 0,
         });
         setStalledJourneys(stalled.data || []);
-        // Filter out completed ones so we only see upcoming for today
-        setTodayAppointments((appt.data || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED'));
+        // Filter out completed/cancelled ones so we only see upcoming for today
+        setTodayAppointments((appt.data || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED'));
       } catch (e) {}
     };
     loadData();
@@ -339,8 +339,7 @@ export default function Dashboard() {
                             if (!confirm("Simulate patient cancelling today's appointment? They will be moved to Stalled Patients.")) return;
                             try {
                               await api.patch(`/appointments/${appt.id}`, { status: 'CANCELLED' });
-                              // Reload dashboard
-                              window.location.reload();
+                              loadData(); // Re-fetch immediately without hard refresh
                             } catch (e) {}
                           }}
                           className="text-red-600 border-red-200 hover:bg-red-50"

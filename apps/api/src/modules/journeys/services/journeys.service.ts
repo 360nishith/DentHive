@@ -1,9 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class JourneysService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue('whatsapp-reminders') private readonly whatsappQueue: Queue
+  ) {}
 
   async createJourney(tenantId: string, payload: { patientId: string; templateId?: string; name?: string }) {
     let template = null;
@@ -114,10 +119,17 @@ export class JourneysService {
           where: { id: currentStage.id },
           data: { status: 'COMPLETED', completedAt: new Date() }
         });
+        const apptsToCancel = await this.prisma.appointment.findMany({
+          where: { treatmentStageId: currentStage.id, status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULE_REQUESTED'] } }
+        });
         await this.prisma.appointment.updateMany({
-          where: { treatmentStageId: currentStage.id, status: 'SCHEDULED' },
+          where: { treatmentStageId: currentStage.id, status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULE_REQUESTED'] } },
           data: { status: 'COMPLETED' }
         });
+        for (const appt of apptsToCancel) {
+          const job = await this.whatsappQueue.getJob(`remind-${appt.id}`);
+          if (job) await job.remove().catch(() => {});
+        }
       }
 
       await this.prisma.treatmentJourney.updateMany({
@@ -135,6 +147,12 @@ export class JourneysService {
           data: { status: 'COMPLETED', completedAt: new Date() }
         });
 
+        const apptsToCancel = await tx.appointment.findMany({
+          where: { 
+            treatmentStageId: currentStage.id, 
+            status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULE_REQUESTED'] } 
+          }
+        });
         await tx.appointment.updateMany({
           where: { 
             treatmentStageId: currentStage.id, 
@@ -142,6 +160,10 @@ export class JourneysService {
           },
           data: { status: 'COMPLETED' }
         });
+        for (const appt of apptsToCancel) {
+          const job = await this.whatsappQueue.getJob(`remind-${appt.id}`);
+          if (job) await job.remove().catch(() => {});
+        }
       }
 
       await tx.treatmentJourney.updateMany({

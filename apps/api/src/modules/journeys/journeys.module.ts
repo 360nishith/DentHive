@@ -7,10 +7,16 @@ import { StagesService } from './services/stages.service';
 import { TemplatesService } from './services/templates.service';
 import { RevenueService } from './services/revenue.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { BullModule } from '@nestjs/bullmq';
 import { TenantModule } from '../tenant/tenant.module';
 
 @Module({
-  imports: [TenantModule],
+  imports: [
+    TenantModule,
+    BullModule.registerQueue({
+      name: 'whatsapp-reminders',
+    }),
+  ],
   controllers: [
     JourneysController,
     StagesController,

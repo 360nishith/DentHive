@@ -11,7 +11,7 @@
     "apps/*"
   ],
   "scripts": {
-    "postinstall": "npx prisma generate || true",
+    "postinstall": "npx prisma@5 generate || true",
     "reset:test": "node scripts/reset_environment.js"
   }
 }
