@@ -124,7 +124,7 @@ model Patient {
   whatsappMessages  WhatsAppMessage[]
   recallLists       RecallList[]
 
-  @@unique([tenantId, phoneNumber])
+  @@index([tenantId, phoneNumber])
   @@index([tenantId, name])
   @@map("patients")
 }

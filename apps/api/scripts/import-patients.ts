@@ -63,23 +63,25 @@ async function main() {
     }
 
     try {
-      await prisma.patient.upsert({
-        where: {
-          tenantId_phoneNumber: {
-            tenantId,
-            phoneNumber: phone
-          }
-        },
-        update: {
-          name, // Update name if they already exist
-        },
-        create: {
-          tenantId,
-          name,
-          phoneNumber: phone,
-          whatsappOptIn: true // Assume opt-in for existing patients
-        }
+      const existing = await prisma.patient.findFirst({
+        where: { tenantId, phoneNumber: phone }
       });
+      
+      if (existing) {
+        await prisma.patient.update({
+          where: { id: existing.id },
+          data: { name }
+        });
+      } else {
+        await prisma.patient.create({
+          data: {
+            tenantId,
+            name,
+            phoneNumber: phone,
+            whatsappOptIn: true // Assume opt-in for existing patients
+          }
+        });
+      }
       successCount++;
     } catch (err: any) {
       console.error(`❌ Failed to import ${name} (${phone}): ${err.message}`);

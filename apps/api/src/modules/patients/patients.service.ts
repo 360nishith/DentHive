@@ -9,14 +9,7 @@ export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
   async create(tenantId: string, dto: CreatePatientDto) {
-    // Phone Deduplication (Scoped by Tenant intrinsically via ALS)
-    const existing = await this.prisma.patient.findFirst({
-      where: { tenantId, phoneNumber: dto.phone },
-    });
-
-    if (existing) {
-      throw new ConflictException('A patient with this phone number already exists in this clinic');
-    }
+    // Phone deduplication has been removed to allow families (e.g. parent/child) to share phone numbers.
 
     return this.prisma.patient.create({
       data: {
@@ -25,6 +18,7 @@ export class PatientsService {
         phoneNumber: dto.phone,
         gender: dto.gender || null,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+        whatsappOptIn: dto.whatsappOptIn ?? true,
         status: 'ACTIVE',
       },
     });
@@ -78,14 +72,7 @@ export class PatientsService {
   async update(tenantId: string, id: string, dto: UpdatePatientDto) {
     const patient = await this.findOne(tenantId, id); // Proves existence and tenant access
 
-    if (dto.phone && dto.phone !== patient.phoneNumber) {
-      const duplicateCheck = await this.prisma.patient.findFirst({
-        where: { phoneNumber: dto.phone, id: { not: id }, tenantId },
-      });
-      if (duplicateCheck) {
-        throw new ConflictException('This phone number is already registered to another patient');
-      }
-    }
+    // Phone deduplication has been removed to allow families (e.g. parent/child) to share phone numbers.
 
     const updateData: any = {};
     if (dto.firstName || dto.lastName) {
@@ -96,6 +83,7 @@ export class PatientsService {
     }
     if (dto.phone) updateData.phoneNumber = dto.phone;
     if (dto.gender !== undefined) updateData.gender = dto.gender;
+    if (dto.whatsappOptIn !== undefined) updateData.whatsappOptIn = dto.whatsappOptIn;
     if (dto.dateOfBirth) updateData.dateOfBirth = new Date(dto.dateOfBirth);
     if (dto.age) {
       const dobYear = new Date().getFullYear() - parseInt(dto.age);

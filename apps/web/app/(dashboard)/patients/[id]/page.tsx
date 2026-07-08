@@ -40,6 +40,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   const [editPhone, setEditPhone] = useState('');
   const [editAge, setEditAge] = useState('');
   const [editGender, setEditGender] = useState('');
+  const [editWhatsappOptIn, setEditWhatsappOptIn] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [tenantStatus, setTenantStatus] = useState('ACTIVE');
   const [subdomain, setSubdomain] = useState('');
@@ -79,6 +80,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
     setEditPhone(patient.phoneNumber.startsWith('+91') ? patient.phoneNumber : (patient.phoneNumber.length === 10 ? `+91 ${patient.phoneNumber}` : patient.phoneNumber));
     setEditAge(patient.dateOfBirth ? String(calcAge(patient.dateOfBirth)).replace(' yrs', '') : '');
     setEditGender(patient.gender || '');
+    setEditWhatsappOptIn(patient.whatsappOptIn ?? true);
     setEditingProfile(true);
   };
 
@@ -92,6 +94,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         phone: editPhone,
         age: editAge,
         gender: editGender,
+        whatsappOptIn: editWhatsappOptIn,
       });
       setEditingProfile(false);
       fetchPatientData();
@@ -248,6 +251,15 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                <label className="flex items-center space-x-2 text-sm text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editWhatsappOptIn}
+                    onChange={(e) => setEditWhatsappOptIn(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 rounded"
+                  />
+                  <span>WhatsApp Reminders</span>
+                </label>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={saveProfile} disabled={savingProfile}>
@@ -275,6 +287,11 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <User className="w-4 h-4 mr-1.5" />
                   {calcAge(patient.dateOfBirth)}
                 </div>
+                {!patient.whatsappOptIn && (
+                  <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-slate-200">
+                    No WhatsApp
+                  </Badge>
+                )}
               </div>
             </div>
           )}

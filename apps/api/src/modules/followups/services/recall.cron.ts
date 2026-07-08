@@ -30,7 +30,13 @@ export class RecallCronService {
     });
 
     for (const recall of pendingRecalls) {
-      if (!recall.patient.phoneNumber) continue;
+      if (!recall.patient.phoneNumber || !recall.patient.whatsappOptIn) {
+        await this.prisma.recallList.updateMany({
+          where: { id: recall.id },
+          data: { status: 'CANCELLED' } // Cancel if they don't have phone/opt-in
+        });
+        continue;
+      }
 
       try {
         await this.whatsappQueue.add('send_template', {

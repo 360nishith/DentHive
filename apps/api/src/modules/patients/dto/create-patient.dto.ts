@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsBoolean } from 'class-validator';
 
 export class CreatePatientDto {
   @IsString()
@@ -28,4 +28,8 @@ export class CreatePatientDto {
   @IsString()
   @IsOptional()
   age?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  whatsappOptIn?: boolean;
 }

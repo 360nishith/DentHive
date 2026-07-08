@@ -109,6 +109,15 @@ export class WhatsappRemindersProcessor extends WorkerHost {
         return;
       }
 
+      if (!patient.whatsappOptIn) {
+        this.logger.log(`Patient ${patient.id} is opted out of WhatsApp. Skipping reminder.`);
+        await this.prisma.appointmentReminder.update({
+          where: { id: reminderId },
+          data: { status: 'CANCELLED' } // Cancel the reminder gracefully
+        });
+        return;
+      }
+
       // Format time safely (assumes IST for the template output)
       // shift UTC time by 5.5 hours to IST
       const istStart = new Date(appointment.scheduledStart.getTime() + (5.5 * 60 * 60 * 1000));

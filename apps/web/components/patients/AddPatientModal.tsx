@@ -17,6 +17,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
   const [phone, setPhone] = useState('+91 ');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +47,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
         phone,
         gender,
         dateOfBirth,
+        whatsappOptIn,
       });
       reset();
       onSuccess();
@@ -156,6 +158,18 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                   <option value="Other">Other</option>
                 </select>
               </div>
+            </div>
+
+            <div className="pt-2">
+              <label className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={whatsappOptIn}
+                  onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                  className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                />
+                <span className="text-sm font-medium text-slate-700">Send WhatsApp Reminders</span>
+              </label>
             </div>
           </div>
 

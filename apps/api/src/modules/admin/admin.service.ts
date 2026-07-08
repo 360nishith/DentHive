@@ -176,24 +176,31 @@ export class AdminService {
         }
 
         try {
-          await this.prisma.patient.upsert({
-            where: {
-              tenantId_phoneNumber: { tenantId, phoneNumber: phone }
-            },
-            update: {
-              name: fullName,
-              gender: gender || undefined,
-              dateOfBirth: dob || undefined
-            },
-            create: {
-              tenantId,
-              name: fullName,
-              phoneNumber: phone,
-              gender,
-              dateOfBirth: dob,
-              whatsappOptIn: true
-            }
+          const existingPatient = await this.prisma.patient.findFirst({
+            where: { tenantId, phoneNumber: phone }
           });
+
+          if (existingPatient) {
+            await this.prisma.patient.update({
+              where: { id: existingPatient.id },
+              data: {
+                name: fullName,
+                gender: gender || undefined,
+                dateOfBirth: dob || undefined
+              }
+            });
+          } else {
+            await this.prisma.patient.create({
+              data: {
+                tenantId,
+                name: fullName,
+                phoneNumber: phone,
+                gender,
+                dateOfBirth: dob,
+                whatsappOptIn: true
+              }
+            });
+          }
           successCount++;
         } catch (err) {
           failCount++;
