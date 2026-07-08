@@ -14,6 +14,17 @@ export class AppointmentsService {
 
   async createAppointment(tenantId: string, data: { patientId: string; treatmentStageId: string; scheduledStart: string; scheduledEnd: string }) {
     try {
+      // Auto-resolve any stalled or requested-reschedule appointments for this stage
+      // so we don't end up with ghost cards on the calendar
+      await this.prisma.appointment.updateMany({
+        where: {
+          tenantId,
+          treatmentStageId: data.treatmentStageId,
+          status: { in: ['RESCHEDULE_REQUESTED', 'NO_SHOW'] }
+        },
+        data: { status: 'CANCELLED' }
+      });
+
       const appointment = await this.prisma.appointment.create({
         data: {
           tenantId,
