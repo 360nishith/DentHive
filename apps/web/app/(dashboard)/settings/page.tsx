@@ -265,7 +265,7 @@ export default function SettingsPage() {
             >
               <CreditCard className="w-4 h-4" /> Billing & Plan
             </button>
-            {userEmail === 'nishithdharmaraj@gmail.com' && (
+            {true && (
               <button 
                 onClick={() => setActiveTab('danger')}
                 className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'danger' ? 'bg-red-50 text-red-700' : 'text-red-600 hover:bg-red-50 hover:text-red-700'}`}
@@ -566,7 +566,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === 'danger' && userEmail === 'nishithdharmaraj@gmail.com' && (
+          {activeTab === 'danger' && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <Card className="p-6 border-red-200 bg-red-50/30">
                 <div className="flex items-start gap-4">
