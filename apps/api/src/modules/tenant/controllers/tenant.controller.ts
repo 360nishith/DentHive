@@ -60,7 +60,8 @@ export class TenantController {
   @Delete('demo-data')
   @UseGuards(AuthGuard('jwt'))
   async resetDemoData(@Req() req: any) {
-    if (req.user.email !== 'nishithdharmaraj@gmail.com') {
+    const allowedEmails = ['nishithdharmaraj@gmail.com', 'salesdemo@denthive.in', 'doctordemo@denthive.in'];
+    if (!allowedEmails.includes(req.user.email)) {
       throw new Error('Unauthorized. Only the Super Admin can reset demo data.');
     }
     return this.tenantService.resetDemoData(req.user.tenantId);
