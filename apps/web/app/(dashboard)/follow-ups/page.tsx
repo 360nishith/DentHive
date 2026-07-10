@@ -85,7 +85,7 @@ export default function FollowUpsPage() {
     if (phoneStr.length === 10) phoneStr = '91' + phoneStr;
 
     // Use the exact user requested template
-    const text = `Hello ${item.patientName}, this is ${item.clinicName}. We noticed you haven't booked your next visit for your ${item.treatmentName} yet. Please let us know when you are free so we can finish your treatment`;
+    const text = `Hello ${item.patientName}, this is ${item.clinicName}. We noticed you haven't booked your next visit for your ${item.currentStageName || item.treatmentName} yet. Please let us know when you are free so we can finish your treatment.`;
     
     window.open(`https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`, '_blank');
   };

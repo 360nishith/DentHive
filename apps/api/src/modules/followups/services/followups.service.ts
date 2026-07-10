@@ -163,6 +163,9 @@ export class FollowUpsService {
         else stallReason = 'No Future Appts';
       }
 
+      const currentStageObj = j.stages.find(s => s.id === j.currentStageId);
+      const currentStageName = currentStageObj ? currentStageObj.name : 'Treatment';
+
       return {
         patientId: j.patient.id,
         patientName: j.patient.name,
@@ -174,7 +177,8 @@ export class FollowUpsService {
         currentStageId: j.currentStageId,
         stallReason,
         latestApptId,
-        latestApptDate
+        latestApptDate,
+        currentStageName
       };
     });
   }
