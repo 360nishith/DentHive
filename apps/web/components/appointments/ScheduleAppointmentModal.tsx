@@ -12,10 +12,11 @@ interface ScheduleAppointmentModalProps {
   stageId: string | null;
   stageName: string;
   aptId?: string;
+  defaultTime?: string;
   onScheduled: () => void;
 }
 
-export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, stageName, aptId, onScheduled }: ScheduleAppointmentModalProps) {
+export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, stageName, aptId, defaultTime, onScheduled }: ScheduleAppointmentModalProps) {
   const [date, setDate] = useState('');
   const [time12, setTime12] = useState('10:00');
   const [ampm, setAmpm] = useState('AM');
@@ -24,6 +25,25 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
   
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (defaultTime) {
+        try {
+          const [hh, mm] = defaultTime.split(':');
+          let hour = parseInt(hh, 10);
+          const isPm = hour >= 12;
+          if (hour > 12) hour -= 12;
+          if (hour === 0) hour = 12;
+          setTime12(`${String(hour).padStart(2, '0')}:${mm.substring(0, 2)}`);
+          setAmpm(isPm ? 'PM' : 'AM');
+        } catch(e) {}
+      } else {
+        setTime12('10:00');
+        setAmpm('AM');
+      }
+    }
+  }, [isOpen, defaultTime]);
 
   useEffect(() => {
     if (!date) {

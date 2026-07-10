@@ -150,8 +150,12 @@ export class FollowUpsService {
       // Calculate Stall Reason
       let stallReason = 'Not Started';
       const allAppts = j.stages.flatMap(s => s.appointments).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      let latestApptId = null;
+      let latestApptDate = null;
       if (allAppts.length > 0) {
         const latestAppt = allAppts[0];
+        latestApptId = latestAppt.id;
+        latestApptDate = latestAppt.scheduledStart;
         if (latestAppt.status === 'CANCELLED') stallReason = 'Patient Cancelled';
         else if (latestAppt.status === 'RESCHEDULE_REQUESTED') stallReason = 'Requested Reschedule';
         else if (latestAppt.status === 'NO_SHOW') stallReason = 'No Show';
@@ -168,7 +172,9 @@ export class FollowUpsService {
         lastCompletedStage: lastCompleted,
         daysStalled,
         currentStageId: j.currentStageId,
-        stallReason
+        stallReason,
+        latestApptId,
+        latestApptDate
       };
     });
   }

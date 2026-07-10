@@ -277,6 +277,8 @@ export default function FollowUpsPage() {
         patientId={rescheduleApt?.patientId || ''}
         stageId={rescheduleApt?.currentStageId || null}
         stageName={rescheduleApt?.treatmentName || 'Custom Stage'}
+        aptId={rescheduleApt?.latestApptId}
+        defaultTime={rescheduleApt?.latestApptDate ? new Date(rescheduleApt.latestApptDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '10:00'}
         onScheduled={() => {
           loadData();
           setRescheduleApt(null);
