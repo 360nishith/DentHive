@@ -100,7 +100,7 @@ export default function Dashboard() {
         });
         setStalledJourneys(stalled.data || []);
         // Filter out completed/cancelled ones so we only see upcoming for today
-        setTodayAppointments((appt.data || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED'));
+        setTodayAppointments((appt.data || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED'));
       } catch (e) {}
     };
     loadData();

@@ -37,7 +37,7 @@ export default function AppointmentsPage() {
         }
       });
       // Filter out COMPLETED and CANCELLED appointments as requested
-      const activeApts = res.data.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED');
+      const activeApts = res.data.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED');
       setAllAppointments(activeApts);
 
       const tenantRes = await api.get('/tenant');
