@@ -608,7 +608,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                       )}
                       {apt.status === 'SCHEDULED' && (
                         <div className="flex items-center">
-                          {true && (
+                          {['nishith', 'salesdemo2', 'citydental2'].includes(subdomain || '') && (
                             <button
                               className="text-indigo-400 hover:text-indigo-600 transition-colors p-1 mr-1"
                               title="Send Demo WhatsApp Reminder Now"
