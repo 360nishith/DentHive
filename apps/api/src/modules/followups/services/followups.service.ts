@@ -149,7 +149,7 @@ export class FollowUpsService {
 
       // Calculate Stall Reason
       let stallReason = 'Not Started';
-      const allAppts = j.stages.flatMap(s => s.appointments).sort((a, b) => new Date(b.scheduledStart).getTime() - new Date(a.scheduledStart).getTime());
+      const allAppts = j.stages.flatMap(s => s.appointments).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       if (allAppts.length > 0) {
         const latestAppt = allAppts[0];
         if (latestAppt.status === 'CANCELLED') stallReason = 'Patient Cancelled';
