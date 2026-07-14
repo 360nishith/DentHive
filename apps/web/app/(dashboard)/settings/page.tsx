@@ -126,14 +126,6 @@ export default function SettingsPage() {
     if (!password) return;
 
     try {
-      // Find the correct role ID from the server or use predefined UUIDs if we know them.
-      // But we changed backend to accept roleId and query role name, so we must pass the correct roleId.
-      // Wait, earlier I updated auth.service to use dto.roleId to look up the Role.
-      // If we don't know the roleId on the frontend, how do we pass it?
-      // Let's fetch roles first!
-      const rolesRes = await api.get('/roles'); // WAIT, we don't have a /roles endpoint.
-      // Better to revert the backend change to use roleName or pass roleName directly!
-      // Let's update auth.service to use roleName instead of roleId!
       await api.post('/auth/invite', {
         email,
         password,
