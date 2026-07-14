@@ -67,9 +67,10 @@ export class SubscriptionService {
     });
 
     // 3. Calculate new price
-    // Base Price is determined by their planTier (e.g. 5000 for standard)
-    // Actually we can just fetch the base price from env or standard config. Let's assume STANDARD is 5000.
-    const basePrice = parseInt(process.env.NEXT_PUBLIC_STANDARD_PLAN_PRICE_INR || '5000');
+    let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
+    if (sub.planTier === 'BYOS') {
+      basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
+    }
     const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
     
     const newPrice = basePrice + (activeDentists * extraPricePerDentist);
