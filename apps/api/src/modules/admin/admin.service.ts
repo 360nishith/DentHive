@@ -120,7 +120,7 @@ export class AdminService {
       
       // 8. Finally, the Tenant
       return tx.tenant.delete({ where: { id } });
-    }, { timeout: 20000 });
+    }, { timeout: 30000 });
   }
 
   async importCsv(tenantId: string, fileBuffer: Buffer) {
