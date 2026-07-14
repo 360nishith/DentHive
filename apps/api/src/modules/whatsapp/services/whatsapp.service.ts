@@ -41,12 +41,18 @@ export class WhatsAppService {
   }
   async sendPaymentLink(tenantId: string, patientId: string, amount: number, journeyName: string) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
-    if (!tenant?.upiVpa) throw new Error('Clinic has no UPI VPA configured.');
+    if (!tenant) throw new Error('Clinic not found');
 
-    const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    const patient = await this.prisma.patient.findUnique({ 
+      where: { id: patientId },
+      include: { doctor: true }
+    });
     if (!patient) throw new Error('Patient not found');
 
-    const upiLink = `upi://pay?pa=${tenant.upiVpa}&pn=${encodeURIComponent(tenant.name)}&am=${amount}&cu=INR`;
+    const upiVpa = patient.doctor?.upiVpa;
+    if (!upiVpa) throw new Error('No doctor assigned to this patient or doctor has no UPI VPA configured.');
+
+    const upiLink = `upi://pay?pa=${upiVpa}&pn=${encodeURIComponent(tenant.name)}&am=${amount}&cu=INR`;
     const textMsg = `Hi ${patient.name}, please click the link below to pay ₹${amount} for your recent treatment (${journeyName}) at ${tenant.name}.\n\n${upiLink}`;
     
     // Push message record to DB

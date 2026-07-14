@@ -101,14 +101,19 @@ export class FollowUpsService {
     return combinedList;
   }
 
-  async getStalledJourneys(tenantId: string) {
+  async getStalledJourneys(tenantId: string, doctorId?: string) {
+    const where: any = {
+      tenantId, 
+      status: 'ACTIVE',
+      patient: { status: 'ACTIVE' }
+    };
+    if (doctorId) {
+      where.doctorId = doctorId;
+    }
+
     // A journey is stalled if it is ACTIVE and has no SCHEDULED appointments
     const activeJourneys = await this.prisma.treatmentJourney.findMany({
-      where: { 
-        tenantId, 
-        status: 'ACTIVE',
-        patient: { status: 'ACTIVE' }
-      },
+      where,
       include: {
         patient: true,
         template: true,

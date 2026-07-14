@@ -23,4 +23,8 @@ export class GetPatientsQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc';
+
+  @IsOptional()
+  @IsString()
+  doctorId?: string;
 }

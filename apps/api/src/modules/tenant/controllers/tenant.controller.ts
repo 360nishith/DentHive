@@ -26,7 +26,7 @@ export class TenantController {
     if (req.user.role !== 'ADMIN') {
       throw new Error('Unauthorized');
     }
-    return this.tenantService.updateClinic(req.user.tenantId, {
+    return this.tenantService.updateClinic(req.user.tenantId, req.user.id, {
       name: body.name,
       upiVpa: body.upiVpa,
       waPhoneNumberId: body.waPhoneNumberId,

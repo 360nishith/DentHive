@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../../lib/axios';
+import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/Button';
-import { X, CalendarDays } from 'lucide-react';
+import { X, CalendarDays, Stethoscope } from 'lucide-react';
 
 interface ScheduleAppointmentModalProps {
   isOpen: boolean;
@@ -25,6 +26,22 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
   
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [doctorId, setDoctorId] = useState('');
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.app_metadata?.role) setCurrentUserRole(session.user.app_metadata.role);
+    });
+
+    api.get('/users').then((res) => {
+      const dentistUsers = res.data.filter((u: any) => u.role?.name === 'DENTIST');
+      setDoctors(dentistUsers);
+    }).catch(console.error);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -112,7 +129,8 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
           patientId,
           treatmentStageId: stageId,
           scheduledStart: startDateTime.toISOString(),
-          scheduledEnd: endDateTime.toISOString()
+          scheduledEnd: endDateTime.toISOString(),
+          doctorId: doctorId || undefined,
         });
       }
       onScheduled();
@@ -160,6 +178,28 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
                 {stageName}
               </div>
             </div>
+
+            {currentUserRole !== 'DENTIST' && doctors.length > 0 && !aptId && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Assign to Doctor</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Stethoscope className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <select
+                    required
+                    value={doctorId}
+                    onChange={(e) => setDoctorId(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors appearance-none"
+                  >
+                    <option value="">Select Doctor...</option>
+                    {doctors.map(doc => (
+                      <option key={doc.id} value={doc.id}>Dr. {doc.firstName} {doc.lastName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

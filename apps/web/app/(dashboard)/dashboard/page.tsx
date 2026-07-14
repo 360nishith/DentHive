@@ -34,6 +34,8 @@ export default function Dashboard() {
   const [stalledSort, setStalledSort] = useState('newest'); // newest, oldest
   const [userRole, setUserRole] = useState('ADMIN');
   const [isTourMode, setIsTourMode] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -80,14 +82,28 @@ export default function Dashboard() {
       try {
         const today = new Date().toISOString().split('T')[0];
         // If staff, don't fetch revenue to avoid 403
-        const pRes = api.get('/patients?limit=1').catch(() => ({ data: { meta: { total: 0 } } }));
-        const stalledRes = api.get('/followups/stalled').catch(() => ({ data: [] }));
-        const apptRes = api.get(`/appointments?start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`).catch(() => ({ data: [] }));
+        
+        let doctorFilter = '';
+        if (selectedDoctorId) {
+          doctorFilter = `doctorId=${selectedDoctorId}&`;
+        }
+
+        const pRes = api.get(`/patients?${doctorFilter}limit=1`).catch(() => ({ data: { meta: { total: 0 } } }));
+        // Note: stalled journeys and appointments APIs also need to support doctorId for this to fully filter
+        // If the backend doesn't support it for stalled, it might ignore it, but we append it anyway
+        const stalledRes = api.get(`/followups/stalled?${doctorFilter.slice(0,-1)}`).catch(() => ({ data: [] }));
+        const apptRes = api.get(`/appointments?${doctorFilter}start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`).catch(() => ({ data: [] }));
         
         let revRes: any = { data: {} };
         const activeRole = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
         if (activeRole !== 'STAFF') {
           revRes = await api.get('/billing/revenue').catch(() => ({ data: {} }));
+        } else if (doctors.length === 0) {
+          // If staff, fetch doctors for the filter dropdown
+          api.get('/users').then((uRes) => {
+            const dentistUsers = uRes.data.filter((u: any) => u.role?.name === 'DENTIST');
+            setDoctors(dentistUsers);
+          }).catch(() => {});
         }
 
         const [p, stalled, appt] = await Promise.all([pRes, stalledRes, apptRes]);
@@ -104,7 +120,7 @@ export default function Dashboard() {
       } catch (e) {}
     };
     loadData();
-  }, []);
+  }, [selectedDoctorId]);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -141,14 +157,29 @@ export default function Dashboard() {
     <div className="p-8 md:p-12 w-full max-w-[1800px] mx-auto animate-in fade-in duration-500">
       
       {/* Page Header */}
-      <div id="tour-dashboard-header" className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+      <div id="tour-dashboard-header" className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {greeting()}{userName ? `, ${userName}` : ''}.
-            {clinicName ? ` Welcome to ${clinicName}.` : ' Here is what\'s happening today.'}
-          </p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            {greeting()}, {userName}
+          </h1>
+          <p className="text-slate-500 mt-1">{clinicName} • Here's what's happening today.</p>
         </div>
+
+        {userRole === 'STAFF' && doctors.length > 0 && (
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-500">Filter by Doctor:</span>
+            <select
+              value={selectedDoctorId}
+              onChange={(e) => setSelectedDoctorId(e.target.value)}
+              className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
+            >
+              <option value="">All Doctors</option>
+              {doctors.map(d => (
+                <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="mt-4 md:mt-0 flex gap-3">
           {clinicName && (
             <div className="flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold border border-indigo-100">

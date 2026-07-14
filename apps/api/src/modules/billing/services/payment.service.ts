@@ -43,6 +43,7 @@ export class PaymentService {
     const payment = await this.prisma.payment.create({
       data: {
         tenantId,
+        doctorId: journey.doctorId || undefined,
         journeyId: data.journeyId,
         amount: data.amount,
         paymentMethod: data.paymentMethod.toUpperCase(),
@@ -62,7 +63,8 @@ export class PaymentService {
         payments: { orderBy: { recordedAt: 'desc' } },
         patient: { select: { id: true, name: true } },
         template: { select: { name: true } },
-        tenant: { select: { upiVpa: true, name: true } },
+        tenant: { select: { name: true } },
+        doctor: { select: { upiVpa: true } },
       }
     });
     if (!journey) return null;
@@ -83,7 +85,7 @@ export class PaymentService {
       balance,
       status: balance <= 0 ? 'PAID' : totalPaid > 0 ? 'PARTIAL' : 'UNPAID',
       payments: journey.payments,
-      upiVpa: journey.tenant?.upiVpa,
+      upiVpa: journey.doctor?.upiVpa,
       clinicName: journey.tenant?.name,
     };
   }

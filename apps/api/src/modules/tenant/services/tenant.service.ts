@@ -116,7 +116,7 @@ export class TenantService {
     };
   }
 
-  async updateClinic(tenantId: string, data: { name?: string; upiVpa?: string; waPhoneNumberId?: string; waAccessToken?: string; waAppSecret?: string }) {
+  async updateClinic(tenantId: string, userId: string, data: { name?: string; upiVpa?: string; waPhoneNumberId?: string; waAccessToken?: string; waAppSecret?: string }) {
     let razorpayPlanChanged = false;
     let oldPlan = 'STANDARD';
     let newPlan = 'STANDARD';
@@ -173,11 +173,17 @@ export class TenantService {
       }
     }
 
+    if (data.upiVpa !== undefined) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { upiVpa: data.upiVpa }
+      });
+    }
+
     return this.prisma.tenant.update({
       where: { id: tenantId },
       data: {
         name: data.name,
-        upiVpa: data.upiVpa,
         waPhoneNumberId: data.waPhoneNumberId,
         waAccessToken: data.waAccessToken,
         waAppSecret: data.waAppSecret

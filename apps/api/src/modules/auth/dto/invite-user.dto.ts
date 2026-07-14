@@ -14,7 +14,7 @@ export class InviteUserDto {
   @MaxLength(50)
   lastName: string;
 
-  @IsUUID(4, { message: 'roleId must be a valid UUID v4' })
+  @IsString()
   @IsNotEmpty()
-  roleId: string;
+  roleName: string;
 }

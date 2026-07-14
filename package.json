@@ -1,9 +1,11 @@
 {
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@supabase/supabase-js": "^2.108.2",
+    "@supabase/supabase-js": "^2.110.2",
     "axios": "^1.18.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
+    "pg": "^8.22.0",
     "prisma": "^5.22.0",
     "xlsx": "^0.18.5"
   },

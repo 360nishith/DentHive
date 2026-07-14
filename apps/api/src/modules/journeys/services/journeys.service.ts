@@ -10,7 +10,7 @@ export class JourneysService {
     @InjectQueue('whatsapp-reminders') private readonly whatsappQueue: Queue
   ) {}
 
-  async createJourney(tenantId: string, payload: { patientId: string; templateId?: string; name?: string }) {
+  async createJourney(tenantId: string, payload: { patientId: string; doctorId?: string; templateId?: string; name?: string }) {
     let template = null;
     if (payload.templateId) {
       template = await this.prisma.treatmentTemplate.findFirst({
@@ -26,6 +26,7 @@ export class JourneysService {
         data: {
           tenantId,
           patientId: payload.patientId,
+          doctorId: payload.doctorId || undefined,
           templateId: payload.templateId || null,
           status: 'ACTIVE',
           totalCost: template ? template.estimatedCost : 0

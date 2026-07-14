@@ -22,6 +22,9 @@ export default function AppointmentsPage() {
   const [newTime, setNewTime] = useState('10:00');
   const [tenantStatus, setTenantStatus] = useState('ACTIVE');
   const [isTourMode, setIsTourMode] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
 
   const fetchAppointments = async () => {
     try {
@@ -30,10 +33,22 @@ export default function AppointmentsPage() {
       const startWindow = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const endWindow = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
       
+      
+      const { data: { session } } = await import('../../../lib/supabase').then(m => m.supabase.auth.getSession());
+      let role = 'ADMIN';
+      if (session?.user?.app_metadata?.role) role = session.user.app_metadata.role;
+      setCurrentUserRole(role);
+
+      let doctorFilter: any = {};
+      if (selectedDoctorId) {
+        doctorFilter.doctorId = selectedDoctorId;
+      }
+
       const res = await api.get('/appointments', {
         params: {
           start: startWindow.toISOString(),
-          end: endWindow.toISOString()
+          end: endWindow.toISOString(),
+          ...doctorFilter
         }
       });
       // Filter out COMPLETED and CANCELLED appointments as requested
@@ -42,6 +57,11 @@ export default function AppointmentsPage() {
 
       const tenantRes = await api.get('/tenant');
       setTenantStatus(tenantRes.data.status);
+
+      if (role === 'STAFF') {
+        const uRes = await api.get('/users');
+        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST'));
+      }
     } catch (err) {
       console.error('Failed to fetch appointments', err);
     } finally {
@@ -51,7 +71,7 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [selectedDoctorId]);
 
   const handleReschedule = async () => {
     if (!newDate || !newTime || !rescheduleApt) return;
@@ -124,11 +144,27 @@ export default function AppointmentsPage() {
     <div className="p-8 md:p-12 w-full max-w-[1800px] mx-auto animate-in fade-in duration-500 relative flex flex-col xl:flex-row gap-8">
       {/* Left Column: Appointments List */}
       <div className="flex-1 min-w-0">
-        <div id="tour-schedule-layout" className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div id="tour-schedule-layout" className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Schedule</h1>
             <p className="text-slate-500 mt-2">Manage your clinic schedule and upcoming patient visits.</p>
           </div>
+
+          {currentUserRole === 'STAFF' && doctors.length > 0 && (
+            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-500">Filter by Doctor:</span>
+              <select
+                value={selectedDoctorId}
+                onChange={(e) => setSelectedDoctorId(e.target.value)}
+                className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
+              >
+                <option value="">All Doctors</option>
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-4 mb-6 border-b border-slate-200">

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { FollowUpsService } from '../services/followups.service';
@@ -14,7 +14,7 @@ export class FollowUpsController {
   }
 
   @Get('stalled')
-  async getStalled(@Req() req: any) {
-    return this.followUpsService.getStalledJourneys(req.user.tenantId);
+  async getStalled(@Req() req: any, @Query('doctorId') doctorId?: string) {
+    return this.followUpsService.getStalledJourneys(req.user.tenantId, doctorId);
   }
 }

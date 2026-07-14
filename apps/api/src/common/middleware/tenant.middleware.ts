@@ -8,6 +8,7 @@ export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     let tenantId: string | undefined;
     let userId: string | undefined;
+    let role: string | undefined;
 
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -17,13 +18,14 @@ export class TenantMiddleware implements NestMiddleware {
         if (decoded) {
           tenantId = decoded.app_metadata?.tenantId;
           userId = decoded.sub;
+          role = decoded.app_metadata?.role;
         }
       } catch (e) {
         // Token parsing failed, ignore
       }
     }
 
-    als.run({ tenantId, userId }, () => {
+    als.run({ tenantId, userId, role }, () => {
       next();
     });
   }

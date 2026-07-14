@@ -13,6 +13,10 @@ export class CreateJourneyDto {
   patientId: string;
 
   @IsUUID('4')
+  @IsOptional()
+  doctorId?: string;
+
+  @IsUUID('4')
   @IsNotEmpty()
   templateId: string;
 

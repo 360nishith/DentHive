@@ -12,7 +12,7 @@ export class AppointmentsService {
     @InjectQueue('whatsapp-reminders') private reminderQueue: Queue
   ) {}
 
-  async createAppointment(tenantId: string, data: { patientId: string; treatmentStageId: string; scheduledStart: string; scheduledEnd: string }) {
+  async createAppointment(tenantId: string, data: { patientId: string; doctorId?: string; treatmentStageId: string; scheduledStart: string; scheduledEnd: string }) {
     try {
       // Auto-resolve any stalled or requested-reschedule appointments for this stage
       // so we don't end up with ghost cards on the calendar
@@ -29,6 +29,7 @@ export class AppointmentsService {
         data: {
           tenantId,
           patientId: data.patientId,
+          doctorId: data.doctorId || undefined,
           treatmentStageId: data.treatmentStageId,
           scheduledStart: new Date(data.scheduledStart),
           scheduledEnd: new Date(data.scheduledEnd),
@@ -50,16 +51,21 @@ export class AppointmentsService {
     }
   }
 
-  async getCalendar(tenantId: string, startDate: string, endDate: string) {
+  async getCalendar(tenantId: string, startDate: string, endDate: string, doctorId?: string) {
+    const where: any = {
+      tenantId,
+      patient: { status: 'ACTIVE' },
+      scheduledStart: { 
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
+    };
+    if (doctorId) {
+      where.doctorId = doctorId;
+    }
+
     return this.prisma.appointment.findMany({
-      where: {
-        tenantId,
-        patient: { status: 'ACTIVE' },
-        scheduledStart: { 
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        }
-      },
+      where,
       include: {
         patient: { select: { id: true, name: true, phoneNumber: true, whatsappOptIn: true } },
         treatmentStage: { include: { templateStage: true } }

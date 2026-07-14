@@ -14,6 +14,7 @@ export class PatientsService {
     return this.prisma.patient.create({
       data: {
         tenantId,
+        doctorId: dto.doctorId || undefined, // If STAFF creates it without selecting, it might be undefined, though frontend will enforce it. If DENTIST creates, hook overrides it.
         name: `${dto.firstName} ${dto.lastName}`,
         phoneNumber: dto.phone,
         gender: dto.gender || null,
@@ -27,13 +28,15 @@ export class PatientsService {
   async findAll(tenantId: string, query: GetPatientsQueryDto) {
     const page = parseInt(String(query.page ?? 1));
     const limit = parseInt(String(query.limit ?? 10));
-    const { search, status } = query;
+    const { search, status, doctorId } = query;
     const sortOrder = query.sortOrder || 'desc';
     const skip = (page - 1) * limit;
 
     const whereClause: any = { tenantId };
     if (status) whereClause.status = status;
     else whereClause.status = 'ACTIVE'; // Default to hiding archived records
+    
+    if (doctorId) whereClause.doctorId = doctorId;
     
     if (search) {
       // PostgreSQL ILIKE implementation mapped via Prisma insensitive mode

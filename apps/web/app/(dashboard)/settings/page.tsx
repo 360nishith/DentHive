@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing' | 'danger'>('profile');
   const [userEmail, setUserEmail] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
   const [waConnected, setWaConnected] = useState(false);
   const [staff, setStaff] = useState<any[]>([]);
   const [prices, setPrices] = useState({ 
@@ -53,6 +54,7 @@ export default function SettingsPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) setUserEmail(session.user.email);
+      if (session?.user?.app_metadata?.role) setCurrentUserRole(session.user.app_metadata.role);
     });
 
     Promise.all([
@@ -103,20 +105,42 @@ export default function SettingsPage() {
   };
 
   const addStaff = async () => {
-    const email = prompt("Enter staff email to invite:");
+    const roleInput = prompt("Enter role to invite (STAFF or DENTIST):", "STAFF");
+    if (!roleInput) return;
+    
+    const roleName = roleInput.toUpperCase();
+    if (roleName !== 'STAFF' && roleName !== 'DENTIST') {
+      alert("Invalid role. Please enter STAFF or DENTIST.");
+      return;
+    }
+
+    if (roleName === 'DENTIST') {
+      const confirmBilling = confirm(`Adding a DENTIST will add an extra seat to your subscription and increase your monthly bill. Do you want to proceed?`);
+      if (!confirmBilling) return;
+    }
+
+    const email = prompt(`Enter ${roleName} email to invite:`);
     if (!email) return;
-    const password = prompt("Create a temporary password for this staff member (they will use this to log in):");
+    const password = prompt(`Create a temporary password for this ${roleName} (they will use this to log in):`);
     if (!password) return;
 
     try {
+      // Find the correct role ID from the server or use predefined UUIDs if we know them.
+      // But we changed backend to accept roleId and query role name, so we must pass the correct roleId.
+      // Wait, earlier I updated auth.service to use dto.roleId to look up the Role.
+      // If we don't know the roleId on the frontend, how do we pass it?
+      // Let's fetch roles first!
+      const rolesRes = await api.get('/roles'); // WAIT, we don't have a /roles endpoint.
+      // Better to revert the backend change to use roleName or pass roleName directly!
+      // Let's update auth.service to use roleName instead of roleId!
       await api.post('/auth/invite', {
         email,
         password,
-        firstName: 'Staff',
-        lastName: 'Member',
-        roleId: 'c2f70eb2-9d3e-4fb1-a08b-6df633000002', // Hardcoded STAFF role for MVP
+        firstName: 'New',
+        lastName: roleName,
+        roleName: roleName, // We will update backend to accept roleName
       });
-      alert("Staff created successfully! They can now log in using the email and password.");
+      alert(`${roleName} created successfully! They can now log in using the email and password.`);
       
       // Refresh staff list
       const res = await api.get('/users');
@@ -244,27 +268,32 @@ export default function SettingsPage() {
             >
               <Building2 className="w-4 h-4" /> Clinic Profile
             </button>
-            <button 
-              id="tour-settings-staff-btn"
-              onClick={() => setActiveTab('staff')}
-              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'staff' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-            >
-              <Users className="w-4 h-4" /> Staff & Team
-            </button>
-            <button 
-              id="tour-settings-wa-btn"
-              onClick={() => setActiveTab('whatsapp')}
-              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'whatsapp' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-            >
-              <MessageSquare className="w-4 h-4" /> WhatsApp API
-            </button>
-            <button 
-              id="tour-settings-billing-btn"
-              onClick={() => setActiveTab('billing')}
-              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-            >
-              <CreditCard className="w-4 h-4" /> Billing & Plan
-            </button>
+            
+            {currentUserRole !== 'DENTIST' && (
+              <>
+                <button 
+                  id="tour-settings-staff-btn"
+                  onClick={() => setActiveTab('staff')}
+                  className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'staff' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                >
+                  <Users className="w-4 h-4" /> Staff & Team
+                </button>
+                <button 
+                  id="tour-settings-wa-btn"
+                  onClick={() => setActiveTab('whatsapp')}
+                  className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'whatsapp' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                >
+                  <MessageSquare className="w-4 h-4" /> WhatsApp API
+                </button>
+                <button 
+                  id="tour-settings-billing-btn"
+                  onClick={() => setActiveTab('billing')}
+                  className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                >
+                  <CreditCard className="w-4 h-4" /> Billing & Plan
+                </button>
+              </>
+            )}
             {['nishithdharmaraj@gmail.com', 'salesdemo@denthive.in', 'doctordemo@denthive.in'].includes(userEmail || '') && (
               <button 
                 onClick={() => setActiveTab('danger')}

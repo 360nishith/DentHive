@@ -18,8 +18,8 @@ export class AppointmentsController {
 
   @Get()
   @RequirePermissions('VIEW_CALENDAR')
-  async getCalendar(@Req() req: any, @Query('start') start: string, @Query('end') end: string) {
-    return this.appointmentsService.getCalendar(req.user.tenantId, start, end);
+  async getCalendar(@Req() req: any, @Query('start') start: string, @Query('end') end: string, @Query('doctorId') doctorId?: string) {
+    return this.appointmentsService.getCalendar(req.user.tenantId, start, end, doctorId);
   }
 
   @Get('patient/:patientId')

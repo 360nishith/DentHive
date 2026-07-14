@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private supabase: SupabaseService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async inviteStaff(tenantId: string, dto: InviteUserDto) {
@@ -69,12 +71,12 @@ export class AuthService {
 
   async createStaff(tenantId: string, dto: InviteUserDto & { password?: string }) {
     let role = await this.prisma.role.findFirst({
-      where: { name: 'STAFF' },
+      where: { name: dto.roleName },
     });
     
     if (!role) {
       role = await this.prisma.role.create({
-        data: { name: 'STAFF' }
+        data: { name: dto.roleName }
       });
     }
 
@@ -113,6 +115,9 @@ export class AuthService {
           passwordHash: 'EXTERNAL_AUTH',
         },
       });
+      
+      this.eventEmitter.emit('staff.created', { tenantId, user, role: role.name });
+
       return user;
     } catch (error) {
       this.logger.error(`Rollback needed: Prisma failed to create user record for authId ${authId}`, error.stack);
@@ -136,7 +141,12 @@ export class AuthService {
       where: { id: userId },
       data: { status: dto.status },
     });
-    return this.prisma.user.findFirst({ where: { id: userId } });
+    
+    const updatedUser = await this.prisma.user.findFirst({ where: { id: userId }, include: { role: true } });
+    if (updatedUser) {
+      this.eventEmitter.emit('staff.status_changed', { tenantId, user: updatedUser, role: updatedUser.role.name, status: dto.status });
+    }
+    return updatedUser;
   }
 
   private async rollbackSupabaseUser(authId: string) {
