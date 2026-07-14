@@ -83,44 +83,48 @@ export class AdminService {
   }
 
   async deleteTenant(id: string) {
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Logs and standalone records
-      await tx.auditLog.deleteMany({ where: { tenantId: id } });
-      await tx.notification.deleteMany({ where: { tenantId: id } });
-      
-      // 2. Billing & Subscriptions
-      await tx.payment.deleteMany({ where: { tenantId: id } });
-      await tx.subscription.deleteMany({ where: { tenantId: id } });
-      
-      // 3. Communications and Reminders
-      await tx.whatsAppMessage.deleteMany({ where: { tenantId: id } });
-      await tx.appointmentReminder.deleteMany({ where: { tenantId: id } });
-      await tx.followUp.deleteMany({ where: { tenantId: id } });
-      await tx.recallList.deleteMany({ where: { tenantId: id } });
-      
-      // 4. Core Workflow (Appointments before stages)
-      await tx.appointment.deleteMany({ where: { tenantId: id } });
-      
-      // 5. Journeys and Stages
-      await tx.treatmentStage.deleteMany({ where: { tenantId: id } });
-      await tx.treatmentJourney.deleteMany({ where: { tenantId: id } });
-      
-      // 6. Templates
-      const templates = await tx.treatmentTemplate.findMany({ where: { tenantId: id }, select: { id: true } });
-      const templateIds = templates.map(t => t.id);
-      if (templateIds.length > 0) {
-        await tx.templateStage.deleteMany({ where: { templateId: { in: templateIds } } });
-      }
-      await tx.treatmentTemplate.deleteMany({ where: { tenantId: id } });
-      
-      // 7. Entities (Users and Patients)
-      await tx.file.deleteMany({ where: { tenantId: id } });
-      await tx.patient.deleteMany({ where: { tenantId: id } });
-      await tx.user.deleteMany({ where: { tenantId: id } });
-      
-      // 8. Finally, the Tenant
-      return tx.tenant.delete({ where: { id } });
-    }, { timeout: 30000 });
+    // We MUST run this with tenantId = null so the global Prisma Middleware doesn't intercept
+    // the deleteMany queries and silently overwrite where.tenantId with the Super Admin's own tenantId.
+    return require('../../common/context/als').als.run({ tenantId: undefined }, () => {
+      return this.prisma.$transaction(async (tx) => {
+        // 1. Logs and standalone records
+        await tx.auditLog.deleteMany({ where: { tenantId: id } });
+        await tx.notification.deleteMany({ where: { tenantId: id } });
+        
+        // 2. Billing & Subscriptions
+        await tx.payment.deleteMany({ where: { tenantId: id } });
+        await tx.subscription.deleteMany({ where: { tenantId: id } });
+        
+        // 3. Communications and Reminders
+        await tx.whatsAppMessage.deleteMany({ where: { tenantId: id } });
+        await tx.appointmentReminder.deleteMany({ where: { tenantId: id } });
+        await tx.followUp.deleteMany({ where: { tenantId: id } });
+        await tx.recallList.deleteMany({ where: { tenantId: id } });
+        
+        // 4. Core Workflow (Appointments before stages)
+        await tx.appointment.deleteMany({ where: { tenantId: id } });
+        
+        // 5. Journeys and Stages
+        await tx.treatmentStage.deleteMany({ where: { tenantId: id } });
+        await tx.treatmentJourney.deleteMany({ where: { tenantId: id } });
+        
+        // 6. Templates
+        const templates = await tx.treatmentTemplate.findMany({ where: { tenantId: id }, select: { id: true } });
+        const templateIds = templates.map((t: any) => t.id);
+        if (templateIds.length > 0) {
+          await tx.templateStage.deleteMany({ where: { templateId: { in: templateIds } } });
+        }
+        await tx.treatmentTemplate.deleteMany({ where: { tenantId: id } });
+        
+        // 7. Entities (Users and Patients)
+        await tx.file.deleteMany({ where: { tenantId: id } });
+        await tx.patient.deleteMany({ where: { tenantId: id } });
+        await tx.user.deleteMany({ where: { tenantId: id } });
+        
+        // 8. Finally, the Tenant
+        return tx.tenant.delete({ where: { id } });
+      }, { timeout: 30000 });
+    });
   }
 
   async importCsv(tenantId: string, fileBuffer: Buffer) {
