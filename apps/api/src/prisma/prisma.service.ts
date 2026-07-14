@@ -37,7 +37,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       // Enforce Doctor Isolation for clinical tables
       if ((role === 'DENTIST' || role === 'ADMIN') && userId) {
         const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
-        if (isolatedModels.includes(params.model)) {
+        if (params.model && isolatedModels.includes(params.model)) {
           if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
             params.args.where.doctorId = userId;
           }
