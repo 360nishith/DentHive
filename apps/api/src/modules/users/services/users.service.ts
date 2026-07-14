@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { JwtRevocationService } from '../../auth/services/jwt-revocation.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-    private revocationService: JwtRevocationService
+    private revocationService: JwtRevocationService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async getMe(authId: string) {
@@ -38,15 +40,29 @@ export class UsersService {
   }
 
   async deactivateUser(tenantId: string, targetUserId: string) {
-    const user = await this.prisma.user.updateMany({
+    // We must fetch the user first to get their role for the event emitter
+    const target = await this.prisma.user.findFirst({
       where: { id: targetUserId, tenantId },
-      data: { status: 'ARCHIVED' }
+      include: { role: true }
     });
 
-    if (user.count === 0) throw new NotFoundException('User not found');
+    if (!target) throw new NotFoundException('User not found');
+
+    await this.prisma.user.updateMany({
+      where: { id: targetUserId, tenantId },
+      data: { status: 'ARCHIVED', isActive: false }
+    });
 
     // SECURITY: Fire immediately. The receptionist's active token is now dead.
     await this.revocationService.revokeUserAccess(targetUserId);
+
+    // Notify billing service to recalculate active dentists
+    this.eventEmitter.emit('staff.status_changed', {
+      tenantId,
+      user: target,
+      role: target.role.name,
+      status: 'ARCHIVED'
+    });
 
     return { success: true };
   }
