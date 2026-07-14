@@ -23,12 +23,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       }
 
       if (!params.args) params.args = {};
-      if (!params.args.where) params.args.where = {};
 
       // Inject tenantId globally for isolated queries, EXCEPT for models that don't have it
       const globalModelsWithoutTenantId = ['Tenant', 'Role'];
       if (params.model && !globalModelsWithoutTenantId.includes(params.model)) {
         if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+           if (!params.args.where) params.args.where = {};
            params.args.where.tenantId = tenantId;
         }
         if (['create', 'update', 'upsert'].includes(params.action)) {
@@ -42,6 +42,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
         if (params.model && isolatedModels.includes(params.model)) {
           if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+            if (!params.args.where) params.args.where = {};
             params.args.where.doctorId = userId;
           }
           if (['create', 'update', 'upsert'].includes(params.action)) {
