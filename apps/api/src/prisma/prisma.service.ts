@@ -25,13 +25,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       if (!params.args) params.args = {};
       if (!params.args.where) params.args.where = {};
 
-      // Inject tenantId globally for isolated queries
-      if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
-         params.args.where.tenantId = tenantId;
-      }
-      if (['create', 'update', 'upsert'].includes(params.action)) {
-         if (!params.args.data) params.args.data = {};
-         params.args.data.tenantId = tenantId;
+      // Inject tenantId globally for isolated queries, EXCEPT for models that don't have it
+      const globalModelsWithoutTenantId = ['Tenant', 'Role'];
+      if (params.model && !globalModelsWithoutTenantId.includes(params.model)) {
+        if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+           params.args.where.tenantId = tenantId;
+        }
+        if (['create', 'update', 'upsert'].includes(params.action)) {
+           if (!params.args.data) params.args.data = {};
+           params.args.data.tenantId = tenantId;
+        }
       }
 
       // Enforce Doctor Isolation for clinical tables
