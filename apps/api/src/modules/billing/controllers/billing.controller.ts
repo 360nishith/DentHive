@@ -26,7 +26,8 @@ export class BillingController {
   async getPrices() {
     return {
       standard: parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499'),
-      discounted: parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999')
+      discounted: parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999'),
+      extraDoctor: parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000')
     };
   }
 
@@ -34,15 +35,26 @@ export class BillingController {
   async createCheckout(@Req() req: any) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
     
-    let price = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
+    let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
     let planType: 'STANDARD' | 'BYOS' = 'STANDARD';
     
     if (tenant?.waPhoneNumberId && tenant?.waAccessToken) {
-      price = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
+      basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
       planType = 'BYOS';
     }
 
-    const subscription = await this.razorpayService.createSubscription(req.user.tenantId, planType, price);
+    const activeDentists = await this.prisma.user.count({
+      where: {
+        tenantId: req.user.tenantId,
+        role: { name: 'DENTIST' },
+        isActive: true
+      }
+    });
+
+    const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
+    const finalPrice = basePrice + (activeDentists * extraPricePerDentist);
+
+    const subscription = await this.razorpayService.createSubscription(req.user.tenantId, planType, finalPrice);
     return subscription;
   }
 

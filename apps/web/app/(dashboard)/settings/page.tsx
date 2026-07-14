@@ -115,7 +115,8 @@ export default function SettingsPage() {
     }
 
     if (roleName === 'DENTIST') {
-      const confirmBilling = confirm(`Adding a DENTIST will add an extra seat to your subscription and increase your monthly bill. Do you want to proceed?`);
+      const extraCost = (prices as any).extraDoctor || 2000;
+      const confirmBilling = confirm(`Adding a DENTIST will add an extra seat to your subscription and increase your monthly bill by ₹${extraCost}. Do you want to proceed?`);
       if (!confirmBilling) return;
     }
 
@@ -500,9 +501,19 @@ export default function SettingsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-slate-900">
-                        ₹{tenant?.waAccessToken ? prices.discounted : prices.standard}
+                        ₹{(() => {
+                          const base = tenant?.waAccessToken ? prices.discounted : prices.standard;
+                          const dentistCount = staff.filter(s => s.role?.name === 'DENTIST').length;
+                          const extraCost = (prices as any).extraDoctor ? dentistCount * (prices as any).extraDoctor : dentistCount * 2000;
+                          return base + extraCost;
+                        })()}
                         <span className="text-sm font-medium text-slate-500">/month</span>
                       </p>
+                      {staff.filter(s => s.role?.name === 'DENTIST').length > 0 && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          (Includes ₹{((prices as any).extraDoctor || 2000) * staff.filter(s => s.role?.name === 'DENTIST').length} for {staff.filter(s => s.role?.name === 'DENTIST').length} extra dentist{staff.filter(s => s.role?.name === 'DENTIST').length > 1 ? 's' : ''})
+                        </p>
+                      )}
                     </div>
                   </div>
 
