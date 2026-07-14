@@ -19,6 +19,15 @@ export class JourneysService {
       });
       if (!template) throw new BadRequestException('Template not found');
     }
+    
+    // Inherit doctorId from patient if not provided (crucial for STAFF creating journeys)
+    let assignedDoctorId = payload.doctorId;
+    if (!assignedDoctorId) {
+      const patient = await this.prisma.patient.findUnique({ where: { id: payload.patientId }, select: { doctorId: true } });
+      if (patient?.doctorId) {
+        assignedDoctorId = patient.doctorId;
+      }
+    }
 
     return this.prisma.$transaction(async (tx) => {
       // Create the journey
@@ -26,7 +35,7 @@ export class JourneysService {
         data: {
           tenantId,
           patientId: payload.patientId,
-          doctorId: payload.doctorId || undefined,
+          doctorId: assignedDoctorId || undefined,
           templateId: payload.templateId || null,
           status: 'ACTIVE',
           totalCost: template ? template.estimatedCost : 0

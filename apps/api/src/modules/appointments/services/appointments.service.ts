@@ -25,11 +25,19 @@ export class AppointmentsService {
         data: { status: 'CANCELLED' }
       });
 
+      let assignedDoctorId = data.doctorId;
+      if (!assignedDoctorId) {
+        const patient = await this.prisma.patient.findUnique({ where: { id: data.patientId }, select: { doctorId: true } });
+        if (patient?.doctorId) {
+          assignedDoctorId = patient.doctorId;
+        }
+      }
+
       const appointment = await this.prisma.appointment.create({
         data: {
           tenantId,
           patientId: data.patientId,
-          doctorId: data.doctorId || undefined,
+          doctorId: assignedDoctorId || undefined,
           treatmentStageId: data.treatmentStageId,
           scheduledStart: new Date(data.scheduledStart),
           scheduledEnd: new Date(data.scheduledEnd),

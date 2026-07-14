@@ -10,44 +10,48 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
     super();
 
-    // The Ultimate Multi-Tenant Isolation Hook ($allOperations)
-    this.extended = this.$extends({
-      query: {
-        $allOperations({ model, operation, args, query }: any) {
-          const store = als.getStore();
-          const tenantId = store?.tenantId;
-          const userId = store?.userId;
-          const role = store?.role;
+    // The Ultimate Multi-Tenant Isolation Hook (Prisma Middleware)
+    this.$use(async (params, next) => {
+      const store = als.getStore();
+      const tenantId = store?.tenantId;
+      const userId = store?.userId;
+      const role = store?.role;
 
-          // Skip isolation for internal/webhook operations where tenantId is explicitly null or injected manually
-          if (!tenantId) {
-            return query(args);
+      // Skip isolation for internal/webhook operations where tenantId is explicitly null or injected manually
+      if (!tenantId) {
+        return next(params);
+      }
+
+      if (!params.args) params.args = {};
+      if (!params.args.where) params.args.where = {};
+
+      // Inject tenantId globally for isolated queries
+      if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+         params.args.where.tenantId = tenantId;
+      }
+      if (['create', 'update', 'upsert'].includes(params.action)) {
+         if (!params.args.data) params.args.data = {};
+         params.args.data.tenantId = tenantId;
+      }
+
+      // Enforce Doctor Isolation for clinical tables
+      if ((role === 'DENTIST' || role === 'ADMIN') && userId) {
+        const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
+        if (isolatedModels.includes(params.model)) {
+          if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+            params.args.where.doctorId = userId;
           }
-
-          // If the model doesn't have a tenantId field (e.g. system tables), skip
-          // For simplicity, we assume models that should be isolated have tenantId in their Prisma schema.
-          // Forcefully inject where: { tenantId }
-          args.where = { ...args.where, tenantId };
-
-          // Enforce Doctor Isolation for clinical tables
-          if ((role === 'DENTIST' || role === 'ADMIN') && userId) {
-            const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
-            if (isolatedModels.includes(model)) {
-              if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany'].includes(operation)) {
-                args.where = { ...args.where, doctorId: userId };
-              }
-              if (['create', 'update', 'upsert'].includes(operation)) {
-                if (args.data) args.data.doctorId = userId;
-              }
-              if (operation === 'createMany' && Array.isArray(args.data)) {
-                args.data = args.data.map((d: any) => ({ ...d, doctorId: userId }));
-              }
-            }
+          if (['create', 'update', 'upsert'].includes(params.action)) {
+            if (!params.args.data) params.args.data = {};
+            params.args.data.doctorId = userId;
           }
-          
-          return query(args);
-        },
-      },
+          if (params.action === 'createMany' && Array.isArray(params.args.data)) {
+            params.args.data = params.args.data.map((d: any) => ({ ...d, doctorId: userId }));
+          }
+        }
+      }
+      
+      return next(params);
     });
   }
 

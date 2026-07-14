@@ -122,6 +122,13 @@ export default function SettingsPage() {
 
     const email = prompt(`Enter ${roleName} email to invite:`);
     if (!email) return;
+    
+    const firstName = prompt(`Enter ${roleName} First Name:`);
+    if (!firstName) return;
+    
+    const lastName = prompt(`Enter ${roleName} Last Name:`);
+    if (!lastName) return;
+
     const password = prompt(`Create a temporary password for this ${roleName} (they will use this to log in):`);
     if (!password) return;
 
@@ -129,8 +136,8 @@ export default function SettingsPage() {
       await api.post('/auth/invite', {
         email,
         password,
-        firstName: 'New',
-        lastName: roleName,
+        firstName,
+        lastName,
         roleName: roleName, // We will update backend to accept roleName
       });
       alert(`${roleName} created successfully! They can now log in using the email and password.`);
