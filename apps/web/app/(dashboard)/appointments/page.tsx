@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../../lib/axios';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { CalendarDays, Clock, User, Phone, CheckCircle2, MessageSquare, Calendar, Zap, XCircle } from 'lucide-react';
+import { CalendarDays, Clock, User, Phone, CheckCircle2, MessageSquare, Calendar, Zap, XCircle, Bell } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
@@ -98,6 +98,16 @@ export default function AppointmentsPage() {
     // Sanitize phone number by removing spaces, hyphens, and everything except + and digits
     const cleanPhone = patientPhone.replace(/[^\d+]/g, '');
     window.open(`https://wa.me/${cleanPhone}?text=Hello%2C%20this%20is%20DentalFlow%20Clinic.`, '_blank');
+  };
+
+  const handleTestReminder = async (aptId: string) => {
+    try {
+      await api.post(`/appointments/${aptId}/test-reminder`);
+      alert('Morning Reminder triggered manually!');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to trigger reminder. It may already be sent or processing.');
+    }
   };
 
   if (loading) {
@@ -313,7 +323,10 @@ export default function AppointmentsPage() {
                         </div>
 
                         {apt.status !== 'CANCELLED' && (
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-4 gap-2">
+                            <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => handleTestReminder(apt.id)} title="Send Automated Reminder Now (Demo)">
+                              <Bell className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Auto</span>
+                            </Button>
                             <Button id={isToday ? "tour-msg-btn" : undefined} variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleSendMessage(apt.patient.phoneNumber)}>
                               <MessageSquare className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">MSG</span>
                             </Button>
