@@ -60,7 +60,7 @@ export default function AppointmentsPage() {
 
       if (role === 'STAFF') {
         const uRes = await api.get('/users');
-        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST'));
+        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
     } catch (err) {
       console.error('Failed to fetch appointments', err);

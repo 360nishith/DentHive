@@ -38,7 +38,7 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
     });
 
     api.get('/users').then((res) => {
-      const dentistUsers = res.data.filter((u: any) => u.role?.name === 'DENTIST');
+      const dentistUsers = res.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
       setDoctors(dentistUsers);
     }).catch(console.error);
   }, [isOpen]);

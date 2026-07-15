@@ -101,7 +101,7 @@ export default function Dashboard() {
         } else if (doctors.length === 0) {
           // If staff, fetch doctors for the filter dropdown
           api.get('/users').then((uRes) => {
-            const dentistUsers = uRes.data.filter((u: any) => u.role?.name === 'DENTIST');
+            const dentistUsers = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
             setDoctors(dentistUsers);
           }).catch(() => {});
         }
