@@ -63,7 +63,7 @@ export class TenantService {
     });
   }
 
-  async getMyClinic(tenantId: string, email?: string) {
+  async getMyClinic(tenantId: string, email?: string, userId?: string) {
     const tenant = await this.prisma.tenant.findFirst({
       where: { id: tenantId },
       include: { subscriptions: true }
@@ -71,10 +71,22 @@ export class TenantService {
 
     if (!tenant) return null;
 
+    let upiVpa = '';
+    if (userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { authId: userId },
+        select: { upiVpa: true }
+      });
+      if (user && user.upiVpa) {
+        upiVpa = user.upiVpa;
+      }
+    }
+
     // Super Admin Bypass for Frontend
     if (email === 'nishithdharmaraj@gmail.com') {
       return {
         ...tenant,
+        upiVpa,
         status: 'ACTIVE',
         subscriptions: [
           {
@@ -112,6 +124,7 @@ export class TenantService {
 
     return {
       ...tenant,
+      upiVpa,
       status: computedStatus
     };
   }
@@ -175,7 +188,7 @@ export class TenantService {
 
     if (data.upiVpa !== undefined) {
       await this.prisma.user.update({
-        where: { id: userId },
+        where: { authId: userId },
         data: { upiVpa: data.upiVpa }
       });
     }

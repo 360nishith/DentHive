@@ -16,7 +16,7 @@ export class TenantController {
   @Get()
   @UseGuards(AuthGuard('jwt')) // Must be fully onboarded (have tenantId)
   async getMyClinic(@Req() req: any) {
-    return this.tenantService.getMyClinic(req.user.tenantId, req.user.email);
+    return this.tenantService.getMyClinic(req.user.tenantId, req.user.email, req.user.id);
   }
 
   @Patch()
