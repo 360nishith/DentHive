@@ -26,6 +26,15 @@ export default function SettingsPage() {
     discounted: Number(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || 1999) 
   });
   const [wiping, setWiping] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    roleName: 'STAFF',
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: ''
+  });
+  const [inviting, setInviting] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
