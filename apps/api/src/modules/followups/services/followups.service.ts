@@ -17,7 +17,7 @@ export class FollowUpsService {
         }
       },
       include: {
-        stage: { include: { journey: { include: { patient: true } } } }
+        stage: { include: { journey: { include: { patient: { include: { doctor: { select: { firstName: true, lastName: true } } } } } } } }
       },
       orderBy: { triggerAt: 'desc' },
       take: 20
@@ -29,7 +29,7 @@ export class FollowUpsService {
         tenantId,
         patient: { status: 'ACTIVE' }
       },
-      include: { patient: true },
+      include: { patient: { include: { doctor: { select: { firstName: true, lastName: true } } } } },
       orderBy: { recallDate: 'desc' },
       take: 20
     });
@@ -47,6 +47,7 @@ export class FollowUpsService {
         combinedList.push({
           id: f.id,
           patientName: patient.name,
+          doctorName: patient.doctor ? `Dr. ${patient.doctor.lastName}` : null,
           triggerType: label,
           status: f.status, // PENDING, PROCESSED
         date: f.triggerAt
@@ -58,6 +59,7 @@ export class FollowUpsService {
       combinedList.push({
         id: r.id,
         patientName: r.patient.name,
+        doctorName: r.patient.doctor ? `Dr. ${r.patient.doctor.lastName}` : null,
         triggerType: 'Recall (6 Mo)',
         status: r.status,
         date: r.recallDate
@@ -67,7 +69,7 @@ export class FollowUpsService {
     // Fetch and Map raw WhatsApp Messages (Payment links, Reminders, Manual)
     const waMessages = await this.prisma.whatsAppMessage.findMany({
       where: { tenantId },
-      include: { patient: true },
+      include: { patient: { include: { doctor: { select: { firstName: true, lastName: true } } } } },
       orderBy: { createdAt: 'desc' },
       take: 30
     });
@@ -89,8 +91,9 @@ export class FollowUpsService {
       combinedList.push({
         id: msg.id,
         patientName: msg.patient.name,
+        doctorName: msg.patient.doctor ? `Dr. ${msg.patient.doctor.lastName}` : null,
         triggerType: label,
-        status: msg.status,
+        status: msg.status === 'sent' || msg.status === 'delivered' || msg.status === 'read' ? 'PROCESSED' : 'PENDING',
         date: msg.createdAt
       });
     }
@@ -115,7 +118,7 @@ export class FollowUpsService {
     const activeJourneys = await this.prisma.treatmentJourney.findMany({
       where,
       include: {
-        patient: true,
+        patient: { include: { doctor: { select: { firstName: true, lastName: true } } } },
         template: true,
         tenant: true,
         stages: {
@@ -174,6 +177,7 @@ export class FollowUpsService {
       return {
         patientId: j.patient.id,
         patientName: j.patient.name,
+        doctorName: j.patient.doctor ? `Dr. ${j.patient.doctor.lastName}` : null,
         patientPhone: j.patient.phoneNumber,
         clinicName: j.tenant.name,
         treatmentName: j.template?.name || 'Custom Journey',

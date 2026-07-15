@@ -49,6 +49,11 @@ export class PatientsService {
     const [patients, total] = await this.prisma.$transaction([
       this.prisma.patient.findMany({
         where: whereClause,
+        include: {
+          doctor: {
+            select: { firstName: true, lastName: true }
+          }
+        },
         skip,
         take: limit,
         orderBy: { createdAt: sortOrder },

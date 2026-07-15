@@ -85,6 +85,7 @@ export class JourneysService {
       include: {
         patient: true,
         template: true,
+        doctor: { select: { firstName: true, lastName: true } },
         stages: {
           include: {
             appointments: true
@@ -101,6 +102,7 @@ export class JourneysService {
       where: { tenantId, patientId },
       include: {
         template: true,
+        doctor: { select: { firstName: true, lastName: true } },
         stages: {
           include: { templateStage: true },
           orderBy: { sequenceOrder: 'asc' }

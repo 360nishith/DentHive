@@ -179,7 +179,14 @@ export default function FollowUpsPage() {
                 items.map((item: any) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-semibold text-slate-900">{item.patientName}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900">{item.patientName}</span>
+                        {item.doctorName && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {item.doctorName}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-600">{item.triggerType}</div>
@@ -234,8 +241,15 @@ export default function FollowUpsPage() {
                 [...stalledItems].sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled).map((item: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-semibold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => router.push(`/patients/${item.patientId}`)}>
-                        {item.patientName}
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => router.push(`/patients/${item.patientId}`)}>
+                          {item.patientName}
+                        </div>
+                        {item.doctorName && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {item.doctorName}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">{item.patientPhone}</div>
                     </td>

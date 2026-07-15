@@ -76,7 +76,14 @@ export default function JourneysPage() {
                 
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex flex-col">
-                    <span className="font-bold text-lg text-slate-900">{journey.patient?.name}</span>
+                    <div className="flex items-center">
+                      <span className="font-bold text-lg text-slate-900">{journey.patient?.name}</span>
+                      {journey.doctor && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded ml-2">
+                          Dr. {journey.doctor.lastName}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-slate-500 flex items-center mt-1">
                       <Phone className="w-3 h-3 mr-1" /> {journey.patient?.phoneNumber}
                     </span>

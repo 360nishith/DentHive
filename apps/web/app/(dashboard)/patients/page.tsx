@@ -220,9 +220,16 @@ export default function PatientsDirectory() {
                         <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs mr-3 border border-indigo-100">
                           {patient.name.charAt(0)}
                         </div>
-                        <span className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                          {patient.name}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                            {patient.name}
+                          </span>
+                          {patient.doctor && (
+                            <span className="text-[10px] font-bold text-slate-400 mt-0.5">
+                              Dr. {patient.doctor.firstName} {patient.doctor.lastName}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">

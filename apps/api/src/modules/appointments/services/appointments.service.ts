@@ -76,7 +76,8 @@ export class AppointmentsService {
       where,
       include: {
         patient: { select: { id: true, name: true, phoneNumber: true, whatsappOptIn: true } },
-        treatmentStage: { include: { templateStage: true } }
+        treatmentStage: { include: { templateStage: true } },
+        doctor: { select: { firstName: true, lastName: true } }
       },
       orderBy: { scheduledStart: 'asc' }
     });
@@ -86,7 +87,8 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { tenantId, patientId },
       include: {
-        treatmentStage: { include: { templateStage: true } }
+        treatmentStage: { include: { templateStage: true } },
+        doctor: { select: { firstName: true, lastName: true } }
       },
       orderBy: { scheduledStart: 'asc' }
     });

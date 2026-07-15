@@ -283,9 +283,16 @@ export default function AppointmentsPage() {
                         </div>
 
                         <div className="space-y-2 mb-4 cursor-pointer" onClick={() => router.push(`/patients/${apt.patientId}`)}>
-                          <div className="flex items-center text-sm font-semibold text-slate-700 hover:text-indigo-600">
-                            <User className="w-4 h-4 mr-2 text-slate-400" />
-                            {apt.patient.name}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-sm font-semibold text-slate-700 hover:text-indigo-600">
+                              <User className="w-4 h-4 mr-2 text-slate-400" />
+                              {apt.patient.name}
+                            </div>
+                            {apt.doctor && (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                Dr. {apt.doctor.lastName}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center text-sm text-slate-500">
                             <Phone className="w-4 h-4 mr-2 text-slate-400" />
