@@ -204,11 +204,15 @@ export class TenantService {
     });
   }
 
-  async getNotifications(tenantId: string, userId: string) {
+  async getNotifications(tenantId: string, userId: string, role?: string) {
+    const userFilter = (role === 'STAFF' || role === 'ADMIN')
+      ? {}
+      : { OR: [{ userId }, { userId: null }] };
+
     const dbNotifs = await this.prisma.notification.findMany({
       where: { 
         tenantId, 
-        OR: [{ userId }, { userId: null }],
+        ...userFilter,
         read: false
       },
       orderBy: { createdAt: 'desc' }
@@ -251,9 +255,13 @@ export class TenantService {
     return [...dynamicNotifs, ...dbNotifs];
   }
 
-  async markNotificationsRead(tenantId: string, userId: string) {
+  async markNotificationsRead(tenantId: string, userId: string, role?: string) {
+    const userFilter = (role === 'STAFF' || role === 'ADMIN')
+      ? {}
+      : { OR: [{ userId }, { userId: null }] };
+
     await this.prisma.notification.updateMany({
-      where: { tenantId, OR: [{ userId }, { userId: null }] },
+      where: { tenantId, ...userFilter },
       data: { read: true }
     });
     return { success: true };

@@ -45,13 +45,13 @@ export class TenantController {
   @Get('notifications')
   @UseGuards(AuthGuard('jwt'))
   async getNotifications(@Req() req: any) {
-    return this.tenantService.getNotifications(req.user.tenantId, req.user.id);
+    return this.tenantService.getNotifications(req.user.tenantId, req.user.id, req.user.role);
   }
 
   @Patch('notifications/read-all')
   @UseGuards(AuthGuard('jwt'))
   async markNotificationsRead(@Req() req: any) {
-    return this.tenantService.markNotificationsRead(req.user.tenantId, req.user.id);
+    return this.tenantService.markNotificationsRead(req.user.tenantId, req.user.id, req.user.role);
   }
 
   @Get('export')

@@ -140,6 +140,7 @@ export class WebhookWorker extends WorkerHost {
               await this.prisma.notification.create({
                 data: {
                   tenantId: appointment.tenantId,
+                  userId: appointment.patient.doctorId,
                   title: 'Reschedule Requested',
                   message: `${appointment.patient.name} requested to reschedule their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}.`,
                   type: 'WARNING'
@@ -157,6 +158,7 @@ export class WebhookWorker extends WorkerHost {
               await this.prisma.notification.create({
                 data: {
                   tenantId: appointment.tenantId,
+                  userId: appointment.patient.doctorId,
                   title: 'Appointment Cancelled',
                   message: `${appointment.patient.name} cancelled their appointment on ${new Date(appointment.scheduledStart).toLocaleDateString()}. A slot is now open.`,
                   type: 'ERROR'
