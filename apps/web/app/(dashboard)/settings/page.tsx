@@ -367,7 +367,7 @@ export default function SettingsPage() {
               
               <div className="space-y-3">
                 {staff.map((s, i) => {
-                  const roleName = s.role?.name === 'ADMIN' ? 'ADMIN' : 'STAFF';
+                  const roleName = s.role?.name || 'STAFF';
                   return (
                     <div key={i} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg bg-slate-50">
                       <div>
@@ -375,7 +375,7 @@ export default function SettingsPage() {
                         <p className="text-xs text-slate-500">{s.email}</p>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${roleName === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'}`}>
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${roleName === 'ADMIN' ? 'bg-purple-100 text-purple-700' : roleName === 'DENTIST' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'}`}>
                           {roleName}
                         </span>
                         {roleName !== 'ADMIN' && (
