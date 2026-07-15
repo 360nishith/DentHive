@@ -104,49 +104,26 @@ export default function SettingsPage() {
     }
   };
 
-  const addStaff = async () => {
-    const roleInput = prompt("Enter role to invite (STAFF or DENTIST):", "STAFF");
-    if (!roleInput) return;
-    
-    const roleName = roleInput.toUpperCase();
-    if (roleName !== 'STAFF' && roleName !== 'DENTIST') {
-      alert("Invalid role. Please enter STAFF or DENTIST.");
-      return;
-    }
-
-    if (roleName === 'DENTIST') {
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inviteForm.roleName === 'DENTIST') {
       const extraCost = (prices as any).extraDoctor || 2000;
       const confirmBilling = confirm(`Adding a DENTIST will add an extra seat to your subscription and increase your monthly bill by ₹${extraCost}. Do you want to proceed?`);
       if (!confirmBilling) return;
     }
 
-    const email = prompt(`Enter ${roleName} email to invite:`);
-    if (!email) return;
-    
-    const firstName = prompt(`Enter ${roleName} First Name:`);
-    if (!firstName) return;
-    
-    const lastName = prompt(`Enter ${roleName} Last Name:`);
-    if (!lastName) return;
-
-    const password = prompt(`Create a temporary password for this ${roleName} (they will use this to log in):`);
-    if (!password) return;
-
+    setInviting(true);
     try {
-      await api.post('/auth/invite', {
-        email,
-        password,
-        firstName,
-        lastName,
-        roleName: roleName, // We will update backend to accept roleName
-      });
-      alert(`${roleName} created successfully! They can now log in using the email and password.`);
-      
-      // Refresh staff list
+      await api.post('/auth/invite', inviteForm);
+      alert(`${inviteForm.roleName} created successfully! They can now log in using the email and password provided.`);
       const res = await api.get('/users');
       setStaff(res.data);
+      setShowInviteModal(false);
+      setInviteForm({ roleName: 'STAFF', firstName: '', lastName: '', email: '', password: '' });
     } catch (err: any) {
       alert('Failed to invite staff: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -373,7 +350,7 @@ export default function SettingsPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-slate-900">Staff & Team</h2>
-                <button onClick={addStaff} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">
+                <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">
                   <Plus className="w-4 h-4" /> Invite Staff
                 </button>
               </div>
@@ -633,6 +610,52 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-900">Invite Team Member</h2>
+              <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleInviteSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <select className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={inviteForm.roleName} onChange={e => setInviteForm({...inviteForm, roleName: e.target.value})}>
+                  <option value="STAFF">STAFF (Front Desk)</option>
+                  <option value="DENTIST">DENTIST (Doctor)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+                  <input required type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={inviteForm.firstName} onChange={e => setInviteForm({...inviteForm, firstName: e.target.value})} placeholder="e.g. John" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
+                  <input required type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={inviteForm.lastName} onChange={e => setInviteForm({...inviteForm, lastName: e.target.value})} placeholder="e.g. Doe" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Login Email</label>
+                <input required type="email" className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} placeholder="john@clinic.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Temporary Password</label>
+                <input required type="text" className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" value={inviteForm.password} onChange={e => setInviteForm({...inviteForm, password: e.target.value})} placeholder="Create a temporary password" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setShowInviteModal(false)} className="flex-1 px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium transition-colors">Cancel</button>
+                <button type="submit" disabled={inviting} className="flex-1 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors disabled:opacity-50">
+                  {inviting ? 'Inviting...' : 'Send Invite'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
