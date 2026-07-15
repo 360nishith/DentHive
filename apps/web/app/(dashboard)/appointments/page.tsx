@@ -25,6 +25,7 @@ export default function AppointmentsPage() {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
   const fetchAppointments = async () => {
     try {
@@ -38,6 +39,7 @@ export default function AppointmentsPage() {
       let role = 'ADMIN';
       if (session?.user?.app_metadata?.role) role = session.user.app_metadata.role;
       setCurrentUserRole(role);
+      setCurrentUserEmail(session?.user?.email || '');
 
       let doctorFilter: any = {};
       if (selectedDoctorId) {
@@ -322,11 +324,15 @@ export default function AppointmentsPage() {
                           </div>
                         </div>
 
-                        {apt.status !== 'CANCELLED' && (
-                          <div className="grid grid-cols-4 gap-2">
-                            <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => handleTestReminder(apt.id)} title="Send Automated Reminder Now (Demo)">
-                              <Bell className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Auto</span>
-                            </Button>
+                        {apt.status !== 'CANCELLED' && (() => {
+                          const isDemoAccount = ['nishithdharmaraj@gmail.com', 'salesdemo@denthive.in', 'doctordemo@denthive.in'].includes(currentUserEmail);
+                          return (
+                            <div className={`grid ${isDemoAccount ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
+                              {isDemoAccount && (
+                                <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={() => handleTestReminder(apt.id)} title="Send Automated Reminder Now (Demo)">
+                                  <Bell className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Auto</span>
+                                </Button>
+                              )}
                             <Button id={isToday ? "tour-msg-btn" : undefined} variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleSendMessage(apt.patient.phoneNumber)}>
                               <MessageSquare className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">MSG</span>
                             </Button>
@@ -359,7 +365,8 @@ export default function AppointmentsPage() {
                               <XCircle className="w-4 h-4 xl:mr-1.5" /> <span className="hidden xl:inline">Cancel</span>
                             </Button>
                           </div>
-                        )}
+                          );
+                        })()}
                       </Card>
                     ))}
                   </div>
