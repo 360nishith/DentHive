@@ -72,7 +72,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
 
       const meRes = await api.get('/auth/me');
       setCurrentUserRole(meRes.data.role.name);
-      if (meRes.data.role.name === 'STAFF') {
+      if (meRes.data.role.name === 'STAFF' || meRes.data.role.name === 'ADMIN') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -264,7 +264,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-                {currentUserRole === 'STAFF' && doctors.length > 0 && (
+                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
                   <select
                     value={editDoctorId}
                     onChange={e => setEditDoctorId(e.target.value)}

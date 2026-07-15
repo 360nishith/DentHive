@@ -98,8 +98,9 @@ export default function Dashboard() {
         const activeRole = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
         if (activeRole !== 'STAFF') {
           revRes = await api.get('/billing/revenue').catch(() => ({ data: {} }));
-        } else if (doctors.length === 0) {
-          // If staff, fetch doctors for the filter dropdown
+        }
+        if ((activeRole === 'STAFF' || activeRole === 'ADMIN') && doctors.length === 0) {
+          // If staff or admin, fetch doctors for the filter dropdown
           api.get('/users').then((uRes) => {
             const dentistUsers = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
             setDoctors(dentistUsers);
@@ -165,7 +166,7 @@ export default function Dashboard() {
           <p className="text-slate-500 mt-1">{clinicName} • Here's what's happening today.</p>
         </div>
 
-        {userRole === 'STAFF' && doctors.length > 0 && (
+        {(userRole === 'STAFF' || userRole === 'ADMIN') && doctors.length > 0 && (
           <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
             <span className="text-sm font-medium text-slate-500">Filter by Doctor:</span>
             <select

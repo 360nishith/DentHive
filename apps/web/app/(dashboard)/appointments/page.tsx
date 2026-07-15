@@ -60,7 +60,7 @@ export default function AppointmentsPage() {
       const tenantRes = await api.get('/tenant');
       setTenantStatus(tenantRes.data.status);
 
-      if (role === 'STAFF') {
+      if (role === 'STAFF' || role === 'ADMIN') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -162,7 +162,7 @@ export default function AppointmentsPage() {
             <p className="text-slate-500 mt-2">Manage your clinic schedule and upcoming patient visits.</p>
           </div>
 
-          {currentUserRole === 'STAFF' && doctors.length > 0 && (
+          {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
             <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
               <span className="text-sm font-medium text-slate-500">Filter by Doctor:</span>
               <select

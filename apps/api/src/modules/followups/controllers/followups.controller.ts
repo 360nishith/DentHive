@@ -10,13 +10,13 @@ export class FollowUpsController {
 
   @Get('pending')
   async getPending(@Req() req: any, @Query('doctorId') doctorId?: string) {
-    if (req.user.role !== 'STAFF') doctorId = req.user.id;
+    if (req.user.role !== 'STAFF' && req.user.role !== 'ADMIN') doctorId = req.user.id;
     return this.followUpsService.getPendingFollowUps(req.user.tenantId, doctorId);
   }
 
   @Get('stalled')
   async getStalled(@Req() req: any, @Query('doctorId') doctorId?: string) {
-    if (req.user.role !== 'STAFF') doctorId = req.user.id;
+    if (req.user.role !== 'STAFF' && req.user.role !== 'ADMIN') doctorId = req.user.id;
     return this.followUpsService.getStalledJourneys(req.user.tenantId, doctorId);
   }
 }

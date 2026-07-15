@@ -91,7 +91,7 @@ export default function PatientsDirectory() {
       const tenantRes = await api.get('/tenant');
       setTenantStatus(tenantRes.data.status);
 
-      if (role === 'STAFF') {
+      if (role === 'STAFF' || role === 'ADMIN') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -148,7 +148,7 @@ export default function PatientsDirectory() {
                 placeholder="Search by name or phone..."
               />
             </div>
-            {currentUserRole === 'STAFF' && doctors.length > 0 && (
+            {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
               <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 flex-shrink-0">
                 <span className="text-sm font-medium text-slate-500">Doctor:</span>
                 <select
