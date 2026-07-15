@@ -303,7 +303,8 @@ export default function SettingsPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    disabled={currentUserRole !== 'ADMIN'}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-100 disabled:text-slate-500"
                   />
                 </div>
                 <div>
@@ -328,30 +329,32 @@ export default function SettingsPage() {
                 </div>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Data Management</h3>
-                <p className="text-xs text-slate-500 mb-4">Export all of your patient, journey, and appointment data. You own your data.</p>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await api.get('/tenant/export');
-                      const blob = new Blob([res.data.csv], { type: 'text/csv' });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `denthive_backup_${new Date().toISOString().split('T')[0]}.csv`;
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                    } catch (e) {
-                      alert('Failed to export data');
-                    }
-                  }}
-                  className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Export Data to CSV
-                </button>
-              </div>
+              {currentUserRole === 'ADMIN' && (
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 mb-2">Data Management</h3>
+                  <p className="text-xs text-slate-500 mb-4">Export all of your patient, journey, and appointment data. You own your data.</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.get('/tenant/export');
+                        const blob = new Blob([res.data.csv], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `denthive_backup_${new Date().toISOString().split('T')[0]}.csv`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      } catch (e) {
+                        alert('Failed to export data');
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export Data to CSV
+                  </button>
+                </div>
+              )}
             </Card>
           )}
 

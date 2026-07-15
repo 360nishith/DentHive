@@ -22,10 +22,17 @@ export class TenantController {
   @Patch()
   @UseGuards(AuthGuard('jwt'))
   async updateClinic(@Req() req: any, @Body() body: any) {
-    // Only allow admins to update the clinic settings
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role === 'STAFF') {
       throw new Error('Unauthorized');
     }
+
+    if (req.user.role === 'DENTIST') {
+      return this.tenantService.updateClinic(req.user.tenantId, req.user.id, {
+        upiVpa: body.upiVpa
+      });
+    }
+
+    // Admins can update everything
     return this.tenantService.updateClinic(req.user.tenantId, req.user.id, {
       name: body.name,
       upiVpa: body.upiVpa,
