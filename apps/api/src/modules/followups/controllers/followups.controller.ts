@@ -9,8 +9,8 @@ export class FollowUpsController {
   constructor(private readonly followUpsService: FollowUpsService) {}
 
   @Get('pending')
-  async getPending(@Req() req: any) {
-    return this.followUpsService.getPendingFollowUps(req.user.tenantId);
+  async getPending(@Req() req: any, @Query('doctorId') doctorId?: string) {
+    return this.followUpsService.getPendingFollowUps(req.user.tenantId, doctorId);
   }
 
   @Get('stalled')

@@ -5,14 +5,19 @@ import { PrismaService } from '../../../prisma/prisma.service';
 export class FollowUpsService {
   constructor(private prisma: PrismaService) {}
 
-  async getPendingFollowUps(tenantId: string) {
+  async getPendingFollowUps(tenantId: string, doctorId?: string) {
+    let patientFilter: any = { status: 'ACTIVE' };
+    if (doctorId) {
+      patientFilter.doctorId = doctorId;
+    }
+
     // Fetch pending FollowUps (Missed Appt, Post-Op)
     const followUps = await this.prisma.followUp.findMany({
       where: { 
         tenantId,
         stage: {
           journey: {
-            patient: { status: 'ACTIVE' }
+            patient: patientFilter
           }
         }
       },
@@ -27,7 +32,7 @@ export class FollowUpsService {
     const recalls = await this.prisma.recallList.findMany({
       where: { 
         tenantId,
-        patient: { status: 'ACTIVE' }
+        patient: patientFilter
       },
       include: { patient: { include: { doctor: { select: { firstName: true, lastName: true } } } } },
       orderBy: { recallDate: 'desc' },
