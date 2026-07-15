@@ -178,7 +178,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
               </div>
             </div>
 
-            {currentUserRole !== 'DENTIST' && doctors.length > 0 && (
+            {currentUserRole === 'STAFF' && doctors.length > 0 && (
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Assign to Doctor</label>
                 <div className="relative">
