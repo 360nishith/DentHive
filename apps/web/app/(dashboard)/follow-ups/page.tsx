@@ -58,7 +58,7 @@ export default function FollowUpsPage() {
       setItems(pendingRes.data);
       setStalledItems(stalledRes.data);
 
-      if (role === 'STAFF' || role === 'ADMIN') {
+      if (role === 'STAFF') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -173,7 +173,7 @@ export default function FollowUpsPage() {
           </button>
         </div>
 
-        {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
+        {currentUserRole === 'STAFF' && doctors.length > 0 && (
           <div className="mb-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
             <span className="text-sm font-medium text-slate-500">Doctor:</span>
             <select

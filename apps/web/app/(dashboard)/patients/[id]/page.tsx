@@ -47,6 +47,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   
   const [doctors, setDoctors] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
+  const [currentUserId, setCurrentUserId] = useState('');
   const [editDoctorId, setEditDoctorId] = useState<string>('');
 
   const fetchPatientData = async () => {
@@ -72,7 +73,8 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
 
       const meRes = await api.get('/auth/me');
       setCurrentUserRole(meRes.data.role.name);
-      if (meRes.data.role.name === 'STAFF' || meRes.data.role.name === 'ADMIN') {
+      setCurrentUserId(meRes.data.id);
+      if (meRes.data.role.name === 'STAFF') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -264,14 +266,19 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
+                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' || currentUserRole === 'DENTIST') && (currentUserRole === 'STAFF' ? doctors.length > 0 : true) && (
                   <select
                     value={editDoctorId}
                     onChange={e => setEditDoctorId(e.target.value)}
                     className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   >
+                    {currentUserRole === 'STAFF' ? (
+                      <option value="">Select Doctor...</option>
+                    ) : (
+                      <option value={currentUserId}>Me</option>
+                    )}
                     <option value="">-- Unassigned --</option>
-                    {doctors.map(d => (
+                    {currentUserRole === 'STAFF' && doctors.map(d => (
                       <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                     ))}
                   </select>

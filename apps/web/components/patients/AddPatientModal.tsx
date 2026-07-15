@@ -31,6 +31,9 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
     
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.app_metadata?.role) setCurrentUserRole(session.user.app_metadata.role);
+      if (session?.user?.id && session.user.app_metadata.role !== 'STAFF') {
+        setDoctorId(session.user.id);
+      }
     });
 
     api.get('/users').then((res) => {
@@ -178,7 +181,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
               </div>
             </div>
 
-            {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.length > 0 && (
+            {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' || currentUserRole === 'DENTIST') && (currentUserRole === 'STAFF' ? doctors.length > 0 : true) && (
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Assign to Doctor</label>
                 <div className="relative">
@@ -186,13 +189,18 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                     <Stethoscope className="h-4 w-4 text-slate-400" />
                   </div>
                   <select
-                    required
+                    required={currentUserRole === 'STAFF'}
                     value={doctorId}
                     onChange={(e) => setDoctorId(e.target.value)}
                     className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors appearance-none"
                   >
-                    <option value="">Select Doctor...</option>
-                    {doctors.map(doc => (
+                    {currentUserRole === 'STAFF' ? (
+                      <option value="">Select Doctor...</option>
+                    ) : (
+                      <option value={doctorId}>Me</option>
+                    )}
+                    <option value="UNASSIGNED">-- Unassigned --</option>
+                    {currentUserRole === 'STAFF' && doctors.map(doc => (
                       <option key={doc.id} value={doc.id}>Dr. {doc.firstName} {doc.lastName}</option>
                     ))}
                   </select>

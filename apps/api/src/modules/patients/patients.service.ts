@@ -101,6 +101,7 @@ export class PatientsService {
     if (dto.phone) updateData.phoneNumber = dto.phone;
     if (dto.gender !== undefined) updateData.gender = dto.gender;
     if (dto.whatsappOptIn !== undefined) updateData.whatsappOptIn = dto.whatsappOptIn;
+    if ('doctorId' in dto) updateData.doctorId = dto.doctorId;
     if (dto.dateOfBirth) updateData.dateOfBirth = new Date(dto.dateOfBirth);
     if (dto.age) {
       const dobYear = new Date().getFullYear() - parseInt(dto.age);

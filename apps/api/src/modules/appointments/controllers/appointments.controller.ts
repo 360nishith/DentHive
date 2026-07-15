@@ -19,7 +19,7 @@ export class AppointmentsController {
   @Get()
   @RequirePermissions('VIEW_CALENDAR')
   async getCalendar(@Req() req: any, @Query('start') start: string, @Query('end') end: string, @Query('doctorId') doctorId?: string) {
-    if (req.user.role !== 'STAFF' && req.user.role !== 'ADMIN') {
+    if (req.user.role !== 'STAFF') {
       doctorId = req.user.id;
     }
     return this.appointmentsService.getCalendar(req.user.tenantId, start, end, doctorId);

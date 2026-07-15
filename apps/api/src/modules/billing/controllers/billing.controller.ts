@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { TenantStatusGuard } from '../../../common/guards/tenant-status.guard';
@@ -101,12 +101,18 @@ export class BillingController {
   }
 
   @Get('revenue')
-  async getRevenueStats(@Req() req: any) {
-    return this.paymentService.getRevenueStats(req.user.tenantId);
+  async getRevenueStats(@Req() req: any, @Query('doctorId') doctorId?: string) {
+    if (req.user.role !== 'STAFF') {
+      doctorId = req.user.id;
+    }
+    return this.paymentService.getRevenueStats(req.user.tenantId, doctorId);
   }
 
   @Get('charts')
-  async getCharts(@Req() req: any) {
-    return this.paymentService.getRevenueCharts(req.user.tenantId);
+  async getCharts(@Req() req: any, @Query('doctorId') doctorId?: string) {
+    if (req.user.role !== 'STAFF') {
+      doctorId = req.user.id;
+    }
+    return this.paymentService.getRevenueCharts(req.user.tenantId, doctorId);
   }
 }

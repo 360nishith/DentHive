@@ -13,11 +13,25 @@ export class PatientsController {
   @Post()
   @RequirePermissions('CREATE_PATIENT')
   async createPatient(@Body() body: any, @Req() req: any) {
+    if (req.user.role !== 'STAFF') {
+      if (body.doctorId !== 'UNASSIGNED') {
+        body.doctorId = req.user.id;
+      } else {
+        body.doctorId = null;
+      }
+    } else {
+      if (body.doctorId === 'UNASSIGNED') body.doctorId = null;
+    }
     return this.patientsService.create(req.user.tenantId, body);
   }
 
   @Get()
   async getPatients(@Query() query: any, @Req() req: any) {
+    if (req.user.role !== 'STAFF') {
+      if (query.doctorId !== 'UNASSIGNED') {
+        query.doctorId = req.user.id;
+      }
+    }
     return this.patientsService.findAll(req.user.tenantId, query);
   }
 
@@ -29,6 +43,14 @@ export class PatientsController {
   @Patch(':id')
   @RequirePermissions('EDIT_PATIENT')
   async updatePatient(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.user.role !== 'STAFF') {
+      if (body.doctorId && body.doctorId !== 'UNASSIGNED' && body.doctorId !== req.user.id) {
+         throw new Error('You can only assign patients to yourself or Unassigned');
+      }
+      if (body.doctorId === 'UNASSIGNED') body.doctorId = null;
+    } else {
+      if (body.doctorId === 'UNASSIGNED') body.doctorId = null;
+    }
     return this.patientsService.update(req.user.tenantId, id, body);
   }
 

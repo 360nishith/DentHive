@@ -117,7 +117,7 @@ export class PaymentService {
     });
   }
 
-  async getRevenueStats(tenantId: string) {
+  async getRevenueStats(tenantId: string, doctorId?: string) {
     const now = new Date();
     
     // Force revenue boundaries to align with Indian Standard Time (IST)
@@ -130,6 +130,18 @@ export class PaymentService {
     const startOfMonthIstStr = `${nowIst.getUTCFullYear()}-${String(nowIst.getUTCMonth() + 1).padStart(2, '0')}-01T00:00:00.000+05:30`;
     const startOfMonth = new Date(startOfMonthIstStr);
 
+    const paymentFilter: any = { tenantId, status: 'SUCCESS' };
+    if (doctorId) paymentFilter.journey = { patient: { doctorId } };
+
+    const journeyFilter: any = { tenantId, status: { not: 'CANCELLED' } };
+    if (doctorId) journeyFilter.patient = { doctorId };
+
+    const activeJourneyFilter: any = { tenantId, status: 'ACTIVE' };
+    if (doctorId) activeJourneyFilter.patient = { doctorId };
+
+    const appointmentFilter: any = { tenantId, scheduledStart: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } };
+    if (doctorId) appointmentFilter.doctorId = doctorId;
+
     const [
       todayPayments, 
       monthPayments, 
@@ -140,22 +152,22 @@ export class PaymentService {
       recentPayments
     ] = await Promise.all([
       this.prisma.payment.aggregate({
-        where: { tenantId, status: 'SUCCESS', recordedAt: { gte: startOfDay } },
+        where: { ...paymentFilter, recordedAt: { gte: startOfDay } },
         _sum: { amount: true },
         _count: true,
       }),
       this.prisma.payment.aggregate({
-        where: { tenantId, status: 'SUCCESS', recordedAt: { gte: startOfMonth } },
+        where: { ...paymentFilter, recordedAt: { gte: startOfMonth } },
         _sum: { amount: true },
         _count: true,
       }),
       this.prisma.payment.aggregate({
-        where: { tenantId, status: 'SUCCESS' },
+        where: paymentFilter,
         _sum: { amount: true },
       }),
       // Journeys with balance due — exclude CANCELLED (aborted) journeys
       this.prisma.treatmentJourney.findMany({
-        where: { tenantId, status: { not: 'CANCELLED' } },
+        where: journeyFilter,
         include: {
           payments: { where: { status: 'SUCCESS' } },
           patient: { select: { name: true, phoneNumber: true } },
@@ -163,13 +175,13 @@ export class PaymentService {
         }
       }),
       this.prisma.treatmentJourney.count({
-        where: { tenantId, status: 'ACTIVE' }
+        where: activeJourneyFilter
       }),
       this.prisma.appointment.count({
-        where: { tenantId, scheduledStart: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
+        where: appointmentFilter
       }),
       this.prisma.payment.findMany({
-        where: { tenantId, status: 'SUCCESS' },
+        where: paymentFilter,
         orderBy: { recordedAt: 'desc' },
         take: 5,
         include: {
@@ -210,10 +222,13 @@ export class PaymentService {
     };
   }
 
-  async getRevenueCharts(tenantId: string) {
+  async getRevenueCharts(tenantId: string, doctorId?: string) {
+    const paymentFilter: any = { tenantId, status: 'SUCCESS' };
+    if (doctorId) paymentFilter.journey = { patient: { doctorId } };
+
     // Fetch all successful payments for the tenant
     const payments = await this.prisma.payment.findMany({
-      where: { tenantId, status: 'SUCCESS' },
+      where: paymentFilter,
       select: { amount: true, recordedAt: true },
       orderBy: { recordedAt: 'asc' }
     });
