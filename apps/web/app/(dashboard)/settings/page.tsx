@@ -329,7 +329,7 @@ export default function SettingsPage() {
                 </div>
               </form>
 
-              {currentUserRole === 'ADMIN' && (
+              {currentUserRole !== 'STAFF' && (
                 <div className="mt-8 pt-6 border-t border-slate-200">
                   <h3 className="text-sm font-bold text-slate-900 mb-2">Data Management</h3>
                   <p className="text-xs text-slate-500 mb-4">Export all of your patient, journey, and appointment data. You own your data.</p>

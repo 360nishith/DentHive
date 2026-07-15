@@ -57,8 +57,7 @@ export class TenantController {
   @Get('export')
   @UseGuards(AuthGuard('jwt'))
   async exportData(@Req() req: any) {
-    // Only allow admins to export data
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role === 'STAFF') {
       throw new Error('Unauthorized');
     }
     return this.tenantService.exportData(req.user.tenantId);
