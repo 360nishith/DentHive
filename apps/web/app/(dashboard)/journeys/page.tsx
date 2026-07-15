@@ -80,7 +80,7 @@ export default function JourneysPage() {
                       <span className="font-bold text-lg text-slate-900">{journey.patient?.name}</span>
                       {journey.doctor && (
                         <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded ml-2">
-                          Dr. {journey.doctor.lastName}
+                          Dr. {journey.doctor.firstName} {journey.doctor.lastName}
                         </span>
                       )}
                     </div>

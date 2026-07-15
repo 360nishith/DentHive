@@ -1,4 +1,4 @@
-require('dotenv').config({ path: 'apps/api/.env' });
+require('dotenv').config({ path: 'D:/DentalFlow/.env' });
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
@@ -13,7 +13,15 @@ async function createDemoAccount(email, password, clinicName, subdomain, phone) 
   try {
     console.log(`Creating ${clinicName}...`);
     
-    // 1. Create user in Supabase
+    // 1. Delete existing user if present
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existing = existingUsers.users.find(u => u.email === email);
+    if (existing) {
+      await supabase.auth.admin.deleteUser(existing.id);
+      console.log(`Deleted existing Supabase user for ${email}`);
+    }
+
+    // 2. Create user in Supabase
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -74,16 +82,16 @@ async function main() {
     'salesdemo@denthive.in',
     'Demo1234!',
     'DentHive Sales Demo',
-    'salesdemo2',
-    '+919000000003'
+    'salesdemo',
+    '+919000000001'
   );
   
   await createDemoAccount(
     'doctordemo@denthive.in',
     'Doctor1234!',
     'City Dental Care',
-    'citydental2',
-    '+919000000004'
+    'citydental',
+    '+919000000002'
   );
   
   console.log("Done!");

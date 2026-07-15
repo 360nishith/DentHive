@@ -273,7 +273,14 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
             </div>
           ) : (
             <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{patient.name}</h1>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                {patient.name}
+                {patient.doctor && (
+                  <span className="text-xs uppercase font-bold tracking-wider text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                    Dr. {patient.doctor.firstName} {patient.doctor.lastName}
+                  </span>
+                )}
+              </h1>
               <div className="flex flex-wrap items-center mt-2 gap-3">
                 <Badge variant={patient.status === 'ACTIVE' ? 'success' : 'secondary'}>
                   {patient.status}

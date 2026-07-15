@@ -47,7 +47,7 @@ export class FollowUpsService {
         combinedList.push({
           id: f.id,
           patientName: patient.name,
-          doctorName: patient.doctor ? `Dr. ${patient.doctor.lastName}` : null,
+          doctorName: patient.doctor ? `Dr. ${patient.doctor.firstName} ${patient.doctor.lastName}` : null,
           triggerType: label,
           status: f.status, // PENDING, PROCESSED
         date: f.triggerAt
@@ -59,7 +59,7 @@ export class FollowUpsService {
       combinedList.push({
         id: r.id,
         patientName: r.patient.name,
-        doctorName: r.patient.doctor ? `Dr. ${r.patient.doctor.lastName}` : null,
+        doctorName: r.patient.doctor ? `Dr. ${r.patient.doctor.firstName} ${r.patient.doctor.lastName}` : null,
         triggerType: 'Recall (6 Mo)',
         status: r.status,
         date: r.recallDate
@@ -91,7 +91,7 @@ export class FollowUpsService {
       combinedList.push({
         id: msg.id,
         patientName: msg.patient.name,
-        doctorName: msg.patient.doctor ? `Dr. ${msg.patient.doctor.lastName}` : null,
+        doctorName: msg.patient.doctor ? `Dr. ${msg.patient.doctor.firstName} ${msg.patient.doctor.lastName}` : null,
         triggerType: label,
         status: msg.status === 'sent' || msg.status === 'delivered' || msg.status === 'read' ? 'PROCESSED' : 'PENDING',
         date: msg.createdAt
@@ -177,7 +177,7 @@ export class FollowUpsService {
       return {
         patientId: j.patient.id,
         patientName: j.patient.name,
-        doctorName: j.patient.doctor ? `Dr. ${j.patient.doctor.lastName}` : null,
+        doctorName: j.patient.doctor ? `Dr. ${j.patient.doctor.firstName} ${j.patient.doctor.lastName}` : null,
         patientPhone: j.patient.phoneNumber,
         clinicName: j.tenant.name,
         treatmentName: j.template?.name || 'Custom Journey',

@@ -71,6 +71,9 @@ export class PatientsService {
     // FIX: Using findFirst instead of findUnique to permit ALS extension to append non-unique tenantId
     const patient = await this.prisma.patient.findFirst({
       where: { id, tenantId },
+      include: {
+        doctor: { select: { firstName: true, lastName: true } }
+      }
     });
 
     if (!patient) throw new NotFoundException('Patient not found or belongs to another clinic');

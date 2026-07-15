@@ -290,7 +290,7 @@ export default function AppointmentsPage() {
                             </div>
                             {apt.doctor && (
                               <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                                Dr. {apt.doctor.lastName}
+                                Dr. {apt.doctor.firstName} {apt.doctor.lastName}
                               </span>
                             )}
                           </div>
