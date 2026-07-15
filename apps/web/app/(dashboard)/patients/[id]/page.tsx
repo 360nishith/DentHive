@@ -44,6 +44,10 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [tenantStatus, setTenantStatus] = useState('ACTIVE');
   const [subdomain, setSubdomain] = useState('');
+  
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
+  const [editDoctorId, setEditDoctorId] = useState<string>('');
 
   const fetchPatientData = async () => {
     try {
@@ -65,6 +69,13 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
       const tenantRes = await api.get('/tenant');
       setTenantStatus(tenantRes.data.status);
       setSubdomain(tenantRes.data.subdomain);
+
+      const meRes = await api.get('/auth/me');
+      setCurrentUserRole(meRes.data.role.name);
+      if (meRes.data.role.name === 'STAFF') {
+        const uRes = await api.get('/users');
+        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
+      }
     } catch (err) {
       console.error('Failed to fetch patient details', err);
     } finally {
@@ -81,6 +92,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
     setEditAge(patient.dateOfBirth ? String(calcAge(patient.dateOfBirth)).replace(' yrs', '') : '');
     setEditGender(patient.gender || '');
     setEditWhatsappOptIn(patient.whatsappOptIn ?? true);
+    setEditDoctorId(patient.doctorId || '');
     setEditingProfile(true);
   };
 
@@ -95,6 +107,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         age: editAge,
         gender: editGender,
         whatsappOptIn: editWhatsappOptIn,
+        doctorId: editDoctorId === '' ? null : editDoctorId,
       });
       setEditingProfile(false);
       fetchPatientData();
@@ -251,6 +264,18 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                {currentUserRole === 'STAFF' && doctors.length > 0 && (
+                  <select
+                    value={editDoctorId}
+                    onChange={e => setEditDoctorId(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >
+                    <option value="">-- Unassigned --</option>
+                    {doctors.map(d => (
+                      <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+                    ))}
+                  </select>
+                )}
                 <label className="flex items-center space-x-2 text-sm text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">
                   <input
                     type="checkbox"
