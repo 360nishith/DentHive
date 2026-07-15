@@ -53,6 +53,12 @@ export class UsersService {
       data: { status: 'ARCHIVED', isActive: false }
     });
 
+    // Auto-unassign patients from the deleted doctor so they return to the clinic's global pool
+    await this.prisma.patient.updateMany({
+      where: { tenantId, doctorId: targetUserId },
+      data: { doctorId: null }
+    });
+
     // SECURITY: Fire immediately. The receptionist's active token is now dead.
     await this.revocationService.revokeUserAccess(targetUserId);
 

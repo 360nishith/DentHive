@@ -157,6 +157,7 @@ export default function PatientsDirectory() {
                   className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
                 >
                   <option value="">All Doctors</option>
+                  <option value="UNASSIGNED">Unassigned Patients</option>
                   {doctors.map(d => (
                     <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                   ))}
@@ -261,9 +262,13 @@ export default function PatientsDirectory() {
                           <span className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
                             {patient.name}
                           </span>
-                          {patient.doctor && (
+                          {patient.doctor ? (
                             <span className="text-[10px] font-bold text-slate-400 mt-0.5">
                               Dr. {patient.doctor.firstName} {patient.doctor.lastName}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-rose-500 mt-0.5">
+                              UNASSIGNED
                             </span>
                           )}
                         </div>

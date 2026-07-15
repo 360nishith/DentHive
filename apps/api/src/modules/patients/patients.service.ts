@@ -36,7 +36,13 @@ export class PatientsService {
     if (status) whereClause.status = status;
     else whereClause.status = 'ACTIVE'; // Default to hiding archived records
     
-    if (doctorId) whereClause.doctorId = doctorId;
+    if (doctorId) {
+      if (doctorId === 'UNASSIGNED') {
+        whereClause.doctorId = null;
+      } else {
+        whereClause.doctorId = doctorId;
+      }
+    }
     
     if (search) {
       // PostgreSQL ILIKE implementation mapped via Prisma insensitive mode
