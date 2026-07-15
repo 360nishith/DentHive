@@ -19,6 +19,8 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+import { supabase } from '../../../lib/supabase';
+
 export default function FollowUpsPage() {
   const router = useRouter();
 
@@ -28,6 +30,10 @@ export default function FollowUpsPage() {
   const [stalledSort, setStalledSort] = useState<'newest' | 'oldest'>('newest');
   const [loading, setLoading] = useState(true);
   
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
+  
   // Reschedule state
   const [rescheduleApt, setRescheduleApt] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
@@ -36,12 +42,26 @@ export default function FollowUpsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
+      setCurrentUserRole(role);
+
+      let urlSuffix = '';
+      if (selectedDoctorId) {
+        urlSuffix = `?doctorId=${selectedDoctorId}`;
+      }
+
       const [pendingRes, stalledRes] = await Promise.all([
-        api.get('/followups/pending'),
-        api.get('/followups/stalled')
+        api.get(`/followups/pending${urlSuffix}`),
+        api.get(`/followups/stalled${urlSuffix}`)
       ]);
       setItems(pendingRes.data);
       setStalledItems(stalledRes.data);
+
+      if (role === 'STAFF') {
+        const uRes = await api.get('/users');
+        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -51,7 +71,7 @@ export default function FollowUpsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedDoctorId]);
 
   const handleReschedule = async () => {
     if (!newDate || !newTime || !rescheduleApt) return;
@@ -136,20 +156,38 @@ export default function FollowUpsPage() {
         <p className="text-sm text-slate-500 mt-1">Automated WhatsApp delivery logs and pending patient recalls.</p>
       </div>
 
-      <div className="flex gap-4 mb-6 border-b border-slate-200">
-        <button 
-          onClick={() => setActiveTab('logs')}
-          className={`px-4 py-2 border-b-2 font-semibold text-sm ${activeTab === 'logs' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          WhatsApp Logs & Recalls
-        </button>
-        <button 
-          onClick={() => setActiveTab('stalled')}
-          className={`px-4 py-2 border-b-2 font-semibold text-sm flex items-center gap-1.5 ${activeTab === 'stalled' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          {stalledItems.length > 0 && <AlertTriangle className="w-4 h-4" />}
-          Stalled Patients ({stalledItems.length})
-        </button>
+      <div className="flex justify-between items-end mb-6 border-b border-slate-200">
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setActiveTab('logs')}
+            className={`px-4 py-2 border-b-2 font-semibold text-sm ${activeTab === 'logs' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            WhatsApp Logs & Recalls
+          </button>
+          <button 
+            onClick={() => setActiveTab('stalled')}
+            className={`px-4 py-2 border-b-2 font-semibold text-sm flex items-center gap-1.5 ${activeTab === 'stalled' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            {stalledItems.length > 0 && <AlertTriangle className="w-4 h-4" />}
+            Stalled Patients ({stalledItems.length})
+          </button>
+        </div>
+
+        {currentUserRole === 'STAFF' && doctors.length > 0 && (
+          <div className="mb-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-500">Doctor:</span>
+            <select
+              value={selectedDoctorId}
+              onChange={(e) => setSelectedDoctorId(e.target.value)}
+              className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
+            >
+              <option value="">All Doctors</option>
+              {doctors.map(d => (
+                <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {loading ? (

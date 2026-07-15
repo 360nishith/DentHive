@@ -29,6 +29,8 @@ interface Patient {
   createdAt: string;
 }
 
+import { supabase } from '../../../lib/supabase';
+
 function calcAge(dob: string | null): string {
   if (!dob) return '—';
   const diff = Date.now() - new Date(dob).getTime();
@@ -43,6 +45,9 @@ export default function PatientsDirectory() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isTourMode, setIsTourMode] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
 
   const [tenantStatus, setTenantStatus] = useState('ACTIVE');
 
@@ -71,10 +76,25 @@ export default function PatientsDirectory() {
   const fetchPatients = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/patients?search=${search}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
+      setCurrentUserRole(role);
+
+      let url = `/patients?search=${search}`;
+      if (selectedDoctorId) {
+        url += `&doctorId=${selectedDoctorId}`;
+      }
+
+      const res = await api.get(url);
       setPatients(res.data.data);
+      
       const tenantRes = await api.get('/tenant');
       setTenantStatus(tenantRes.data.status);
+
+      if (role === 'STAFF') {
+        const uRes = await api.get('/users');
+        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
+      }
     } catch (err) {
       console.error('Failed to fetch patients', err);
     } finally {
@@ -88,7 +108,7 @@ export default function PatientsDirectory() {
       fetchPatients();
     }, 300);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, selectedDoctorId]);
 
   return (
     <div className="p-8 md:p-12 w-full max-w-[1800px] mx-auto animate-in fade-in duration-500">
@@ -115,17 +135,34 @@ export default function PatientsDirectory() {
         
         {/* Toolbar */}
         <div id="tour-patient-search" className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="relative w-full max-w-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400" />
+          <div className="flex items-center gap-4 w-full max-w-2xl">
+            <div className="relative w-full max-w-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors shadow-sm"
+                placeholder="Search by name or phone..."
+              />
             </div>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors shadow-sm"
-              placeholder="Search by name or phone..."
-            />
+            {currentUserRole === 'STAFF' && doctors.length > 0 && (
+              <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 flex-shrink-0">
+                <span className="text-sm font-medium text-slate-500">Doctor:</span>
+                <select
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                  className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
+                >
+                  <option value="">All Doctors</option>
+                  {doctors.map(d => (
+                    <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           
           <div className="text-sm font-medium text-slate-500 flex items-center">
