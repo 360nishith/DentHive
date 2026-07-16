@@ -14,16 +14,23 @@ export class TenantCacheService {
 
   async setStatus(tenantId: string, status: string): Promise<void> {
     const key = `tenant_status:${tenantId}`;
-    await this.redis.set(key, status, 'EX', this.TTL);
+    try {
+      await this.redis.set(key, status, 'EX', this.TTL);
+    } catch (e) {
+      this.logger.error(`Redis set failed for ${key}`, e);
+    }
   }
 
   async getStatusSafely(tenantId: string): Promise<string> {
     const key = `tenant_status:${tenantId}`;
-    const cachedStatus = await this.redis.get(key);
+    try {
+      const cachedStatus = await this.redis.get(key);
+      if (cachedStatus) return cachedStatus;
+    } catch (e) {
+      this.logger.error(`Redis get failed for ${key}`, e);
+    }
 
-    if (cachedStatus) return cachedStatus;
-
-    this.logger.warn(`Cache miss for Tenant ${tenantId}. Executing Graceful Fallback to DB.`);
+    this.logger.warn(`Cache miss or error for Tenant ${tenantId}. Executing Graceful Fallback to DB.`);
     
     const tenant = await this.prisma.tenant.findFirst({
       where: { id: tenantId },
@@ -38,9 +45,12 @@ export class TenantCacheService {
 
   async getInternalUserIdSafely(authId: string): Promise<string | null> {
     const key = `user_internal_id:${authId}`;
-    const cachedId = await this.redis.get(key);
-
-    if (cachedId) return cachedId;
+    try {
+      const cachedId = await this.redis.get(key);
+      if (cachedId) return cachedId;
+    } catch (e) {
+      this.logger.error(`Redis get failed for ${key}`, e);
+    }
 
     const user = await this.prisma.user.findFirst({
       where: { authId },
@@ -48,7 +58,11 @@ export class TenantCacheService {
     });
 
     if (user?.id) {
-      await this.redis.set(key, user.id, 'EX', this.TTL);
+      try {
+        await this.redis.set(key, user.id, 'EX', this.TTL);
+      } catch (e) {
+        this.logger.error(`Redis set failed for ${key}`, e);
+      }
       return user.id;
     }
 

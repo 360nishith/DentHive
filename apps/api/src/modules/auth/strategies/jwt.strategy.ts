@@ -35,12 +35,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!tenantId) throw new UnauthorizedException('Tenant ID missing from token');
 
     // 1. JWT REVOCATION CHECK (Stateless)
-    const revocationTimestampStr = await this.redis.get(`revoked_user:${userId}`);
-    if (revocationTimestampStr) {
-      const revocationTimestamp = parseInt(revocationTimestampStr, 10);
-      if (iat < revocationTimestamp) {
-        throw new UnauthorizedException('Session has been revoked by an administrator');
+    try {
+      const revocationTimestampStr = await this.redis.get(`revoked_user:${userId}`);
+      if (revocationTimestampStr) {
+        const revocationTimestamp = parseInt(revocationTimestampStr, 10);
+        if (iat < revocationTimestamp) {
+          throw new UnauthorizedException('Session has been revoked by an administrator');
+        }
       }
+    } catch (e) {
+      if (e instanceof UnauthorizedException) throw e;
+      // If Redis is down, log it but don't crash the request (fail open for auth)
     }
 
     // 2. HYDRATE TENANT CACHE
