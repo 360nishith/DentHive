@@ -48,6 +48,31 @@ export class UsersService {
 
     if (!target) throw new NotFoundException('User not found');
 
+    const affectedAppointments = await this.prisma.appointment.findMany({
+      where: {
+        tenantId,
+        status: 'SCHEDULED',
+        scheduledStart: { gt: new Date() },
+        OR: [
+          { doctorId: targetUserId },
+          { doctorId: null, patient: { doctorId: targetUserId } }
+        ]
+      },
+      select: { id: true }
+    });
+
+    const appointmentIds = affectedAppointments.map(a => a.id);
+
+    if (appointmentIds.length > 0) {
+      // The background processor (whatsapp-reminders.processor.ts) already checks if the 
+      // appointment status is SCHEDULED. If it's CANCELLED, it automatically drops the reminder.
+      // So we only need to cancel the appointments.
+      await this.prisma.appointment.updateMany({
+        where: { id: { in: appointmentIds } },
+        data: { status: 'CANCELLED' }
+      });
+    }
+
     await this.prisma.user.updateMany({
       where: { id: targetUserId, tenantId },
       data: { status: 'ARCHIVED', isActive: false }
