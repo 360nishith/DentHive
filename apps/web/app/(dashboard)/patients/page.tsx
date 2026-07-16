@@ -107,7 +107,26 @@ export default function PatientsDirectory() {
     const timer = setTimeout(() => {
       fetchPatients();
     }, 300);
-    return () => clearTimeout(timer);
+
+    const intervalId = setInterval(() => {
+      // Don't auto-refresh while typing a search to avoid losing focus/state weirdness
+      if (!search) fetchPatients();
+    }, 30000);
+
+    const handleFocus = () => fetchPatients();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchPatients();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [search, selectedDoctorId]);
 
   return (

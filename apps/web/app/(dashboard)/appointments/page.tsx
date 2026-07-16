@@ -73,6 +73,22 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     fetchAppointments();
+
+    const intervalId = setInterval(fetchAppointments, 30000);
+
+    const handleFocus = () => fetchAppointments();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchAppointments();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedDoctorId]);
 
   const handleReschedule = async () => {

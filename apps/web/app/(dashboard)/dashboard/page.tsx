@@ -121,6 +121,24 @@ export default function Dashboard() {
       } catch (e) {}
     };
     loadData();
+
+    // Auto-refresh the dashboard every 30 seconds
+    const intervalId = setInterval(loadData, 30000);
+
+    // Refresh immediately when the user switches back to this tab
+    const handleFocus = () => loadData();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedDoctorId]);
 
   const greeting = () => {

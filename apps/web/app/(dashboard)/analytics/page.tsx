@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
 
-  useEffect(() => {
+  const fetchAnalytics = () => {
     Promise.all([
       api.get('/billing/revenue'),
       api.get('/billing/charts')
@@ -23,6 +23,26 @@ export default function AnalyticsPage() {
       setChartData(chartRes.data);
       setLoading(false);
     }).catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+
+    const intervalId = setInterval(fetchAnalytics, 30000);
+
+    const handleFocus = () => fetchAnalytics();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchAnalytics();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   return (

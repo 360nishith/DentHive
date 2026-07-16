@@ -59,7 +59,25 @@ export default function RevenuePage() {
     }
   };
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => {
+    fetchStats();
+
+    const intervalId = setInterval(fetchStats, 30000);
+
+    const handleFocus = () => fetchStats();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchStats();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const filteredOutstanding = useMemo(() => {
     if (!stats?.outstanding) return [];

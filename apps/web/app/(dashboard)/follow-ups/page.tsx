@@ -71,6 +71,22 @@ export default function FollowUpsPage() {
 
   useEffect(() => {
     loadData();
+
+    const intervalId = setInterval(loadData, 30000);
+
+    const handleFocus = () => loadData();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedDoctorId]);
 
   const handleReschedule = async () => {
