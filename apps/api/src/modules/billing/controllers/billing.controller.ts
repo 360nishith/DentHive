@@ -102,7 +102,7 @@ export class BillingController {
 
   @Get('revenue')
   async getRevenueStats(@Req() req: any, @Query('doctorId') doctorId?: string) {
-    if (req.user.role !== 'STAFF') {
+    if (req.user.role === 'DENTIST') {
       doctorId = req.user.id;
     }
     return this.paymentService.getRevenueStats(req.user.tenantId, doctorId);
@@ -110,7 +110,7 @@ export class BillingController {
 
   @Get('charts')
   async getCharts(@Req() req: any, @Query('doctorId') doctorId?: string) {
-    if (req.user.role !== 'STAFF') {
+    if (req.user.role === 'DENTIST') {
       doctorId = req.user.id;
     }
     return this.paymentService.getRevenueCharts(req.user.tenantId, doctorId);

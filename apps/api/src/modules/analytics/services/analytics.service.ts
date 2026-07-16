@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { als } from '../../../common/context/als';
 
 @Injectable()
 export class AnalyticsService {
@@ -22,18 +23,20 @@ export class AnalyticsService {
     const historicalSnapshots = { _sum: { appointmentsCompleted: 0 } };
 
     // 2. HYBRID PATH: Run a tiny dynamic query strictly for *Today's* real-time data
-    const todaysAppointments = await this.prisma.appointment.aggregate({
-      where: {
-        tenantId,
-        scheduledStart: { gte: today, lte: endDate }
-      },
-      _count: { _all: true }
+    return als.run({}, async () => {
+      const todaysAppointments = await this.prisma.appointment.aggregate({
+        where: {
+          tenantId,
+          scheduledStart: { gte: today, lte: endDate }
+        },
+        _count: { _all: true }
+      });
+
+      const totalAppointments = 
+        Number(historicalSnapshots._sum.appointmentsCompleted || 0) + 
+        Number(todaysAppointments._count?._all ?? 0);
+
+      return { appointmentsCompleted: totalAppointments };
     });
-
-    const totalAppointments = 
-      Number(historicalSnapshots._sum.appointmentsCompleted || 0) + 
-      Number(todaysAppointments._count?._all ?? 0);
-
-    return { appointmentsCompleted: totalAppointments };
   }
 }
