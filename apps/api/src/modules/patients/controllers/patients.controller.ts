@@ -23,6 +23,8 @@ export class PatientsController {
   async getPatients(@Query() query: any, @Req() req: any) {
     if (query.doctorId === 'MY_PATIENTS') {
       query.doctorId = req.user.id;
+    } else if (query.doctorId === 'UNASSIGNED') {
+      query.doctorId = null;
     }
     return this.patientsService.findAll(req.user.tenantId, query);
   }

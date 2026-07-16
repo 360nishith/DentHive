@@ -48,30 +48,19 @@ export class UsersService {
 
     if (!target) throw new NotFoundException('User not found');
 
-    const affectedAppointments = await this.prisma.appointment.findMany({
-      where: {
-        tenantId,
-        status: 'SCHEDULED',
-        scheduledStart: { gt: new Date() },
-        OR: [
-          { doctorId: targetUserId },
-          { doctorId: null, patient: { doctorId: targetUserId } }
-        ]
-      },
-      select: { id: true }
-    });
-
-    const appointmentIds = affectedAppointments.map(a => a.id);
-
-    if (appointmentIds.length > 0) {
-      // The background processor (whatsapp-reminders.processor.ts) already checks if the 
-      // appointment status is SCHEDULED. If it's CANCELLED, it automatically drops the reminder.
-      // So we only need to cancel the appointments.
-      await this.prisma.appointment.updateMany({
-        where: { id: { in: appointmentIds } },
-        data: { status: 'CANCELLED' }
-      });
-    }
+    // Bypass Prisma middleware using $executeRaw so that if an Admin deletes a Doctor, 
+    // the middleware doesn't overwrite where.doctorId with the Admin's ID.
+    await this.prisma.$executeRaw`
+      UPDATE "Appointment"
+      SET "status" = 'CANCELLED'
+      WHERE "tenantId" = ${tenantId}
+        AND "status" = 'SCHEDULED'
+        AND "scheduledStart" > NOW()
+        AND (
+          "doctorId" = ${targetUserId}
+          OR ("doctorId" IS NULL AND "patientId" IN (SELECT id FROM "Patient" WHERE "doctorId" = ${targetUserId}))
+        )
+    `;
 
     await this.prisma.user.updateMany({
       where: { id: targetUserId, tenantId },
@@ -79,10 +68,11 @@ export class UsersService {
     });
 
     // Auto-unassign patients from the deleted doctor so they return to the clinic's global pool
-    await this.prisma.patient.updateMany({
-      where: { tenantId, doctorId: targetUserId },
-      data: { doctorId: null }
-    });
+    await this.prisma.$executeRaw`
+      UPDATE "Patient"
+      SET "doctorId" = NULL
+      WHERE "tenantId" = ${tenantId} AND "doctorId" = ${targetUserId}
+    `;
 
     // SECURITY: Fire immediately. The receptionist's active token is now dead.
     await this.revocationService.revokeUserAccess(targetUserId);
