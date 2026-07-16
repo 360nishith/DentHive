@@ -2,7 +2,7 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Runs every 3 days at midnight UTC (well within the 7-day pause threshold)
+    # Runs every 3 days at midnight UTC
     - cron: '0 0 */3 * *'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
@@ -14,7 +14,7 @@ jobs:
       - name: Ping Health Endpoint
         run: |
           echo "Pinging DentHive API to keep Supabase alive..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.API_URL }}/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://denthive.onrender.com/health)
           echo "Response status: $response"
           if [ "$response" -ne 200 ]; then
             echo "Warning: Health endpoint returned $response"
