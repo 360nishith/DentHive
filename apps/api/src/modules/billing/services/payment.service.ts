@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { als } from '../../../common/context/als';
 
 @Injectable()
 export class PaymentService {
@@ -143,127 +142,123 @@ export class PaymentService {
     const appointmentFilter: any = { tenantId, scheduledStart: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } };
     if (doctorId) appointmentFilter.doctorId = doctorId;
 
-    return als.run({}, async () => {
-      const [
-        todayPayments, 
-        monthPayments, 
-        allPayments, 
-        outstandingJourneys,
-        activePatients,
-        appointments30d,
-        recentPayments
-      ] = await Promise.all([
-        this.prisma.payment.aggregate({
-          where: { ...paymentFilter, recordedAt: { gte: startOfDay } },
-          _sum: { amount: true },
-          _count: true,
-        }),
-        this.prisma.payment.aggregate({
-          where: { ...paymentFilter, recordedAt: { gte: startOfMonth } },
-          _sum: { amount: true },
-          _count: true,
-        }),
-        this.prisma.payment.aggregate({
-          where: paymentFilter,
-          _sum: { amount: true },
-        }),
-        // Journeys with balance due — exclude CANCELLED (aborted) journeys
-        this.prisma.treatmentJourney.findMany({
-          where: journeyFilter,
-          include: {
-            payments: { where: { status: 'SUCCESS' } },
-            patient: { select: { name: true, phoneNumber: true } },
-            template: { select: { name: true } },
-          }
-        }),
-        this.prisma.treatmentJourney.count({
-          where: activeJourneyFilter
-        }),
-        this.prisma.appointment.count({
-          where: appointmentFilter
-        }),
-        this.prisma.payment.findMany({
-          where: paymentFilter,
-          orderBy: { recordedAt: 'desc' },
-          take: 5,
-          include: {
-            journey: { include: { template: true } }
-          }
-        })
-      ]);
+    const [
+      todayPayments, 
+      monthPayments, 
+      allPayments, 
+      outstandingJourneys,
+      activePatients,
+      appointments30d,
+      recentPayments
+    ] = await Promise.all([
+      this.prisma.payment.aggregate({
+        where: { ...paymentFilter, recordedAt: { gte: startOfDay } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      this.prisma.payment.aggregate({
+        where: { ...paymentFilter, recordedAt: { gte: startOfMonth } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      this.prisma.payment.aggregate({
+        where: paymentFilter,
+        _sum: { amount: true },
+      }),
+      // Journeys with balance due — exclude CANCELLED (aborted) journeys
+      this.prisma.treatmentJourney.findMany({
+        where: journeyFilter,
+        include: {
+          payments: { where: { status: 'SUCCESS' } },
+          patient: { select: { name: true, phoneNumber: true } },
+          template: { select: { name: true } },
+        }
+      }),
+      this.prisma.treatmentJourney.count({
+        where: activeJourneyFilter
+      }),
+      this.prisma.appointment.count({
+        where: appointmentFilter
+      }),
+      this.prisma.payment.findMany({
+        where: paymentFilter,
+        orderBy: { recordedAt: 'desc' },
+        take: 5,
+        include: {
+          journey: { include: { template: true } }
+        }
+      })
+    ]);
 
-      const outstanding = outstandingJourneys
-        .map(j => {
-          const paid = j.payments.reduce((s, p) => s + p.amount, 0);
-          return { 
-            ...j, 
-            template: j.template ? j.template : { name: 'Custom Journey' },
-            paid, 
-            balance: j.totalCost - paid 
-          };
-        })
-        .filter(j => j.balance > 0)
-        .sort((a, b) => b.balance - a.balance);
+    const outstanding = outstandingJourneys
+      .map(j => {
+        const paid = j.payments.reduce((s, p) => s + p.amount, 0);
+        return { 
+          ...j, 
+          template: j.template ? j.template : { name: 'Custom Journey' },
+          paid, 
+          balance: j.totalCost - paid 
+        };
+      })
+      .filter(j => j.balance > 0)
+      .sort((a, b) => b.balance - a.balance);
 
-      return {
-        today: {
-          amount: todayPayments._sum.amount || 0,
-          count: todayPayments._count,
-        },
-        month: {
-          amount: monthPayments._sum.amount || 0,
-          count: monthPayments._count,
-        },
-        total: allPayments._sum.amount || 0,
-        outstandingCount: outstanding.length,
-        outstandingTotal: outstanding.reduce((s, j) => s + j.balance, 0),
-        outstanding: outstanding.slice(0, 10), // top 10
-        activePatients,
-        appointments30d,
-        recentPayments
-      };
-    });
+    return {
+      today: {
+        amount: todayPayments._sum.amount || 0,
+        count: todayPayments._count,
+      },
+      month: {
+        amount: monthPayments._sum.amount || 0,
+        count: monthPayments._count,
+      },
+      total: allPayments._sum.amount || 0,
+      outstandingCount: outstanding.length,
+      outstandingTotal: outstanding.reduce((s, j) => s + j.balance, 0),
+      outstanding: outstanding.slice(0, 10), // top 10
+      activePatients,
+      appointments30d,
+      recentPayments
+    };
   }
 
   async getRevenueCharts(tenantId: string, doctorId?: string) {
     const paymentFilter: any = { tenantId, status: 'SUCCESS' };
     if (doctorId) paymentFilter.journey = { patient: { doctorId } };
 
-    return als.run({}, async () => {
-      // Fetch all successful payments for the tenant
-      const payments = await this.prisma.payment.findMany({
-        where: paymentFilter,
-        select: { amount: true, recordedAt: true },
-        orderBy: { recordedAt: 'asc' }
-      });
-
-      const dailyMap = new Map<string, number>();
-      const monthlyMap = new Map<string, number>();
-      const yearlyMap = new Map<string, number>();
-
-      for (const p of payments) {
-        const date = new Date(p.recordedAt);
-        
-        // Localize to IST since clinic is in India (or generic local time based on server)
-        // Formatting key
-        const dKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        const mKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
-        const yKey = `${date.getFullYear()}`; // YYYY
-
-        dailyMap.set(dKey, (dailyMap.get(dKey) || 0) + p.amount);
-        monthlyMap.set(mKey, (monthlyMap.get(mKey) || 0) + p.amount);
-        yearlyMap.set(yKey, (yearlyMap.get(yKey) || 0) + p.amount);
-      }
-
-      const formatData = (map: Map<string, number>) => {
-        return Array.from(map.entries()).map(([name, total]) => ({ name, total }));
-      };
-
-      return {
-        daily: formatData(dailyMap),
-        monthly: formatData(monthlyMap),
-        yearly: formatData(yearlyMap),
-      };
+    // Fetch all successful payments for the tenant
+    const payments = await this.prisma.payment.findMany({
+      where: paymentFilter,
+      select: { amount: true, recordedAt: true },
+      orderBy: { recordedAt: 'asc' }
     });
+
+    const dailyMap = new Map<string, number>();
+    const monthlyMap = new Map<string, number>();
+    const yearlyMap = new Map<string, number>();
+
+    for (const p of payments) {
+      const date = new Date(p.recordedAt);
+      
+      // Localize to IST since clinic is in India (or generic local time based on server)
+      // Formatting key
+      const dKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const mKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      const yKey = `${date.getFullYear()}`; // YYYY
+
+      dailyMap.set(dKey, (dailyMap.get(dKey) || 0) + p.amount);
+      monthlyMap.set(mKey, (monthlyMap.get(mKey) || 0) + p.amount);
+      yearlyMap.set(yKey, (yearlyMap.get(yKey) || 0) + p.amount);
+    }
+
+    const formatData = (map: Map<string, number>) => {
+      return Array.from(map.entries()).map(([name, total]) => ({ name, total }));
+    };
+
+    return {
+      daily: formatData(dailyMap),
+      monthly: formatData(monthlyMap),
+      yearly: formatData(yearlyMap),
+    };
   }
 }
