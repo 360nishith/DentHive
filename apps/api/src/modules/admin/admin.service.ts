@@ -1,11 +1,15 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { parse } from 'csv-parse/sync';
 import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabaseService: SupabaseService
+  ) {}
 
   async getDashboardStats() {
     const tenants: any = await this.prisma.tenant.findMany({
@@ -85,7 +89,10 @@ export class AdminService {
   async deleteTenant(id: string) {
     // We MUST run this with tenantId = null so the global Prisma Middleware doesn't intercept
     // the deleteMany queries and silently overwrite where.tenantId with the Super Admin's own tenantId.
-    return require('../../common/context/als').als.run({ tenantId: undefined }, () => {
+    return require('../../common/context/als').als.run({ tenantId: undefined }, async () => {
+      // Find all users before deleting anything
+      const users = await this.prisma.user.findMany({ where: { tenantId: id }, select: { authId: true } });
+      
       return this.prisma.$transaction(async (tx) => {
         // 1. Logs and standalone records
         await tx.auditLog.deleteMany({ where: { tenantId: id } });
@@ -120,25 +127,24 @@ export class AdminService {
         await tx.file.deleteMany({ where: { tenantId: id } });
         await tx.patient.deleteMany({ where: { tenantId: id } });
         
-        // Keep the original owner (first user created) but delete all other staff
-        const firstUser = await tx.user.findFirst({
-          where: { tenantId: id },
-          orderBy: { createdAt: 'asc' }
-        });
-
-        if (firstUser) {
-          await tx.user.deleteMany({
-            where: {
-              tenantId: id,
-              id: { not: firstUser.id }
-            }
-          });
-        } else {
-          await tx.user.deleteMany({ where: { tenantId: id } });
-        }
+        // 8. Delete all users from the database
+        await tx.user.deleteMany({ where: { tenantId: id } });
         
-        // 8. Finally, do NOT delete the Tenant. We reset it to its fresh state.
-        return tx.tenant.findUnique({ where: { id } });
+        // 9. Actually delete the Tenant
+        const deletedTenant = await tx.tenant.delete({ where: { id } });
+
+        // 10. Clean up Supabase Auth Accounts
+        // We do this outside the transaction so if it fails, the DB still rolls back,
+        // but if it succeeds, the users are gone forever.
+        for (const user of users) {
+          try {
+            await this.supabaseService.deleteUser(user.authId);
+          } catch (e) {
+            console.error(\`Failed to delete user \${user.authId} from Supabase:\`, e);
+          }
+        }
+
+        return deletedTenant;
       }, { timeout: 30000 });
     });
   }

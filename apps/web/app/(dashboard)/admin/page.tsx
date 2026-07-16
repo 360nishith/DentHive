@@ -49,23 +49,23 @@ export default function SuperAdminPage() {
   }, [router]);
 
   const handleDeleteTenant = async (id: string, name: string) => {
-    const confirm1 = window.confirm(`WARNING: You are about to RESET the clinic "${name}". This will wipe all their patients, appointments, billing data, templates, and extra staff. Only the original Admin will remain.\n\nAre you sure you want to proceed?`);
+    const confirm1 = window.confirm(`WARNING: You are about to COMPLETELY DELETE the clinic "${name}". This will permanently wipe ALL their patients, appointments, billing data, templates, and EVERY user account from the system.\n\nThis action CANNOT be undone.\n\nAre you sure you want to proceed?`);
     if (!confirm1) return;
     
-    const confirm2 = window.prompt(`Type "${name}" to confirm resetting this clinic:`);
+    const confirm2 = window.prompt(`Type "${name}" to confirm permanently deleting this clinic:`);
     if (confirm2 !== name) {
-      alert("Clinic name did not match. Reset cancelled.");
+      alert("Clinic name did not match. Deletion cancelled.");
       return;
     }
 
     try {
       await api.delete(`/admin/tenants/${id}`);
-      // Don't filter it out since it's just reset, but maybe refresh stats
+      // Refresh stats and remove from list
       const res = await api.get('/admin/tenants');
       setTenants(res.data);
-      alert("Clinic reset successfully. All data wiped except the original admin.");
+      alert("Clinic deleted successfully. All data and users have been permanently wiped.");
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to reset clinic.");
+      alert(err.response?.data?.message || "Failed to delete clinic.");
     }
   };
 
