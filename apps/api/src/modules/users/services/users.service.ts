@@ -51,14 +51,14 @@ export class UsersService {
     // Bypass Prisma middleware using $executeRaw so that if an Admin deletes a Doctor, 
     // the middleware doesn't overwrite where.doctorId with the Admin's ID.
     await this.prisma.$executeRaw`
-      UPDATE "Appointment"
-      SET "status" = 'CANCELLED'
-      WHERE "tenantId" = ${tenantId}
-        AND "status" = 'SCHEDULED'
+      UPDATE appointments
+      SET status = 'CANCELLED'
+      WHERE "tenantId" = ${tenantId}::uuid
+        AND status = 'SCHEDULED'
         AND "scheduledStart" > NOW()
         AND (
-          "doctorId" = ${targetUserId}
-          OR ("doctorId" IS NULL AND "patientId" IN (SELECT id FROM "Patient" WHERE "doctorId" = ${targetUserId}))
+          "doctorId" = ${targetUserId}::uuid
+          OR ("doctorId" IS NULL AND "patientId" IN (SELECT id FROM patients WHERE "doctorId" = ${targetUserId}::uuid))
         )
     `;
 
@@ -69,9 +69,9 @@ export class UsersService {
 
     // Auto-unassign patients from the deleted doctor so they return to the clinic's global pool
     await this.prisma.$executeRaw`
-      UPDATE "Patient"
+      UPDATE patients
       SET "doctorId" = NULL
-      WHERE "tenantId" = ${tenantId} AND "doctorId" = ${targetUserId}
+      WHERE "tenantId" = ${tenantId}::uuid AND "doctorId" = ${targetUserId}::uuid
     `;
 
     // SECURITY: Fire immediately. The receptionist's active token is now dead.
