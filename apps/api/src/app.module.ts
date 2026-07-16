@@ -33,13 +33,27 @@ import { AdminModule } from './modules/admin/admin.module';
       limit: 50,
     }]),
     EventEmitterModule.forRoot(),
-    BullModule.forRoot({
-      connection: {
-
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-      },
+    BullModule.forRootAsync({
+      useFactory: () => {
+        let connection: any = {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD,
+        };
+        
+        if (process.env.REDIS_URL) {
+          const url = new URL(process.env.REDIS_URL);
+          connection = {
+            host: url.hostname,
+            port: parseInt(url.port || '6379'),
+            password: url.password || undefined,
+            username: url.username || undefined,
+            tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined
+          };
+        }
+        
+        return { connection };
+      }
     }),
     RedisModule,
     AuthModule,
