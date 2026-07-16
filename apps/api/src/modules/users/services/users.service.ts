@@ -21,7 +21,7 @@ export class UsersService {
   async listStaff(tenantId: string) {
     return this.prisma.user.findMany({
       where: { tenantId, status: 'ACTIVE' },
-      select: { id: true, email: true, firstName: true, lastName: true, roleId: true, status: true, role: true }
+      select: { id: true, authId: true, email: true, firstName: true, lastName: true, roleId: true, status: true, role: true }
     });
   }
 

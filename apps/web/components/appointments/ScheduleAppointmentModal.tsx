@@ -44,8 +44,8 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
       const dentistUsers = usersRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
       setDoctors(dentistUsers);
 
-      if (session?.user?.email && role !== 'STAFF') {
-        const myDoc = dentistUsers.find((d: any) => d.email === session.user.email);
+      if (session?.user?.id && role !== 'STAFF') {
+        const myDoc = dentistUsers.find((d: any) => d.authId === session.user.id);
         if (myDoc) {
           setDoctorId(myDoc.id);
         } else {
