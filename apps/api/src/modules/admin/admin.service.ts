@@ -140,7 +140,7 @@ export class AdminService {
           try {
             await this.supabaseService.deleteUser(user.authId);
           } catch (e) {
-            console.error(\`Failed to delete user \${user.authId} from Supabase:\`, e);
+            console.error(`Failed to delete user ${user.authId} from Supabase:`, e);
           }
         }
 
