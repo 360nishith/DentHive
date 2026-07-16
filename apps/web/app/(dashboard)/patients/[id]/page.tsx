@@ -72,9 +72,10 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
       setSubdomain(tenantRes.data.subdomain);
 
       const meRes = await api.get('/auth/me');
-      setCurrentUserRole(meRes.data.role.name);
+      const role = meRes.data.role?.name || meRes.data.role || 'ADMIN';
+      setCurrentUserRole(role);
       setCurrentUserId(meRes.data.id);
-      if (meRes.data.role.name === 'STAFF') {
+      if (role === 'STAFF') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }

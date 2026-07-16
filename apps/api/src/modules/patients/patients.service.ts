@@ -36,8 +36,8 @@ export class PatientsService {
     if (status) whereClause.status = status;
     else whereClause.status = 'ACTIVE'; // Default to hiding archived records
     
-    if (doctorId) {
-      if (doctorId === 'UNASSIGNED') {
+    if (doctorId !== undefined) {
+      if (doctorId === 'UNASSIGNED' || doctorId === null || doctorId === 'null') {
         whereClause.doctorId = null;
       } else {
         whereClause.doctorId = doctorId;
