@@ -54,21 +54,35 @@ export default function Dashboard() {
         }
 
         try {
-          if (activeRole === 'STAFF') {
-            setUserName('Staff');
-          } else {
-            // It's the Doctor / Admin
-            const meRes = await api.get('/users/me');
-            if (meRes.data?.firstName) {
-              setUserName(`Dr. ${meRes.data.firstName}`);
+          const meRes = await api.get('/users/me');
+          const firstName = meRes.data?.firstName;
+          const lastName = meRes.data?.lastName || '';
+          
+          if (firstName) {
+            const fullName = `${firstName} ${lastName}`.trim();
+            if (activeRole === 'STAFF') {
+              setUserName(fullName);
             } else {
-              const fallback = session.user.email?.split('@')[0] || 'Doctor';
-              setUserName(`Dr. ${fallback.charAt(0).toUpperCase() + fallback.slice(1)}`);
+              setUserName(`Dr. ${fullName}`);
+            }
+          } else {
+            // Fallback to email
+            const fallback = session.user.email?.split('@')[0] || 'User';
+            const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
+            if (activeRole === 'STAFF') {
+              setUserName(capFallback);
+            } else {
+              setUserName(`Dr. ${capFallback}`);
             }
           }
         } catch (e) {
-          const fallback = session.user.email?.split('@')[0] || 'Doctor';
-          setUserName(`Dr. ${fallback.charAt(0).toUpperCase() + fallback.slice(1)}`);
+          const fallback = session.user.email?.split('@')[0] || 'User';
+          const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
+          if (activeRole === 'STAFF') {
+            setUserName(capFallback);
+          } else {
+            setUserName(`Dr. ${capFallback}`);
+          }
         }
       }
 
