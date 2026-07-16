@@ -604,8 +604,8 @@ export default function SettingsPage() {
                   <div className="flex-1">
                     <h2 className="text-lg font-bold text-red-900">Reset Demo Data</h2>
                     <p className="text-sm text-red-700 mt-1 mb-4">
-                      This action will permanently delete all operational data from your clinic (Patients, Appointments, WhatsApp Logs, Revenue, and Follow-ups). 
-                      It will NOT delete your templates, staff accounts, or clinic settings. This is specifically for clearing out dummy data after a sales demo.
+                      This action will permanently delete all operational data from your clinic (Patients, Appointments, WhatsApp Logs, Revenue, Follow-ups, and extra Staff). 
+                      Only the original clinic owner will remain. It will NOT delete your templates or clinic settings. This is specifically for clearing out dummy data after a sales demo.
                     </p>
                     <Button 
                       onClick={handleResetDemo}

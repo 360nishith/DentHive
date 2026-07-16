@@ -324,6 +324,21 @@ export class TenantService {
       await tx.notification.deleteMany({ where: { tenantId } });
       await tx.auditLog.deleteMany({ where: { tenantId } });
 
+      // 4. Wipe staff except the original owner
+      const firstUser = await tx.user.findFirst({
+        where: { tenantId },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      if (firstUser) {
+        await tx.user.deleteMany({
+          where: {
+            tenantId,
+            id: { not: firstUser.id }
+          }
+        });
+      }
+
       return { success: true, message: 'Demo data completely wiped.' };
       });
     });
