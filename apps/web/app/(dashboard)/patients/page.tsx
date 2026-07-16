@@ -172,26 +172,29 @@ export default function PatientsDirectory() {
                 placeholder="Search by name or phone..."
               />
             </div>
-            {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && (currentUserRole === 'STAFF' ? doctors.length > 0 : true) && (
-              <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 flex-shrink-0">
-                <span className="text-sm font-medium text-slate-500">Doctor:</span>
-                  <select
-                    value={selectedDoctorId}
-                    onChange={(e) => setSelectedDoctorId(e.target.value)}
-                    className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
-                  >
-                    {currentUserRole === 'STAFF' ? (
-                      <option value="">All Doctors</option>
-                    ) : (
+            <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 flex-shrink-0">
+              <span className="text-sm font-medium text-slate-500">Doctor:</span>
+                <select
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                  className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
+                >
+                  {currentUserRole === 'STAFF' ? (
+                    <>
+                      <option value="">All Clinic Patients</option>
+                      <option value="UNASSIGNED">Unassigned Patients</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
+                      ))}
+                    </>
+                  ) : (
+                    <>
                       <option value="MY_PATIENTS">My Patients</option>
-                    )}
-                    <option value="UNASSIGNED">Unassigned Patients</option>
-                    {currentUserRole === 'STAFF' && doctors.map(d => (
-                      <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
-                    ))}
-                  </select>
-              </div>
-            )}
+                      <option value="UNASSIGNED">Unassigned Patients</option>
+                    </>
+                  )}
+                </select>
+            </div>
           </div>
           
           <div className="text-sm font-medium text-slate-500 flex items-center">

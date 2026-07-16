@@ -38,19 +38,26 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       }
 
       // Enforce Doctor Isolation for clinical tables
-      if (role === 'DENTIST' && userId) {
+      if ((role === 'DENTIST' || role === 'ADMIN') && userId) {
         const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
         if (params.model && isolatedModels.includes(params.model)) {
           if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
             if (!params.args.where) params.args.where = {};
-            params.args.where.doctorId = userId;
+            // Allow explicit queries for unassigned patients (doctorId = null).
+            // If they are not querying for unassigned, force isolation to their own ID.
+            if (params.args.where.doctorId !== null) {
+              params.args.where.doctorId = userId;
+            }
           }
           if (['create', 'update', 'upsert'].includes(params.action)) {
             if (!params.args.data) params.args.data = {};
-            params.args.data.doctorId = userId;
+            // Allow creating/updating unassigned patients
+            if (params.args.data.doctorId !== null) {
+              params.args.data.doctorId = userId;
+            }
           }
           if (params.action === 'createMany' && Array.isArray(params.args.data)) {
-            params.args.data = params.args.data.map((d: any) => ({ ...d, doctorId: userId }));
+            params.args.data = params.args.data.map((d: any) => ({ ...d, doctorId: d.doctorId === null ? null : userId }));
           }
         }
       }
