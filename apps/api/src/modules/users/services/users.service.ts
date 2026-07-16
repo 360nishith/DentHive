@@ -3,12 +3,15 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { JwtRevocationService } from '../../auth/services/jwt-revocation.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { SupabaseService } from '../../supabase/supabase.service';
+
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private revocationService: JwtRevocationService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private supabase: SupabaseService
   ) {}
 
   async getMe(internalId: string) {
@@ -47,6 +50,10 @@ export class UsersService {
     });
 
     if (!target) throw new NotFoundException('User not found');
+
+    if (target.authId) {
+      await this.supabase.banUser(target.authId);
+    }
 
     // Bypass Prisma middleware using $executeRaw so that if an Admin deletes a Doctor, 
     // the middleware doesn't overwrite where.doctorId with the Admin's ID.
