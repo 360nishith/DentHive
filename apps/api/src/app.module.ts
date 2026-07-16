@@ -1,4 +1,5 @@
 import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { AppController } from './app.controller';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
@@ -70,13 +71,14 @@ import { AdminModule } from './modules/admin/admin.module';
     StorageModule,
     AdminModule,
   ],
+  controllers: [AppController],
   providers: [PrismaService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .exclude('webhooks/(.*)')
+      .exclude('webhooks/(.*)', 'health')
       .forRoutes('*');
 
     consumer
