@@ -74,10 +74,20 @@ export class TenantService {
 
     let upiVpa = '';
     if (userId) {
-      const user = await this.prisma.user.findUnique({
+      let user = await this.prisma.user.findUnique({
         where: { authId: userId },
         select: { upiVpa: true }
       });
+      if (!user) {
+        // Fallback: get the first admin's upiVpa for this clinic
+        const adminRole = await this.prisma.role.findUnique({ where: { name: 'ADMIN' } });
+        if (adminRole) {
+          user = await this.prisma.user.findFirst({
+            where: { tenantId, roleId: adminRole.id },
+            select: { upiVpa: true }
+          });
+        }
+      }
       if (user && user.upiVpa) {
         upiVpa = user.upiVpa;
       }
@@ -202,10 +212,25 @@ export class TenantService {
     }
 
     if (data.upiVpa !== undefined) {
-      await this.prisma.user.updateMany({
+      const updateResult = await this.prisma.user.updateMany({
         where: { authId: userId },
         data: { upiVpa: data.upiVpa }
       });
+      if (updateResult.count === 0) {
+        // Fallback: update the first admin's upiVpa for this clinic
+        const adminRole = await this.prisma.role.findUnique({ where: { name: 'ADMIN' } });
+        if (adminRole) {
+          const firstAdmin = await this.prisma.user.findFirst({
+            where: { tenantId, roleId: adminRole.id }
+          });
+          if (firstAdmin) {
+            await this.prisma.user.update({
+              where: { id: firstAdmin.id },
+              data: { upiVpa: data.upiVpa }
+            });
+          }
+        }
+      }
     }
 
     return this.prisma.tenant.update({
