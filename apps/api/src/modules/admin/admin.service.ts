@@ -137,10 +137,12 @@ export class AdminService {
         // We do this outside the transaction so if it fails, the DB still rolls back,
         // but if it succeeds, the users are gone forever.
         for (const user of users) {
-          try {
-            await this.supabaseService.deleteUser(user.authId);
-          } catch (e) {
-            console.error(`Failed to delete user ${user.authId} from Supabase:`, e);
+          if (user.authId) {
+            try {
+              await this.supabaseService.deleteUser(user.authId);
+            } catch (e) {
+              console.error(`Failed to delete user ${user.authId} from Supabase:`, e);
+            }
           }
         }
 
