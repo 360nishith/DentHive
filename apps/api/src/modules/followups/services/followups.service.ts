@@ -73,7 +73,10 @@ export class FollowUpsService {
 
     // Fetch and Map raw WhatsApp Messages (Payment links, Reminders, Manual)
     const waMessages = await this.prisma.whatsAppMessage.findMany({
-      where: { tenantId },
+      where: { 
+        tenantId,
+        patient: patientFilter
+      },
       include: { patient: { include: { doctor: { select: { firstName: true, lastName: true } } } } },
       orderBy: { createdAt: 'desc' },
       take: 30
