@@ -131,12 +131,21 @@ export class TenantService {
   }
 
   async updateClinic(tenantId: string, userId: string, data: { name?: string; upiVpa?: string; waPhoneNumberId?: string; waAccessToken?: string; waAppSecret?: string }) {
+    const currentTenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!currentTenant) throw new BadRequestException('Tenant not found');
+
     let razorpayPlanChanged = false;
-    let oldPlan = 'STANDARD';
-    let newPlan = 'STANDARD';
+    let oldPlan = currentTenant.waAccessToken ? 'BYOS' : 'STANDARD';
+    let newPlan = oldPlan;
+
+    const waChanged = (
+      (data.waPhoneNumberId !== undefined && data.waPhoneNumberId !== (currentTenant.waPhoneNumberId || '')) ||
+      (data.waAccessToken !== undefined && data.waAccessToken !== (currentTenant.waAccessToken || '')) ||
+      (data.waAppSecret !== undefined && data.waAppSecret !== (currentTenant.waAppSecret || ''))
+    );
 
     // Actively validate Meta keys if they are being updated
-    if (data.waPhoneNumberId && data.waAccessToken) {
+    if (waChanged && data.waPhoneNumberId && data.waAccessToken) {
       try {
         const response = await fetch(`https://graph.facebook.com/v19.0/${data.waPhoneNumberId}?access_token=${data.waAccessToken}`);
         if (!response.ok) {
@@ -149,14 +158,19 @@ export class TenantService {
         
         // If keys are valid, they are now on BYOS!
         newPlan = 'BYOS';
-        razorpayPlanChanged = true;
+        if (newPlan !== oldPlan) razorpayPlanChanged = true;
       } catch (e: any) {
         throw new BadRequestException(e.message || 'Invalid WhatsApp Keys provided. Meta rejected the connection.');
       }
-    } else if (data.waPhoneNumberId === null || data.waAccessToken === null) {
+    } else if (waChanged && (!data.waPhoneNumberId || !data.waAccessToken)) {
       // If they deleted their keys, they are back to standard
       newPlan = 'STANDARD';
-      razorpayPlanChanged = true;
+      if (newPlan !== oldPlan) razorpayPlanChanged = true;
+      
+      // Ensure we clear the fields if they are partially deleted
+      data.waPhoneNumberId = null as any;
+      data.waAccessToken = null as any;
+      data.waAppSecret = null as any;
     }
 
     if (razorpayPlanChanged) {
