@@ -1,6 +1,7 @@
 import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { als } from '../../../common/context/als';
 
 @Injectable()
 export class TenantService {
@@ -302,8 +303,10 @@ export class TenantService {
   async resetDemoData(tenantId: string) {
     // SECURITY: This forcefully wipes all operational data but retains clinic settings, templates, and staff.
     // Order of deletion is critical due to foreign key constraints.
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Delete deep dependencies
+    // We MUST run this in an empty ALS context to bypass Prisma's role-based deleteMany filters.
+    return als.run({}, () => {
+      return this.prisma.$transaction(async (tx) => {
+        // 1. Delete deep dependencies
       await tx.payment.deleteMany({ where: { tenantId } });
       await tx.appointmentReminder.deleteMany({ where: { tenantId } });
       await tx.appointment.deleteMany({ where: { tenantId } });
@@ -322,6 +325,7 @@ export class TenantService {
       await tx.auditLog.deleteMany({ where: { tenantId } });
 
       return { success: true, message: 'Demo data completely wiped.' };
+      });
     });
   }
 }
