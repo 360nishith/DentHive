@@ -35,4 +35,23 @@ export class TenantCacheService {
     
     return status;
   }
+
+  async getInternalUserIdSafely(authId: string): Promise<string | null> {
+    const key = `user_internal_id:${authId}`;
+    const cachedId = await this.redis.get(key);
+
+    if (cachedId) return cachedId;
+
+    const user = await this.prisma.user.findFirst({
+      where: { authId },
+      select: { id: true }
+    });
+
+    if (user?.id) {
+      await this.redis.set(key, user.id, 'EX', this.TTL);
+      return user.id;
+    }
+
+    return null;
+  }
 }

@@ -46,6 +46,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // 2. HYDRATE TENANT CACHE
     this.tenantCache.getStatusSafely(tenantId).catch(() => {});
 
-    return { id: userId, tenantId, role: payload.app_metadata?.role, email: payload.email };
+    // 3. MAP AUTH ID TO INTERNAL USER ID
+    // The JWT contains the Supabase auth ID, but the Prisma Middleware and database
+    // expect the internal database `User.id` for isolation rules.
+    const internalUserId = await this.tenantCache.getInternalUserIdSafely(userId);
+
+    // If for some reason the internal user isn't found (e.g. user just created in Supabase but not yet in our DB),
+    // we fallback to the Supabase UUID to prevent complete request failure, though isolation might not work until synced.
+    const finalUserId = internalUserId || userId;
+
+    return { id: finalUserId, tenantId, role: payload.app_metadata?.role, email: payload.email };
   }
 }
