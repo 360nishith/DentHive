@@ -80,6 +80,11 @@ export default function PatientsDirectory() {
       const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
       setCurrentUserRole(role);
 
+      if (role !== 'STAFF' && selectedDoctorId === '') {
+        setSelectedDoctorId('MY_PATIENTS');
+        return; // Let the useEffect re-trigger with the correct state
+      }
+
       let url = `/patients?search=${search}`;
       if (selectedDoctorId) {
         url += `&doctorId=${selectedDoctorId}`;
@@ -175,12 +180,13 @@ export default function PatientsDirectory() {
                     onChange={(e) => setSelectedDoctorId(e.target.value)}
                     className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
                   >
-                    {currentUserRole !== 'STAFF' && (
+                    {currentUserRole === 'STAFF' ? (
+                      <option value="">All Doctors</option>
+                    ) : (
                       <option value="MY_PATIENTS">My Patients</option>
                     )}
-                    <option value="">All Doctors</option>
                     <option value="UNASSIGNED">Unassigned Patients</option>
-                    {doctors.map(d => (
+                    {currentUserRole === 'STAFF' && doctors.map(d => (
                       <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                     ))}
                   </select>
