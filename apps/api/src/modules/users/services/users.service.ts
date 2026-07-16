@@ -11,9 +11,9 @@ export class UsersService {
     private eventEmitter: EventEmitter2
   ) {}
 
-  async getMe(authId: string) {
+  async getMe(internalId: string) {
     return this.prisma.user.findUnique({
-      where: { authId },
+      where: { id: internalId },
       select: { id: true, firstName: true, lastName: true, email: true, role: true }
     });
   }
