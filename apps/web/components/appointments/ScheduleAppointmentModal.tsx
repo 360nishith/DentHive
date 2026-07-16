@@ -33,16 +33,27 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
   useEffect(() => {
     if (!isOpen) return;
     
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.app_metadata?.role) setCurrentUserRole(session.user.app_metadata.role);
-      if (session?.user?.id && session.user.app_metadata.role !== 'STAFF') {
-        setDoctorId(session.user.id);
-      }
-    });
+    Promise.all([
+      supabase.auth.getSession(),
+      api.get('/users')
+    ]).then(([sessionRes, usersRes]) => {
+      const session = sessionRes.data.session;
+      const role = session?.user?.app_metadata?.role;
+      if (role) setCurrentUserRole(role);
 
-    api.get('/users').then((res) => {
-      const dentistUsers = res.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
+      const dentistUsers = usersRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
       setDoctors(dentistUsers);
+
+      if (session?.user?.email && role !== 'STAFF') {
+        const myDoc = dentistUsers.find((d: any) => d.email === session.user.email);
+        if (myDoc) {
+          setDoctorId(myDoc.id);
+        } else {
+          setDoctorId('UNASSIGNED');
+        }
+      } else if (role === 'STAFF') {
+        setDoctorId('UNASSIGNED');
+      }
     }).catch(console.error);
   }, [isOpen]);
 
