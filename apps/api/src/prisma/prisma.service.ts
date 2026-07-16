@@ -51,13 +51,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
           }
           if (['create', 'update', 'upsert'].includes(params.action)) {
             if (!params.args.data) params.args.data = {};
-            // Allow creating/updating unassigned patients
-            if (params.args.data.doctorId !== null) {
+            // Allow assigning to any doctor. Only default to self if not provided.
+            if (params.args.data.doctorId === undefined) {
               params.args.data.doctorId = userId;
             }
           }
           if (params.action === 'createMany' && Array.isArray(params.args.data)) {
-            params.args.data = params.args.data.map((d: any) => ({ ...d, doctorId: d.doctorId === null ? null : userId }));
+            params.args.data = params.args.data.map((d: any) => ({ ...d, doctorId: d.doctorId === undefined ? userId : d.doctorId }));
           }
         }
       }

@@ -15,9 +15,6 @@ export class PatientsController {
   async createPatient(@Body() body: any, @Req() req: any) {
     if (body.doctorId === 'UNASSIGNED') {
       body.doctorId = null;
-    } else if (req.user.role === 'DENTIST') {
-      // Dentists can only assign to themselves
-      body.doctorId = req.user.id;
     }
     return this.patientsService.create(req.user.tenantId, body);
   }
@@ -40,8 +37,6 @@ export class PatientsController {
   async updatePatient(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     if (body.doctorId === 'UNASSIGNED') {
       body.doctorId = null;
-    } else if (req.user.role === 'DENTIST' && body.doctorId && body.doctorId !== req.user.id) {
-       throw new Error('You can only assign patients to yourself or Unassigned');
     }
     return this.patientsService.update(req.user.tenantId, id, body);
   }
