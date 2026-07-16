@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Delete, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Req, UseGuards, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { TenantService } from '../services/tenant.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -58,7 +58,7 @@ export class TenantController {
   @UseGuards(AuthGuard('jwt'))
   async exportData(@Req() req: any) {
     if (req.user.role === 'STAFF') {
-      throw new Error('Unauthorized');
+      throw new UnauthorizedException('Unauthorized');
     }
     return this.tenantService.exportData(req.user.tenantId);
   }
@@ -68,8 +68,12 @@ export class TenantController {
   async resetDemoData(@Req() req: any) {
     const allowedEmails = ['nishithdharmaraj@gmail.com', 'salesdemo@denthive.in', 'doctordemo@denthive.in'];
     if (!allowedEmails.includes(req.user.email)) {
-      throw new Error('Unauthorized. Only the Super Admin can reset demo data.');
+      throw new UnauthorizedException('Unauthorized. Only the Super Admin can reset demo data.');
     }
-    return this.tenantService.resetDemoData(req.user.tenantId);
+    try {
+      return await this.tenantService.resetDemoData(req.user.tenantId);
+    } catch (error: any) {
+      throw new InternalServerErrorException('Failed to wipe data: ' + error.message);
+    }
   }
 }
