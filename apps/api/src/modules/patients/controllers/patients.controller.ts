@@ -27,10 +27,8 @@ export class PatientsController {
 
   @Get()
   async getPatients(@Query() query: any, @Req() req: any) {
-    if (req.user.role !== 'STAFF') {
-      if (query.doctorId !== 'UNASSIGNED') {
-        query.doctorId = req.user.id;
-      }
+    if (query.doctorId === 'MY_PATIENTS') {
+      query.doctorId = req.user.id;
     }
     return this.patientsService.findAll(req.user.tenantId, query);
   }

@@ -175,13 +175,12 @@ export default function PatientsDirectory() {
                     onChange={(e) => setSelectedDoctorId(e.target.value)}
                     className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
                   >
-                    {currentUserRole === 'STAFF' ? (
-                      <option value="">All Doctors</option>
-                    ) : (
-                      <option value="">My Patients</option>
+                    {currentUserRole !== 'STAFF' && (
+                      <option value="MY_PATIENTS">My Patients</option>
                     )}
+                    <option value="">All Doctors</option>
                     <option value="UNASSIGNED">Unassigned Patients</option>
-                    {currentUserRole === 'STAFF' && doctors.map(d => (
+                    {doctors.map(d => (
                       <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                     ))}
                   </select>
