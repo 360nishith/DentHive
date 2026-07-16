@@ -119,10 +119,26 @@ export class AdminService {
         // 7. Entities (Users and Patients)
         await tx.file.deleteMany({ where: { tenantId: id } });
         await tx.patient.deleteMany({ where: { tenantId: id } });
-        await tx.user.deleteMany({ where: { tenantId: id } });
         
-        // 8. Finally, the Tenant
-        return tx.tenant.delete({ where: { id } });
+        // Keep the original owner (first user created) but delete all other staff
+        const firstUser = await tx.user.findFirst({
+          where: { tenantId: id },
+          orderBy: { createdAt: 'asc' }
+        });
+
+        if (firstUser) {
+          await tx.user.deleteMany({
+            where: {
+              tenantId: id,
+              id: { not: firstUser.id }
+            }
+          });
+        } else {
+          await tx.user.deleteMany({ where: { tenantId: id } });
+        }
+        
+        // 8. Finally, do NOT delete the Tenant. We reset it to its fresh state.
+        return tx.tenant.findUnique({ where: { id } });
       }, { timeout: 30000 });
     });
   }

@@ -49,21 +49,23 @@ export default function SuperAdminPage() {
   }, [router]);
 
   const handleDeleteTenant = async (id: string, name: string) => {
-    const confirm1 = window.confirm(`WARNING: You are about to completely delete the clinic "${name}". This will wipe all their patients, appointments, billing data, and templates.\n\nAre you sure you want to proceed?`);
+    const confirm1 = window.confirm(`WARNING: You are about to RESET the clinic "${name}". This will wipe all their patients, appointments, billing data, templates, and extra staff. Only the original Admin will remain.\n\nAre you sure you want to proceed?`);
     if (!confirm1) return;
     
-    const confirm2 = window.prompt(`Type "${name}" to confirm deletion of this clinic:`);
+    const confirm2 = window.prompt(`Type "${name}" to confirm resetting this clinic:`);
     if (confirm2 !== name) {
-      alert("Clinic name did not match. Deletion cancelled.");
+      alert("Clinic name did not match. Reset cancelled.");
       return;
     }
 
     try {
       await api.delete(`/admin/tenants/${id}`);
-      setTenants(prev => prev.filter(t => t.id !== id));
-      alert("Clinic deleted successfully.");
+      // Don't filter it out since it's just reset, but maybe refresh stats
+      const res = await api.get('/admin/tenants');
+      setTenants(res.data);
+      alert("Clinic reset successfully. All data wiped except the original admin.");
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete clinic.");
+      alert(err.response?.data?.message || "Failed to reset clinic.");
     }
   };
 
@@ -217,7 +219,7 @@ export default function SuperAdminPage() {
                       <button 
                         onClick={() => handleDeleteTenant(t.id, t.name)}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="Delete Clinic"
+                        title="Reset Clinic"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
