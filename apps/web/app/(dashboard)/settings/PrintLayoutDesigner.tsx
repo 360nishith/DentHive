@@ -124,14 +124,27 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           </button>
           
           <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
-            <label className="text-xs font-semibold text-slate-700">Clinic Logo URL</label>
+            <label className="text-xs font-semibold text-slate-700">Upload Clinic Logo</label>
             <input 
-              type="text" 
-              placeholder="https://..." 
-              value={formData.logoUrl || ''} 
-              onChange={e => setFormData({...formData, logoUrl: e.target.value})}
-              className="w-full text-xs px-2 py-1 border border-slate-200 rounded"
+              type="file"
+              accept="image/*"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setFormData({...formData, logoUrl: reader.result as string});
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="w-full text-xs"
             />
+            {formData.logoUrl && (
+              <div className="mt-2 h-12 w-full border border-slate-200 rounded flex items-center justify-center p-1 bg-white">
+                <img src={formData.logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" />
+              </div>
+            )}
           </div>
         </div>
 

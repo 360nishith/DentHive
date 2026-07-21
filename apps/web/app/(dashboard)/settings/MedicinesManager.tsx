@@ -6,7 +6,7 @@ import api from '../../../lib/axios';
 export default function MedicinesManager() {
   const [medicines, setMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newMed, setNewMed] = useState({ name: '', defaultDosage: '', defaultFrequency: '', defaultDuration: '' });
+  const [newMed, setNewMed] = useState({ name: '', defaultDosage: '' });
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +30,7 @@ export default function MedicinesManager() {
     setSaving(true);
     try {
       await api.post('/medicines', newMed);
-      setNewMed({ name: '', defaultDosage: '', defaultFrequency: '', defaultDuration: '' });
+      setNewMed({ name: '', defaultDosage: '' });
       setAdding(false);
       fetchMedicines();
     } catch (e) {
@@ -77,14 +77,6 @@ export default function MedicinesManager() {
               <label className="block text-xs font-semibold text-slate-700 mb-1">Default Dosage</label>
               <input type="text" value={newMed.defaultDosage} onChange={e => setNewMed({...newMed, defaultDosage: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. 500mg" />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Default Frequency</label>
-              <input type="text" value={newMed.defaultFrequency} onChange={e => setNewMed({...newMed, defaultFrequency: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. 1-1-1" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Default Duration</label>
-              <input type="text" value={newMed.defaultDuration} onChange={e => setNewMed({...newMed, defaultDuration: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. 5 days" />
-            </div>
           </div>
           <div className="flex justify-end pt-2">
             <Button onClick={handleAdd} disabled={saving} className="bg-indigo-600 text-white">
@@ -112,8 +104,6 @@ export default function MedicinesManager() {
                 </div>
                 <div className="text-xs text-slate-500 mt-1 flex gap-3">
                   {m.defaultDosage && <span>💊 {m.defaultDosage}</span>}
-                  {m.defaultFrequency && <span>⏱️ {m.defaultFrequency}</span>}
-                  {m.defaultDuration && <span>📅 {m.defaultDuration}</span>}
                 </div>
               </div>
               <button onClick={() => handleDelete(m.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
