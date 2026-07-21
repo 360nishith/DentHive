@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Building, Building2, Settings as SettingsIcon, Settings, CreditCard, MessageSquare, Users, Loader2, Link2, CheckCircle2, Save, Plus, Download, AlertOctagon } from 'lucide-react';
+import { Building, Building2, Settings as SettingsIcon, Settings, CreditCard, MessageSquare, Users, Loader2, Link2, CheckCircle2, Save, Plus, Download, AlertOctagon, Layout } from 'lucide-react';
 import api from '../../../lib/axios';
 import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
