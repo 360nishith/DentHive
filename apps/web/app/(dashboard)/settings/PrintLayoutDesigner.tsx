@@ -8,6 +8,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   
   const [elements, setElements] = useState<any[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [paperSize, setPaperSize] = useState(formData.defaultPaperSize || 'A4');
   const [customWidth, setCustomWidth] = useState(formData.customWidth || 14);
@@ -74,7 +75,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   };
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
     setDraggingId(id);
+    setSelectedId(id);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -105,6 +108,12 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const updateElementContent = (id: string, content: string) => {
     saveToForm(elements.map(e => e.id === id ? { ...e, content } : e));
   };
+
+  const updateElementProp = (id: string, prop: string, value: any) => {
+    saveToForm(elements.map(e => e.id === id ? { ...e, [prop]: value } : e));
+  };
+
+  const selectedEl = elements.find(e => e.id === selectedId);
 
   return (
     <div className="space-y-6">
@@ -177,6 +186,85 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             <Minus className="w-4 h-4 text-slate-500" /> Add Line
           </button>
           
+          {selectedEl && (
+            <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Properties</h3>
+              
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Color</label>
+                <input 
+                  type="color" 
+                  value={selectedEl.color || '#000000'} 
+                  onChange={e => updateElementProp(selectedEl.id, 'color', e.target.value)}
+                  className="w-full h-8 cursor-pointer rounded"
+                />
+              </div>
+
+              {selectedEl.type === 'text' && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Font Size (px)</label>
+                    <input 
+                      type="number" 
+                      value={selectedEl.fontSize || 14} 
+                      onChange={e => updateElementProp(selectedEl.id, 'fontSize', Number(e.target.value))}
+                      className="w-full text-xs px-2 py-1 border border-slate-200 rounded"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => updateElementProp(selectedEl.id, 'fontWeight', selectedEl.fontWeight === 'bold' ? 'normal' : 'bold')}
+                      className={`flex-1 py-1 text-xs border rounded font-bold ${selectedEl.fontWeight === 'bold' ? 'bg-indigo-100 border-indigo-300 text-indigo-800' : 'bg-white border-slate-200'}`}
+                    >
+                      B
+                    </button>
+                    <button 
+                      onClick={() => updateElementProp(selectedEl.id, 'textAlign', 'left')}
+                      className={`flex-1 py-1 text-xs border rounded ${selectedEl.textAlign === 'left' || !selectedEl.textAlign ? 'bg-slate-200 border-slate-300' : 'bg-white border-slate-200'}`}
+                    >
+                      L
+                    </button>
+                    <button 
+                      onClick={() => updateElementProp(selectedEl.id, 'textAlign', 'center')}
+                      className={`flex-1 py-1 text-xs border rounded ${selectedEl.textAlign === 'center' ? 'bg-slate-200 border-slate-300' : 'bg-white border-slate-200'}`}
+                    >
+                      C
+                    </button>
+                    <button 
+                      onClick={() => updateElementProp(selectedEl.id, 'textAlign', 'right')}
+                      className={`flex-1 py-1 text-xs border rounded ${selectedEl.textAlign === 'right' ? 'bg-slate-200 border-slate-300' : 'bg-white border-slate-200'}`}
+                    >
+                      R
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {(selectedEl.type === 'image' || selectedEl.type === 'line') && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Width (px)</label>
+                    <input 
+                      type="number" 
+                      value={selectedEl.width || 100} 
+                      onChange={e => updateElementProp(selectedEl.id, 'width', Number(e.target.value))}
+                      className="w-full text-xs px-2 py-1 border border-slate-200 rounded"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Height/Thickness (px)</label>
+                    <input 
+                      type="number" 
+                      value={selectedEl.height || 100} 
+                      onChange={e => updateElementProp(selectedEl.id, 'height', Number(e.target.value))}
+                      className="w-full text-xs px-2 py-1 border border-slate-200 rounded"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
             <label className="text-xs font-semibold text-slate-700">Upload Clinic Logo</label>
             <input 
@@ -208,6 +296,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
+          onPointerDown={() => setSelectedId(null)}
           className="flex-1 bg-white border border-slate-300 rounded-sm shadow-sm relative overflow-hidden"
           style={{ 
             height: paperSize === 'Custom' ? `${customHeight * 37.8}px` : '800px', 
@@ -222,7 +311,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             <div
               key={el.id}
               onPointerDown={(e) => handlePointerDown(e, el.id)}
-              className={`absolute group border-2 ${draggingId === el.id ? 'border-indigo-500 border-dashed z-50' : 'border-transparent hover:border-slate-200 hover:border-dashed z-10'}`}
+              className={`absolute group border-2 ${selectedId === el.id ? 'border-indigo-500 z-50' : (draggingId === el.id ? 'border-indigo-300 border-dashed z-40' : 'border-transparent hover:border-slate-200 hover:border-dashed z-10')}`}
               style={{ left: el.x, top: el.y, cursor: 'grab' }}
             >
               {el.type === 'text' && (
@@ -230,7 +319,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
                   value={el.content}
                   onChange={(e) => updateElementContent(el.id, e.target.value)}
                   className="bg-transparent outline-none resize-none overflow-hidden"
-                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, minHeight: '30px', minWidth: '100px' }}
+                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px' }}
                 />
               )}
               {el.type === 'image' && (

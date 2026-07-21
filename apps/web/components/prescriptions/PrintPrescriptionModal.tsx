@@ -99,7 +99,9 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
                   top: el.y,
                   fontSize: el.fontSize,
                   fontWeight: el.fontWeight,
-                  color: el.color
+                  color: el.color,
+                  textAlign: el.textAlign || 'left',
+                  width: el.width || 'auto'
                 }}
               >
                 {el.type === 'text' && (
