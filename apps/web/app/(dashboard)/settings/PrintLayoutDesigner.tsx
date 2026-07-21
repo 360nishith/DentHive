@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Image as ImageIcon, Type, Layout, Loader2 } from 'lucide-react';
+import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus } from 'lucide-react';
 
 export default function PrintLayoutDesigner({ formData, setFormData, onSave, saving }: any) {
   // We'll store elements in printConfig.elements. 
@@ -10,6 +10,8 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [paperSize, setPaperSize] = useState(formData.defaultPaperSize || 'A4');
+  const [customWidth, setCustomWidth] = useState(formData.customWidth || 14);
+  const [customHeight, setCustomHeight] = useState(formData.customHeight || 21);
 
   useEffect(() => {
     if (formData.printConfig && formData.printConfig.elements) {
@@ -22,6 +24,8 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     setFormData({
       ...formData,
       defaultPaperSize: paperSize,
+      customWidth,
+      customHeight,
       printConfig: {
         ...formData.printConfig,
         elements: newElements
@@ -41,6 +45,11 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   
   const addRxBadge = () => {
     const newEl = { id: `rx-${Date.now()}`, type: 'text', content: 'Rx', x: 30, y: 250, fontSize: 32, fontWeight: 'bold', color: '#000000' };
+    saveToForm([...elements, newEl]);
+  };
+
+  const addHorizontalLine = () => {
+    const newEl = { id: `line-${Date.now()}`, type: 'line', content: '', x: 20, y: 150, width: 400, height: 2, color: '#334155' };
     saveToForm([...elements, newEl]);
   };
 
@@ -102,6 +111,32 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             <option value="Letter">US Letter</option>
             <option value="Custom">Custom Pad</option>
           </select>
+          {paperSize === 'Custom' && (
+            <div className="flex gap-2 items-center">
+              <input 
+                type="number" 
+                value={customWidth} 
+                onChange={e => {
+                  setCustomWidth(Number(e.target.value));
+                  setFormData({ ...formData, customWidth: Number(e.target.value) });
+                }}
+                className="w-16 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none"
+                placeholder="W (cm)"
+              />
+              <span className="text-slate-400 text-sm">×</span>
+              <input 
+                type="number" 
+                value={customHeight} 
+                onChange={e => {
+                  setCustomHeight(Number(e.target.value));
+                  setFormData({ ...formData, customHeight: Number(e.target.value) });
+                }}
+                className="w-16 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none"
+                placeholder="H (cm)"
+              />
+              <span className="text-slate-400 text-sm">cm</span>
+            </div>
+          )}
           <Button onClick={onSave} disabled={saving} className="bg-indigo-600 text-white shadow-sm">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             Save Layout
@@ -121,6 +156,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           </button>
           <button onClick={addRxBadge} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
             <Layout className="w-4 h-4 text-slate-500" /> Add Rx Badge
+          </button>
+          <button onClick={addHorizontalLine} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
+            <Minus className="w-4 h-4 text-slate-500" /> Add Line
           </button>
           
           <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
@@ -155,7 +193,14 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
           className="flex-1 bg-white border border-slate-300 rounded-sm shadow-sm relative overflow-hidden"
-          style={{ height: '800px', width: paperSize === 'A4' ? '600px' : '450px', margin: '0 auto', cursor: draggingId ? 'grabbing' : 'auto' }}
+          style={{ 
+            height: paperSize === 'Custom' ? `${customHeight * 37.8}px` : '800px', 
+            width: paperSize === 'Custom' ? `${customWidth * 37.8}px` : (paperSize === 'A4' ? '600px' : '450px'), 
+            margin: '0 auto', 
+            cursor: draggingId ? 'grabbing' : 'auto',
+            transformOrigin: 'top center',
+            transform: paperSize === 'Custom' && customHeight > 22 ? 'scale(0.8)' : 'scale(1)'
+          }}
         >
           {elements.map((el) => (
             <div
@@ -164,15 +209,19 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               className={`absolute group border-2 ${draggingId === el.id ? 'border-indigo-500 border-dashed z-50' : 'border-transparent hover:border-slate-200 hover:border-dashed z-10'}`}
               style={{ left: el.x, top: el.y, cursor: 'grab' }}
             >
-              {el.type === 'text' ? (
+              {el.type === 'text' && (
                 <textarea 
                   value={el.content}
                   onChange={(e) => updateElementContent(el.id, e.target.value)}
                   className="bg-transparent outline-none resize-none overflow-hidden"
                   style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, minHeight: '30px', minWidth: '100px' }}
                 />
-              ) : (
+              )}
+              {el.type === 'image' && (
                 <img src={el.content} alt="Logo" style={{ width: el.width, height: el.height, objectFit: 'contain' }} draggable={false} />
+              )}
+              {el.type === 'line' && (
+                <div style={{ width: el.width, height: el.height, backgroundColor: el.color }} />
               )}
               
               <button 

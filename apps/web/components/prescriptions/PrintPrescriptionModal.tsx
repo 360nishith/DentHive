@@ -32,7 +32,7 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
           <style>
             body { margin: 0; padding: 0; font-family: sans-serif; }
             @media print {
-              @page { margin: 0; size: auto; }
+              @page { margin: 0; size: ${paperSize === 'Custom' ? `${tenant?.customWidth || 14}cm ${tenant?.customHeight || 21}cm` : 'auto'}; }
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
           </style>
@@ -59,7 +59,10 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
   // Load layout from tenant or use defaults
   const printConfig = tenant?.printConfig?.elements || [];
   const paperSize = tenant?.defaultPaperSize || 'A4';
-  const width = paperSize === 'A4' ? 794 : 595; // A4 approx 794px width at 96dpi, A5 approx 595px
+  const customWidthPx = (tenant?.customWidth || 14) * 37.8;
+  const customHeightPx = (tenant?.customHeight || 21) * 37.8;
+  const width = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 794 : 595); // A4 approx 794px width at 96dpi, A5 approx 595px
+  const minHeight = paperSize === 'Custom' ? customHeightPx : (paperSize === 'A4' ? 1122 : 842);
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
@@ -83,7 +86,7 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
             className="bg-white mx-auto relative shadow-md"
             style={{ 
               width: `${width}px`, 
-              minHeight: paperSize === 'A4' ? '1122px' : '842px', // A4/A5 height approx
+              minHeight: `${minHeight}px`,
             }}
           >
             {/* Render Custom Drag-and-Drop Headers/Logos */}
@@ -99,10 +102,14 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
                   color: el.color
                 }}
               >
-                {el.type === 'text' ? (
+                {el.type === 'text' && (
                   <div style={{ whiteSpace: 'pre-wrap' }}>{el.content}</div>
-                ) : (
+                )}
+                {el.type === 'image' && (
                   <img src={el.content} alt="Logo" style={{ width: el.width, height: el.height, objectFit: 'contain' }} />
+                )}
+                {el.type === 'line' && (
+                  <div style={{ width: el.width, height: el.height, backgroundColor: el.color }} />
                 )}
               </div>
             ))}
