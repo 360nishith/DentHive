@@ -341,6 +341,7 @@ export class TenantService {
         // 1. Delete deep dependencies
       await tx.payment.deleteMany({ where: { tenantId } });
       await tx.appointmentReminder.deleteMany({ where: { tenantId } });
+      await tx.prescription.deleteMany({ where: { tenantId } });
       await tx.appointment.deleteMany({ where: { tenantId } });
       await tx.followUp.deleteMany({ where: { tenantId } });
       await tx.whatsAppMessage.deleteMany({ where: { tenantId } });
@@ -350,6 +351,7 @@ export class TenantService {
       await tx.treatmentJourney.deleteMany({ where: { tenantId } });
       await tx.recallList.deleteMany({ where: { tenantId } });
       await tx.file.deleteMany({ where: { tenantId } });
+      await tx.doctorMedicine.deleteMany({ where: { tenantId } });
 
       // 3. Delete root operational records
       await tx.patient.deleteMany({ where: { tenantId } });
