@@ -8,6 +8,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   
   const [elements, setElements] = useState<any[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [resizingId, setResizingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [paperSize, setPaperSize] = useState(formData.defaultPaperSize || 'A4');
@@ -15,17 +16,17 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const [customHeight, setCustomHeight] = useState(formData.customHeight || 21);
 
   const DEFAULT_TEMPLATE = [
-    { id: 'clinic-name', type: 'text', content: 'SHIVAPRABHA\nMULTI SPECIALTY DENTAL CLINIC', x: 150, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af' },
-    { id: 'clinic-address', type: 'text', content: 'Opposite Iyenger Bakery, Yekkur - 575 007.', x: 170, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155' },
+    { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: 150, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
+    { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: 170, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
     { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: 560, height: 2, color: '#1e40af' },
-    { id: 'doc-1', type: 'text', content: 'Dr. Akhil S. Shetty, B.D.S., M.D.S\nOral & Maxillofacial Pathologist\nMob.: 9742433027', x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000' },
+    { id: 'doc-1', type: 'text', content: "Doctor's Name, Degree\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
     { id: 'logo-1', type: 'image', content: formData.logoUrl || 'https://via.placeholder.com/150', x: 250, y: 110, width: 80, height: 80 },
-    { id: 'doc-2', type: 'text', content: 'Dr. Mukul S. Shetty, B.D.S., M.D.S\nOrthodontist\nMob.:', x: 380, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000' },
+    { id: 'doc-2', type: 'text', content: "Doctor 2 Name, Degree\nSpecialization\nMob.:", x: 380, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
     { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: 560, height: 2, color: '#1e40af' },
-    { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000' },
-    { id: 'date-field', type: 'text', content: 'Date: _______________', x: 420, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000' },
+    { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000', width: 50, height: 40 },
+    { id: 'date-field', type: 'text', content: 'Date: _______________', x: 420, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
     { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: 560, height: 2, color: '#1e40af' },
-    { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: 40, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af' }
+    { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: 40, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: 500, height: 30 }
   ];
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   };
 
   const addTextElement = () => {
-    const newEl = { id: `text-${Date.now()}`, type: 'text', content: 'New Text', x: 50, y: 50, fontSize: 14, fontWeight: 'normal', color: '#000000' };
+    const newEl = { id: `text-${Date.now()}`, type: 'text', content: 'New Text', x: 50, y: 50, width: 150, height: 40, fontSize: 14, fontWeight: 'normal', color: '#000000' };
     saveToForm([...elements, newEl]);
   };
 
@@ -61,7 +62,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   };
   
   const addRxBadge = () => {
-    const newEl = { id: `rx-${Date.now()}`, type: 'text', content: 'Rx', x: 30, y: 250, fontSize: 32, fontWeight: 'bold', color: '#000000' };
+    const newEl = { id: `rx-${Date.now()}`, type: 'text', content: 'Rx', x: 30, y: 250, width: 50, height: 40, fontSize: 32, fontWeight: 'bold', color: '#000000' };
     saveToForm([...elements, newEl]);
   };
 
@@ -81,25 +82,49 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
+  const handleResizeStart = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
+    setResizingId(id);
+    setSelectedId(id);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!draggingId || !canvasRef.current) return;
+    if ((!draggingId && !resizingId) || !canvasRef.current) return;
     const canvasRect = canvasRef.current.getBoundingClientRect();
     
     // Calculate new position relative to canvas
     const newX = e.clientX - canvasRect.left;
     const newY = e.clientY - canvasRect.top;
 
-    setElements(prev => prev.map(el => {
-      if (el.id === draggingId) {
-        return { ...el, x: Math.max(0, newX - 20), y: Math.max(0, newY - 10) }; // offset for center of mouse
-      }
-      return el;
-    }));
+    if (resizingId) {
+      setElements(prev => prev.map(el => {
+        if (el.id === resizingId) {
+          return { 
+            ...el, 
+            width: Math.max(20, newX - el.x), 
+            height: Math.max(2, newY - el.y) 
+          };
+        }
+        return el;
+      }));
+      return;
+    }
+
+    if (draggingId) {
+      setElements(prev => prev.map(el => {
+        if (el.id === draggingId) {
+          return { ...el, x: Math.max(0, newX - 20), y: Math.max(0, newY - 10) }; // offset for center of mouse
+        }
+        return el;
+      }));
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    if (draggingId) {
+    if (draggingId || resizingId) {
       setDraggingId(null);
+      setResizingId(null);
       // Finalize save to form state when dropping
       saveToForm(elements);
     }
@@ -319,7 +344,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
                   value={el.content}
                   onChange={(e) => updateElementContent(el.id, e.target.value)}
                   className="bg-transparent outline-none resize-none overflow-hidden"
-                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px' }}
+                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px', width: el.width, height: el.height }}
                 />
               )}
               {el.type === 'image' && (
@@ -335,6 +360,15 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               >
                 ×
               </button>
+              
+              {selectedId === el.id && (
+                <div 
+                  className="absolute -bottom-2 -right-2 w-4 h-4 bg-indigo-500 rounded-full cursor-se-resize z-50 flex items-center justify-center shadow-sm"
+                  onPointerDown={(e) => handleResizeStart(e, el.id)}
+                >
+                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                </div>
+              )}
             </div>
           ))}
           
