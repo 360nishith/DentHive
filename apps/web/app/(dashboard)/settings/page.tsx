@@ -415,15 +415,15 @@ export default function SettingsPage() {
               <div className="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-4 mt-4">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Permanent Access Token</label>
-                    <input type="password" value={formData.waAccessToken} onChange={e => setFormData({...formData, waAccessToken: e.target.value})} placeholder="EAABw..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
+                    <input type="password" autoComplete="new-password" value={formData.waAccessToken} onChange={e => setFormData({...formData, waAccessToken: e.target.value})} placeholder="EAABw..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number ID</label>
-                    <input type="text" value={formData.waPhoneNumberId} onChange={e => setFormData({...formData, waPhoneNumberId: e.target.value})} placeholder="10239..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
+                    <input type="text" autoComplete="off" value={formData.waPhoneNumberId} onChange={e => setFormData({...formData, waPhoneNumberId: e.target.value})} placeholder="10239..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">App Secret</label>
-                    <input type="password" value={formData.waAppSecret} onChange={e => setFormData({...formData, waAppSecret: e.target.value})} placeholder="a1b2c3d4..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
+                    <input type="password" autoComplete="new-password" value={formData.waAppSecret} onChange={e => setFormData({...formData, waAppSecret: e.target.value})} placeholder="a1b2c3d4..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" />
                   </div>
                   <Button onClick={connectWhatsApp} disabled={saving} className="bg-indigo-600 text-white w-full">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
