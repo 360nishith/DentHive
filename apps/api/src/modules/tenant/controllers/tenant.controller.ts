@@ -38,7 +38,13 @@ export class TenantController {
       upiVpa: body.upiVpa,
       waPhoneNumberId: body.waPhoneNumberId,
       waAccessToken: body.waAccessToken,
-      waAppSecret: body.waAppSecret
+      waAppSecret: body.waAppSecret,
+      logoUrl: body.logoUrl,
+      address: body.address,
+      contactEmail: body.contactEmail,
+      contactPhone: body.contactPhone,
+      defaultPaperSize: body.defaultPaperSize,
+      printConfig: body.printConfig, // This will hold the drag-and-drop JSON data
     });
   }
 

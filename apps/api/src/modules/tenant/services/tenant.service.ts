@@ -130,7 +130,19 @@ export class TenantService {
     };
   }
 
-  async updateClinic(tenantId: string, userId: string, data: { name?: string; upiVpa?: string; waPhoneNumberId?: string; waAccessToken?: string; waAppSecret?: string }) {
+  async updateClinic(tenantId: string, userId: string, data: { 
+    name?: string; 
+    upiVpa?: string; 
+    waPhoneNumberId?: string; 
+    waAccessToken?: string; 
+    waAppSecret?: string;
+    logoUrl?: string;
+    address?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    defaultPaperSize?: string;
+    printConfig?: any;
+  }) {
     const currentTenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!currentTenant) throw new BadRequestException('Tenant not found');
 
@@ -214,7 +226,13 @@ export class TenantService {
         name: data.name,
         waPhoneNumberId: data.waPhoneNumberId,
         waAccessToken: data.waAccessToken,
-        waAppSecret: data.waAppSecret
+        waAppSecret: data.waAppSecret,
+        logoUrl: data.logoUrl,
+        address: data.address,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
+        defaultPaperSize: data.defaultPaperSize,
+        printConfig: data.printConfig,
       }
     });
   }

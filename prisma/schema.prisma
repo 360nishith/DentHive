@@ -12,13 +12,19 @@ datasource db {
 // -----------------------------------------------------------------------------
 
 model Tenant {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String  @db.VarChar(255)
-  subdomain       String  @unique @db.VarChar(100)
-  waPhoneNumberId String? @db.VarChar(100)
-  waAccessToken   String? @db.Text
-  waAppSecret     String? @db.Text
-  status          String  @default("TRIAL") @db.VarChar(50)
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String  @db.VarChar(255)
+  subdomain        String  @unique @db.VarChar(100)
+  waPhoneNumberId  String? @db.VarChar(100)
+  waAccessToken    String? @db.Text
+  waAppSecret      String? @db.Text
+  status           String  @default("TRIAL") @db.VarChar(50)
+  logoUrl          String? @db.Text
+  address          String? @db.Text
+  contactEmail     String? @db.VarChar(255)
+  contactPhone     String? @db.VarChar(50)
+  defaultPaperSize String  @default("A4") @db.VarChar(10)
+  printConfig      Json?   @db.JsonB
 
   createdAt DateTime  @default(now()) @db.Timestamptz
   updatedAt DateTime  @updatedAt @db.Timestamptz
@@ -39,6 +45,8 @@ model Tenant {
   treatmentStages      TreatmentStage[]
   appointmentReminders AppointmentReminder[]
   notifications        Notification[]
+  prescriptions        Prescription[]
+  doctorMedicines      DoctorMedicine[]
 
   @@index([subdomain])
   @@map("tenants")
@@ -97,6 +105,8 @@ model User {
   treatmentJourneys TreatmentJourney[] @relation("DoctorJourneys")
   appointments      Appointment[]      @relation("DoctorAppointments")
   payments          Payment[]          @relation("DoctorPayments")
+  prescriptions     Prescription[]     @relation("DoctorPrescriptions")
+  doctorMedicines   DoctorMedicine[]   @relation("DoctorMedicines")
 
   @@index([tenantId, email])
   @@index([tenantId, phoneNumber])
@@ -130,6 +140,7 @@ model Patient {
   appointments      Appointment[]
   whatsappMessages  WhatsAppMessage[]
   recallLists       RecallList[]
+  prescriptions     Prescription[]
 
   @@index([tenantId, phoneNumber])
   @@index([tenantId, name])
@@ -281,6 +292,7 @@ model Appointment {
   doctor               User?                 @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
   treatmentStage       TreatmentStage        @relation(fields: [treatmentStageId], references: [id], onDelete: Restrict)
   appointmentReminders AppointmentReminder[]
+  prescriptions        Prescription[]
 
   @@index([tenantId, patientId])
   @@index([tenantId, scheduledStart])
@@ -436,4 +448,69 @@ model WebhookLog {
   processedAt DateTime @db.Timestamptz
 
   @@map("webhook_logs")
+}
+
+// -----------------------------------------------------------------------------
+// CLINICAL RECORDS MODULE (Prescriptions & Medicines)
+// -----------------------------------------------------------------------------
+
+model DoctorMedicine {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String  @db.Uuid
+  doctorId     String  @db.Uuid
+  medicineName String  @db.VarChar(255)
+  dosage       String? @db.VarChar(255)
+  frequency    String? @db.VarChar(255)
+  duration     String? @db.VarChar(255)
+  instructions String? @db.Text
+
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  doctor User   @relation("DoctorMedicines", fields: [doctorId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, doctorId])
+  @@map("doctor_medicines")
+}
+
+model Prescription {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String  @db.Uuid
+  patientId     String  @db.Uuid
+  doctorId      String  @db.Uuid
+  appointmentId String? @db.Uuid // Optional, can just be a walk-in prescription
+  notes         String? @db.Text
+
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient     Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor      User               @relation("DoctorPrescriptions", fields: [doctorId], references: [id], onDelete: Restrict)
+  appointment Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  items       PrescriptionItem[]
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, doctorId])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescriptionId String  @db.Uuid
+  medicineName   String  @db.VarChar(255)
+  dosage         String? @db.VarChar(255)
+  frequency      String? @db.VarChar(255)
+  duration       String? @db.VarChar(255)
+  instructions   String? @db.Text
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
+  @@map("prescription_items")
 }

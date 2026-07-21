@@ -14,6 +14,7 @@ import { StartJourneyModal } from '../../../../components/journeys/StartJourneyM
 import { ScheduleAppointmentModal } from '../../../../components/appointments/ScheduleAppointmentModal';
 import { PaymentModal } from '../../../../components/billing/PaymentModal';
 import { EditStageModal } from '../../../../components/journeys/EditStageModal';
+import { PatientPrescriptions } from '../../../../components/prescriptions/PatientPrescriptions';
 
 function calcAge(dob: string | null): string {
   if (!dob) return '—';
@@ -721,6 +722,12 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
               <p className="text-sm text-slate-500 italic">No notes have been added yet.</p>
             </div>
           </Card>
+
+          <PatientPrescriptions 
+            patientId={patient.id} 
+            tenantStatus={tenantStatus}
+            currentUserRole={currentUserRole}
+          />
         </div>
       </div>
     </div>

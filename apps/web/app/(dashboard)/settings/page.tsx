@@ -9,6 +9,8 @@ import { supabase } from '../../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import PrintLayoutDesigner from './PrintLayoutDesigner';
+import MedicinesManager from './MedicinesManager';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState({ name: '', upiVpa: '', waPhoneNumberId: '', waAccessToken: '', waAppSecret: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing' | 'danger'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing' | 'danger' | 'print_layout' | 'medicines'>('profile');
   const [userEmail, setUserEmail] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [waConnected, setWaConnected] = useState(false);
@@ -83,7 +85,10 @@ export default function SettingsPage() {
           upiVpa: tenantRes.data.upiVpa || '',
           waPhoneNumberId: tenantRes.data.waPhoneNumberId || '',
           waAccessToken: tenantRes.data.waAccessToken || '',
-          waAppSecret: tenantRes.data.waAppSecret || ''
+          waAppSecret: tenantRes.data.waAppSecret || '',
+          logoUrl: tenantRes.data.logoUrl || '',
+          defaultPaperSize: tenantRes.data.defaultPaperSize || 'A4',
+          printConfig: tenantRes.data.printConfig || { elements: [] }
         });
         if (tenantRes.data.waAccessToken) {
           setWaConnected(true);
@@ -254,6 +259,18 @@ export default function SettingsPage() {
             >
               <Building2 className="w-4 h-4" /> Clinic Profile
             </button>
+            <button 
+              onClick={() => setActiveTab('print_layout')}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'print_layout' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+              <Layout className="w-4 h-4" /> Print Layout
+            </button>
+            <button 
+              onClick={() => setActiveTab('medicines')}
+              className={`flex-shrink-0 whitespace-nowrap md:w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'medicines' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+              <SettingsIcon className="w-4 h-4" /> Medicines
+            </button>
             
             {currentUserRole !== 'DENTIST' && (
               <>
@@ -355,6 +372,18 @@ export default function SettingsPage() {
                   </button>
                 </div>
               )}
+            </Card>
+          )}
+
+          {activeTab === 'print_layout' && (
+            <Card className="p-6">
+              <PrintLayoutDesigner formData={formData} setFormData={setFormData} onSave={handleSave} saving={saving} />
+            </Card>
+          )}
+
+          {activeTab === 'medicines' && (
+            <Card className="p-6">
+              <MedicinesManager />
             </Card>
           )}
 

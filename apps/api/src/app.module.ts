@@ -25,6 +25,8 @@ import { FollowUpsModule } from './modules/followups/followups.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { MedicinesModule } from './modules/medicines/medicines.module';
+import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { AdminModule } from './modules/admin/admin.module';
     WhatsAppModule,
     StorageModule,
     AdminModule,
+    MedicinesModule,
+    PrescriptionsModule,
   ],
   controllers: [AppController],
   providers: [PrismaService],
