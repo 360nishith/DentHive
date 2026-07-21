@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '../../../../components/ui/Button';
+import { Button } from '../../../components/ui/Button';
 import { Save, Image as ImageIcon, Type, Layout, Loader2 } from 'lucide-react';
 
 export default function PrintLayoutDesigner({ formData, setFormData, onSave, saving }: any) {

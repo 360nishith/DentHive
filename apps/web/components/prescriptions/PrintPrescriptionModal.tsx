@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import api from '../../../lib/axios';
+import api from '../../lib/axios';
 import { X, Printer, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 

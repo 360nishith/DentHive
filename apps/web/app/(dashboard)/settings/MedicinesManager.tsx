@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../../../../components/ui/Button';
+import { Button } from '../../../components/ui/Button';
 import { Pill, Trash2, Edit2, Check, X, Loader2, Plus } from 'lucide-react';
-import api from '../../../../lib/axios';
+import api from '../../../lib/axios';
 
 export default function MedicinesManager() {
   const [medicines, setMedicines] = useState<any[]>([]);
