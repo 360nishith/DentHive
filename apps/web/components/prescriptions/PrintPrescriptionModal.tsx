@@ -73,9 +73,16 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
   const paperSize = tenant?.defaultPaperSize || 'A4';
   const customWidthPx = (tenant?.customWidth || 14) * 37.8;
   const customHeightPx = (tenant?.customHeight || 21) * 37.8;
-  // Syncing EXACTLY with PrintLayoutDesigner.tsx dimensions
-  const width = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
-  const minHeight = paperSize === 'Custom' ? customHeightPx : 800;
+  
+  // The physical dimensions used for the final print
+  const printWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 794 : paperSize === 'Letter' ? 816 : 595);
+  const printMinHeight = paperSize === 'Custom' ? customHeightPx : (paperSize === 'A4' ? 1122 : paperSize === 'Letter' ? 1056 : 842);
+
+  // The dimensions used in the visual designer
+  const designerWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
+  
+  // Calculate the ratio to scale up the custom elements perfectly
+  const scale = printWidth / designerWidth;
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
@@ -98,8 +105,11 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
             ref={printRef}
             className="bg-white mx-auto relative shadow-md"
             style={{ 
-              width: `${width}px`, 
-              minHeight: `${minHeight}px`,
+              width: `${printWidth}px`, 
+              minHeight: `${printMinHeight}px`,
+              position: 'relative',
+              margin: '0 auto',
+              backgroundColor: 'white'
             }}
           >
             {/* Render Custom Drag-and-Drop Headers/Logos with Dynamic Tokens */}
@@ -125,31 +135,32 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
                   key={el.id}
                   style={{ 
                     position: 'absolute', 
-                    left: el.x, 
-                    top: el.y,
-                    fontSize: el.fontSize,
+                    left: el.x * scale, 
+                    top: el.y * scale,
+                    fontSize: el.fontSize * scale,
                     fontWeight: el.fontWeight,
                     color: el.color,
                     textAlign: el.textAlign || 'left',
-                    width: el.width || 'auto'
+                    width: el.width ? el.width * scale : 'auto',
+                    height: el.height ? el.height * scale : 'auto'
                   }}
                 >
                   {el.type === 'text' && (
                     <div style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</div>
                   )}
                   {el.type === 'image' && (
-                    <img src={el.content} alt="Logo" style={{ width: el.width, height: el.height, objectFit: 'contain' }} />
+                    <img src={el.content} alt="Logo" style={{ width: el.width ? el.width * scale : 'auto', height: el.height ? el.height * scale : 'auto', objectFit: 'contain' }} />
                   )}
                   {el.type === 'line' && (
-                    <div style={{ width: el.width, height: el.height, backgroundColor: el.color }} />
+                    <div style={{ width: el.width ? el.width * scale : 'auto', height: el.height ? el.height * scale : 'auto', backgroundColor: el.color }} />
                   )}
                 </div>
               );
             })}
 
             {/* Render Prescription Content Body */}
-            {/* We position the body content starting below the header area exactly at top: 300px */}
-            <div style={{ position: 'absolute', top: '300px', left: '40px', right: '40px' }}>
+            {/* We position the body content starting exactly at scaled top: 300px */}
+            <div style={{ position: 'absolute', top: `${300 * scale}px`, left: '50px', right: '50px' }}>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
                 <thead>
