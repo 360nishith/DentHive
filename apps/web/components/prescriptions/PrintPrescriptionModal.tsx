@@ -162,20 +162,20 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
                 <tbody>
                   {prescription.items.map((item: any, i: number) => (
                     <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '12px 0' }}>
+                      <td style={{ padding: '12px 0', wordBreak: 'break-word' }}>
                         <div style={{ fontWeight: 'bold' }}>{item.medicineName}</div>
                         {item.instructions && <div style={{ fontSize: '12px', color: '#666' }}>{item.instructions}</div>}
                       </td>
-                      <td>{item.dosage || '-'}</td>
-                      <td>{item.frequency || '-'}</td>
-                      <td>{item.duration || '-'}</td>
+                      <td style={{ wordBreak: 'break-word' }}>{item.dosage || '-'}</td>
+                      <td style={{ wordBreak: 'break-word' }}>{item.frequency || '-'}</td>
+                      <td style={{ wordBreak: 'break-word' }}>{item.duration || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               {prescription.notes && (
-                <div style={{ marginTop: '40px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                <div style={{ marginTop: '40px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                   <strong style={{ display: 'block', marginBottom: '5px' }}>Additional Advice / Notes:</strong>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{prescription.notes}</div>
                 </div>
