@@ -38,7 +38,7 @@ export class StagesController {
   }
 
   @Get('stages/:id/images')
-  @RequirePermissions('VIEW_PATIENT')
+  @RequirePermissions('EDIT_PATIENT')
   async getImages(@Param('id') stageId: string, @Req() req: any) {
     return this.stagesService.getImages(req.user.tenantId, stageId);
   }
