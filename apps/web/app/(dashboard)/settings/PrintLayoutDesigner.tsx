@@ -19,26 +19,51 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const canvasWidth = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
 
   useEffect(() => {
+    const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
     if (formData.printConfig && formData.printConfig.elements && formData.printConfig.elements.length > 0) {
       setElements(formData.printConfig.elements);
     } else {
-      const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
       const DEFAULT_TEMPLATE = [
         { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: (cw - 300) / 2, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
         { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: (cw - 250) / 2, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
-        { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: cw - 40, height: 2, color: '#1e40af' },
-        { id: 'doc-1', type: 'text', content: "Doctor's Name, Degree\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
+        { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
+        { id: 'doc-1', type: 'text', content: "Doctor: {DoctorName}\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: Math.min(200, cw / 2 - 20), height: 60 },
         { id: 'logo-1', type: 'image', content: formData.logoUrl || 'https://via.placeholder.com/150', x: (cw - 80) / 2, y: 110, width: 80, height: 80 },
-        { id: 'doc-2', type: 'text', content: "Doctor 2 Name, Degree\nSpecialization\nMob.:", x: cw - 220, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
-        { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: cw - 40, height: 2, color: '#1e40af' },
+        { id: 'patient-info', type: 'text', content: 'Patient: {PatientName}\nAge/Sex: {PatientAge} / {PatientGender}', x: cw - Math.min(220, cw / 2 - 20) - 20, y: 110, fontSize: 11, fontWeight: 'bold', color: '#000000', width: Math.min(200, cw / 2 - 20), height: 60 },
+        { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
         { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000', width: 50, height: 40 },
-        { id: 'date-field', type: 'text', content: 'Date: _______________', x: cw - 170, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
-        { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: cw - 40, height: 2, color: '#1e40af' },
-        { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: (cw - 500) / 2, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: 500, height: 30 }
+        { id: 'date-field', type: 'text', content: 'Date: {Date}', x: cw - 170, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
+        { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
+        { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: Math.max(0, (cw - 500) / 2), y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: Math.min(500, cw), height: 30 }
       ];
       setElements(DEFAULT_TEMPLATE);
     }
   }, [formData.printConfig]);
+
+  // Clamp elements to canvas bounds if paper size changes
+  useEffect(() => {
+    setElements(prev => {
+      let needsUpdate = false;
+      const newElements = prev.map(el => {
+        let changed = false;
+        let newEl = { ...el };
+        const elWidth = newEl.width || 100;
+        
+        if (newEl.x + elWidth > canvasWidth) {
+          if (newEl.x > canvasWidth - 20) {
+            newEl.x = Math.max(0, canvasWidth - 20);
+          }
+          if (newEl.x + elWidth > canvasWidth) {
+            newEl.width = canvasWidth - newEl.x;
+          }
+          changed = true;
+          needsUpdate = true;
+        }
+        return changed ? newEl : el;
+      });
+      return needsUpdate ? newElements : prev;
+    });
+  }, [canvasWidth]);
 
   const saveToForm = (newElements: any[]) => {
     setElements(newElements);
@@ -60,15 +85,15 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     const DEFAULT_TEMPLATE = [
       { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: (cw - 300) / 2, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
       { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: (cw - 250) / 2, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
-      { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: cw - 40, height: 2, color: '#1e40af' },
-      { id: 'doc-1', type: 'text', content: "Doctor: {DoctorName}\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
+      { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
+      { id: 'doc-1', type: 'text', content: "Doctor: {DoctorName}\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: Math.min(200, cw / 2 - 20), height: 60 },
       { id: 'logo-1', type: 'image', content: formData.logoUrl || 'https://via.placeholder.com/150', x: (cw - 80) / 2, y: 110, width: 80, height: 80 },
-      { id: 'patient-info', type: 'text', content: 'Patient: {PatientName}\nAge/Sex: {PatientAge} / {PatientGender}', x: cw - 220, y: 110, fontSize: 11, fontWeight: 'bold', color: '#000000', width: 200, height: 60 },
-      { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: cw - 40, height: 2, color: '#1e40af' },
+      { id: 'patient-info', type: 'text', content: 'Patient: {PatientName}\nAge/Sex: {PatientAge} / {PatientGender}', x: cw - Math.min(220, cw / 2 - 20) - 20, y: 110, fontSize: 11, fontWeight: 'bold', color: '#000000', width: Math.min(200, cw / 2 - 20), height: 60 },
+      { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
       { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000', width: 50, height: 40 },
       { id: 'date-field', type: 'text', content: 'Date: {Date}', x: cw - 170, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
-      { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: cw - 40, height: 2, color: '#1e40af' },
-      { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: (cw - 500) / 2, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: 500, height: 30 }
+      { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: Math.max(100, cw - 40), height: 2, color: '#1e40af' },
+      { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: Math.max(0, (cw - 500) / 2), y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: Math.min(500, cw), height: 30 }
     ];
     saveToForm(DEFAULT_TEMPLATE);
   };
@@ -124,7 +149,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         if (el.id === resizingId) {
           return { 
             ...el, 
-            width: Math.max(20, newX - el.x), 
+            width: Math.min(canvasWidth - el.x, Math.max(20, newX - el.x)), 
             height: Math.max(2, newY - el.y) 
           };
         }
@@ -184,7 +209,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
 
       setElements(prev => prev.map(el => {
         if (el.id === draggingId) {
-          return { ...el, x: finalX, y: Math.max(0, newY - 10) };
+          return { ...el, x: Math.min(canvasWidth - (el.width || 20), finalX), y: finalY };
         }
         return el;
       }));
