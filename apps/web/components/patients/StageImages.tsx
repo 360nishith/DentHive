@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import api from '../../../lib/api';
-import { Button } from '../../ui/button';
+import { supabase } from '../../lib/supabase';
+import api from '../../lib/axios';
+import { Button } from '../ui/Button';
 import { Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { toast } from 'react-hot-toast';
