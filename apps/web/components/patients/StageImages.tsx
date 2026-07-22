@@ -27,7 +27,8 @@ export function StageImages({ stageId, tenantStatus }: { stageId: string, tenant
   const fetchImages = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/stages/${stageId}/images`);
+      // Add a cache buster so the browser doesn't return a cached empty array after upload
+      const res = await api.get(`/stages/${stageId}/images?t=${Date.now()}`);
       setImages(res.data);
     } catch (err) {
       console.error('Failed to fetch stage images', err);
