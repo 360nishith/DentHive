@@ -15,24 +15,27 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const [customWidth, setCustomWidth] = useState(formData.customWidth || 14);
   const [customHeight, setCustomHeight] = useState(formData.customHeight || 21);
 
-  const DEFAULT_TEMPLATE = [
-    { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: 150, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
-    { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: 170, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
-    { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: 560, height: 2, color: '#1e40af' },
-    { id: 'doc-1', type: 'text', content: "Doctor's Name, Degree\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
-    { id: 'logo-1', type: 'image', content: formData.logoUrl || 'https://via.placeholder.com/150', x: 250, y: 110, width: 80, height: 80 },
-    { id: 'doc-2', type: 'text', content: "Doctor 2 Name, Degree\nSpecialization\nMob.:", x: 380, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
-    { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: 560, height: 2, color: '#1e40af' },
-    { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000', width: 50, height: 40 },
-    { id: 'date-field', type: 'text', content: 'Date: _______________', x: 420, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
-    { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: 560, height: 2, color: '#1e40af' },
-    { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: 40, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: 500, height: 30 }
-  ];
+  const [showSnapLine, setShowSnapLine] = useState(false);
+  const canvasWidth = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : 450);
 
   useEffect(() => {
     if (formData.printConfig && formData.printConfig.elements && formData.printConfig.elements.length > 0) {
       setElements(formData.printConfig.elements);
     } else {
+      const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : 450);
+      const DEFAULT_TEMPLATE = [
+        { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: (cw - 300) / 2, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
+        { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: (cw - 250) / 2, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
+        { id: 'line-1', type: 'line', content: '', x: 20, y: 100, width: cw - 40, height: 2, color: '#1e40af' },
+        { id: 'doc-1', type: 'text', content: "Doctor's Name, Degree\nSpecialization\nMob.: 9876543210", x: 20, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
+        { id: 'logo-1', type: 'image', content: formData.logoUrl || 'https://via.placeholder.com/150', x: (cw - 80) / 2, y: 110, width: 80, height: 80 },
+        { id: 'doc-2', type: 'text', content: "Doctor 2 Name, Degree\nSpecialization\nMob.:", x: cw - 220, y: 110, fontSize: 11, fontWeight: 'normal', color: '#000000', width: 200, height: 60 },
+        { id: 'line-2', type: 'line', content: '', x: 20, y: 195, width: cw - 40, height: 2, color: '#1e40af' },
+        { id: 'rx-badge', type: 'text', content: 'Rx', x: 20, y: 210, fontSize: 24, fontWeight: 'bold', color: '#000000', width: 50, height: 40 },
+        { id: 'date-field', type: 'text', content: 'Date: _______________', x: cw - 170, y: 220, fontSize: 12, fontWeight: 'normal', color: '#000000', width: 150, height: 30 },
+        { id: 'line-3', type: 'line', content: '', x: 20, y: 720, width: cw - 40, height: 2, color: '#1e40af' },
+        { id: 'footer-timing', type: 'text', content: 'Timing : 10.00 A.M. - 12.00 P.M. & 5.00 P.M. - 8.00 P.M. (Sundays on Appointment Only)', x: (cw - 500) / 2, y: 730, fontSize: 11, fontWeight: 'bold', color: '#1e40af', width: 500, height: 30 }
+      ];
       setElements(DEFAULT_TEMPLATE);
     }
   }, [formData.printConfig]);
@@ -112,9 +115,25 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     }
 
     if (draggingId) {
+      let finalX = Math.max(0, newX - 20);
+      let isSnapping = false;
+      const draggingEl = elements.find(e => e.id === draggingId);
+      const elWidth = draggingEl?.width || 100;
+
+      // Center snap logic (15px threshold)
+      const elementCenterX = finalX + (elWidth / 2);
+      const canvasCenterX = canvasWidth / 2;
+      
+      if (Math.abs(elementCenterX - canvasCenterX) < 15) {
+        finalX = canvasCenterX - (elWidth / 2);
+        isSnapping = true;
+      }
+      
+      setShowSnapLine(isSnapping);
+
       setElements(prev => prev.map(el => {
         if (el.id === draggingId) {
-          return { ...el, x: Math.max(0, newX - 20), y: Math.max(0, newY - 10) }; // offset for center of mouse
+          return { ...el, x: finalX, y: Math.max(0, newY - 10) };
         }
         return el;
       }));
@@ -125,6 +144,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     if (draggingId || resizingId) {
       setDraggingId(null);
       setResizingId(null);
+      setShowSnapLine(false);
       // Finalize save to form state when dropping
       saveToForm(elements);
     }
@@ -325,13 +345,17 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           className="flex-1 bg-white border border-slate-300 rounded-sm shadow-sm relative overflow-hidden"
           style={{ 
             height: paperSize === 'Custom' ? `${customHeight * 37.8}px` : '800px', 
-            width: paperSize === 'Custom' ? `${customWidth * 37.8}px` : (paperSize === 'A4' ? '600px' : '450px'), 
+            width: `${canvasWidth}px`, 
             margin: '0 auto', 
             cursor: draggingId ? 'grabbing' : 'auto',
             transformOrigin: 'top center',
             transform: paperSize === 'Custom' && customHeight > 22 ? 'scale(0.8)' : 'scale(1)'
           }}
         >
+          {showSnapLine && (
+            <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-400 z-0 pointer-events-none" style={{ left: '50%' }} />
+          )}
+
           {elements.map((el) => (
             <div
               key={el.id}
