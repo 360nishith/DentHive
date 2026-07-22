@@ -16,11 +16,12 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const [customHeight, setCustomHeight] = useState(formData.customHeight || 21);
 
   const [snapLines, setSnapLines] = useState<{x?: number, y?: number}[]>([]);
-  const canvasWidth = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
+  const canvasWidth = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'Letter' ? 612 : paperSize === 'A5' ? 450 : paperSize === 'HalfLetter' ? 450 : paperSize === 'A6' ? 300 : 600);
+  const canvasHeight = paperSize === 'Custom' ? customHeight * 37.8 : (paperSize === 'Letter' ? 800 : paperSize === 'A5' ? 640 : paperSize === 'HalfLetter' ? 695 : paperSize === 'A6' ? 424 : 800);
 
   useEffect(() => {
-    const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
-    const ch = paperSize === 'Custom' ? customHeight * 37.8 : 800;
+    const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'Letter' ? 612 : paperSize === 'A5' ? 450 : paperSize === 'HalfLetter' ? 450 : paperSize === 'A6' ? 300 : 600);
+    const ch = paperSize === 'Custom' ? customHeight * 37.8 : (paperSize === 'Letter' ? 800 : paperSize === 'A5' ? 640 : paperSize === 'HalfLetter' ? 695 : paperSize === 'A6' ? 424 : 800);
     if (formData.printConfig && formData.printConfig.elements && formData.printConfig.elements.length > 0) {
       setElements(formData.printConfig.elements);
     } else {
@@ -82,8 +83,8 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
 
   const resetToPreset = () => {
     if (!confirm('This will wipe your current layout and reset it to the default clinic layout. Are you sure?')) return;
-    const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
-    const ch = paperSize === 'Custom' ? customHeight * 37.8 : 800;
+    const cw = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'Letter' ? 612 : paperSize === 'A5' ? 450 : paperSize === 'HalfLetter' ? 450 : paperSize === 'A6' ? 300 : 600);
+    const ch = paperSize === 'Custom' ? customHeight * 37.8 : (paperSize === 'Letter' ? 800 : paperSize === 'A5' ? 640 : paperSize === 'HalfLetter' ? 695 : paperSize === 'A6' ? 424 : 800);
     const DEFAULT_TEMPLATE = [
       { id: 'clinic-name', type: 'text', content: 'CLINIC NAME\nMULTI SPECIALTY CLINIC', x: (cw - 300) / 2, y: 20, fontSize: 18, fontWeight: 'bold', color: '#1e40af', textAlign: 'center', width: 300, height: 50 },
       { id: 'clinic-address', type: 'text', content: 'Clinic Address line 1, City - Pincode.', x: (cw - 250) / 2, y: 70, fontSize: 12, fontWeight: 'normal', color: '#334155', textAlign: 'center', width: 250, height: 30 },
@@ -256,7 +257,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           >
             <option value="A4">A4 Size</option>
             <option value="A5">A5 Size</option>
+            <option value="A6">A6 Size</option>
             <option value="Letter">US Letter</option>
+            <option value="HalfLetter">Half Letter (5.5" x 8.5")</option>
             <option value="Custom">Custom Pad</option>
           </select>
           {paperSize === 'Custom' && (
@@ -425,7 +428,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           onPointerDown={() => setSelectedId(null)}
           className="flex-1 bg-white border border-slate-300 rounded-sm shadow-sm relative overflow-hidden"
           style={{ 
-            height: paperSize === 'Custom' ? `${customHeight * 37.8}px` : '800px', 
+            height: `${canvasHeight}px`, 
             width: `${canvasWidth}px`, 
             margin: '0 auto', 
             cursor: draggingId ? 'grabbing' : 'auto',

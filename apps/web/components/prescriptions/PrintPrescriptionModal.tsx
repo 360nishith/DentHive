@@ -75,11 +75,11 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
   const customHeightPx = (tenant?.customHeight || 21) * 37.8;
   
   // The physical dimensions used for the final print
-  const printWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 794 : paperSize === 'Letter' ? 816 : 595);
-  const printMinHeight = paperSize === 'Custom' ? customHeightPx : (paperSize === 'A4' ? 1122 : paperSize === 'Letter' ? 1056 : 842);
+  const printWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'Letter' ? 816 : paperSize === 'A5' ? 559 : paperSize === 'HalfLetter' ? 528 : paperSize === 'A6' ? 397 : 794);
+  const printMinHeight = paperSize === 'Custom' ? customHeightPx : (paperSize === 'Letter' ? 1056 : paperSize === 'A5' ? 794 : paperSize === 'HalfLetter' ? 816 : paperSize === 'A6' ? 559 : 1122);
 
   // The dimensions used in the visual designer
-  const designerWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
+  const designerWidth = paperSize === 'Custom' ? customWidthPx : (paperSize === 'Letter' ? 612 : paperSize === 'A5' ? 450 : paperSize === 'HalfLetter' ? 450 : paperSize === 'A6' ? 300 : 600);
   
   // Calculate the ratio to scale up the custom elements perfectly
   const scale = printWidth / designerWidth;
