@@ -146,7 +146,10 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
                   }}
                 >
                   {el.type === 'text' && (
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</div>
+                    <div 
+                      style={{ whiteSpace: 'pre-wrap' }} 
+                      dangerouslySetInnerHTML={{ __html: displayContent.replace(/\n/g, '<br>') }}
+                    />
                   )}
                   {el.type === 'image' && (
                     <img src={el.content} alt="Logo" style={{ width: el.width ? el.width * scale : 'auto', height: el.height ? el.height * scale : 'auto', objectFit: 'contain' }} />

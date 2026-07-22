@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus } from 'lucide-react';
+import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus, Move } from 'lucide-react';
 
 export default function PrintLayoutDesigner({ formData, setFormData, onSave, saving }: any) {
   // We'll store elements in printConfig.elements. 
@@ -358,8 +358,16 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
                   </div>
                   <div className="flex gap-2">
                     <button 
-                      onClick={() => updateElementProp(selectedEl.id, 'fontWeight', selectedEl.fontWeight === 'bold' ? 'normal' : 'bold')}
-                      className={`flex-1 py-1 text-xs border rounded font-bold ${selectedEl.fontWeight === 'bold' ? 'bg-indigo-100 border-indigo-300 text-indigo-800' : 'bg-white border-slate-200'}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevent losing focus on the text editor
+                        if (selectedEl.type === 'text') {
+                          document.execCommand('bold', false);
+                        } else {
+                          updateElementProp(selectedEl.id, 'fontWeight', selectedEl.fontWeight === 'bold' ? 'normal' : 'bold');
+                        }
+                      }}
+                      className={`flex-1 py-1 text-xs font-bold border rounded ${selectedEl.fontWeight === 'bold' ? 'bg-slate-200 border-slate-300' : 'bg-white border-slate-200'}`}
+                      title="Bold (Select text to apply)"
                     >
                       B
                     </button>
@@ -463,16 +471,24 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           {elements.map((el) => (
             <div
               key={el.id}
-              onPointerDown={(e) => handlePointerDown(e, el.id)}
               className={`absolute group border-2 ${selectedId === el.id ? 'border-indigo-500 z-50' : (draggingId === el.id ? 'border-indigo-300 border-dashed z-40' : 'border-transparent hover:border-slate-200 hover:border-dashed z-10')}`}
-              style={{ left: el.x, top: el.y, cursor: 'grab' }}
+              style={{ left: el.x, top: el.y, cursor: el.type === 'text' ? 'text' : 'grab' }}
+              onPointerDown={(e) => {
+                if (el.type !== 'text') handlePointerDown(e, el.id);
+              }}
             >
               {el.type === 'text' && (
-                <textarea 
-                  value={el.content}
-                  onChange={(e) => updateElementContent(el.id, e.target.value)}
-                  className="bg-transparent outline-none resize-none overflow-hidden"
-                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px', width: el.width, height: el.height }}
+                <div 
+                  contentEditable
+                  suppressContentEditableWarning
+                  onPointerDown={(e) => {
+                    setSelectedId(el.id);
+                    e.stopPropagation();
+                  }}
+                  onBlur={(e) => updateElementContent(el.id, e.currentTarget.innerHTML)}
+                  className="bg-transparent outline-none overflow-hidden"
+                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px', width: el.width, height: el.height, whiteSpace: 'pre-wrap' }}
+                  dangerouslySetInnerHTML={{ __html: el.content.replace(/\n/g, '<br>') }}
                 />
               )}
               {el.type === 'image' && (
@@ -484,10 +500,24 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               
               <button 
                 onClick={() => deleteElement(el.id)}
-                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 text-xs"
+                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 text-xs z-50"
               >
                 ×
               </button>
+
+              {/* Drag Handle for Text Elements */}
+              {selectedId === el.id && (
+                <div 
+                  className="absolute -top-3 -left-3 w-6 h-6 bg-blue-500 text-white rounded-full cursor-grab z-50 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    handlePointerDown(e, el.id);
+                  }}
+                  title="Drag to move"
+                >
+                  <Move size={12} />
+                </div>
+              )}
               
               {selectedId === el.id && (
                 <div 
