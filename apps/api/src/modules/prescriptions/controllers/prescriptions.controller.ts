@@ -11,7 +11,7 @@ export class PrescriptionsController {
   create(@Req() req: any, @Body() createPrescriptionDto: any) {
     // Both doctors and staff can create prescriptions (e.g., staff drafts it for the doctor)
     // We assume the frontend passes the correct doctorId if staff is creating it, or we use req.user.id if it's a dentist.
-    const doctorId = req.user.role === 'DENTIST' ? req.user.id : createPrescriptionDto.doctorId;
+    const doctorId = createPrescriptionDto.doctorId || req.user.id;
     
     if (!doctorId) {
       throw new Error('A doctor ID is required to create a prescription.');

@@ -6,7 +6,7 @@ import api from '../../../lib/axios';
 export default function MedicinesManager() {
   const [medicines, setMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newMed, setNewMed] = useState({ name: '', defaultDosage: '' });
+  const [newMed, setNewMed] = useState({ medicineName: '', dosage: '' });
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -26,11 +26,11 @@ export default function MedicinesManager() {
   };
 
   const handleAdd = async () => {
-    if (!newMed.name) return alert('Name is required');
+    if (!newMed.medicineName) return alert('Name is required');
     setSaving(true);
     try {
       await api.post('/medicines', newMed);
-      setNewMed({ name: '', defaultDosage: '' });
+      setNewMed({ medicineName: '', dosage: '' });
       setAdding(false);
       fetchMedicines();
     } catch (e) {
@@ -71,11 +71,11 @@ export default function MedicinesManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Medicine Name *</label>
-              <input type="text" value={newMed.name} onChange={e => setNewMed({...newMed, name: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. Amoxicillin" />
+              <input type="text" value={newMed.medicineName} onChange={e => setNewMed({...newMed, medicineName: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. Amoxicillin" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Default Dosage</label>
-              <input type="text" value={newMed.defaultDosage} onChange={e => setNewMed({...newMed, defaultDosage: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. 500mg" />
+              <input type="text" value={newMed.dosage} onChange={e => setNewMed({...newMed, dosage: e.target.value})} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none" placeholder="e.g. 500mg" />
             </div>
           </div>
           <div className="flex justify-end pt-2">
@@ -100,10 +100,10 @@ export default function MedicinesManager() {
               <div>
                 <div className="font-bold text-slate-900 flex items-center">
                   <Pill className="w-4 h-4 text-indigo-500 mr-2" />
-                  {m.name}
+                  {m.medicineName}
                 </div>
                 <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                  {m.defaultDosage && <span>💊 {m.defaultDosage}</span>}
+                  {m.dosage && <span>💊 {m.dosage}</span>}
                 </div>
               </div>
               <button onClick={() => handleDelete(m.id)} className="text-slate-400 hover:text-red-500 p-2 transition-colors">

@@ -725,6 +725,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
 
           <PatientPrescriptions 
             patientId={patient.id} 
+            patientDoctorId={patient.doctorId}
             tenantStatus={tenantStatus}
             currentUserRole={currentUserRole}
           />

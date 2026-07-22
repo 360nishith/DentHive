@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { Pill, Printer, Plus, X, Loader2 } from 'lucide-react';
 import { PrintPrescriptionModal } from './PrintPrescriptionModal';
 
-export function PatientPrescriptions({ patientId, tenantStatus, currentUserRole }: any) {
+export function PatientPrescriptions({ patientId, patientDoctorId, tenantStatus, currentUserRole }: any) {
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [medicines, setMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +56,7 @@ export function PatientPrescriptions({ patientId, tenantStatus, currentUserRole 
       await api.post('/prescriptions', {
         patientId,
         notes,
+        doctorId: patientDoctorId,
         items: items.filter(i => i.medicineName.trim() !== '')
       });
       setShowAdd(false);
