@@ -51,6 +51,9 @@ export class PrescriptionsService {
         items: true,
         doctor: {
           select: { id: true, firstName: true, lastName: true }
+        },
+        patient: {
+          select: { id: true, name: true, dateOfBirth: true, gender: true, phoneNumber: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -66,7 +69,7 @@ export class PrescriptionsService {
           select: { id: true, firstName: true, lastName: true }
         },
         patient: {
-          select: { id: true, name: true, phoneNumber: true }
+          select: { id: true, name: true, dateOfBirth: true, gender: true, phoneNumber: true }
         }
       }
     });

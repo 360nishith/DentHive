@@ -5,6 +5,18 @@ import { Button } from '../ui/Button';
 
 export function PrintPrescriptionModal({ prescription, onClose }: any) {
   const [tenant, setTenant] = useState<any>(null);
+
+  const calculateAge = (dob: string | Date | null) => {
+    if (!dob) return '--';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age.toString();
+  };
   const [loading, setLoading] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +44,7 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
           <style>
             body { margin: 0; padding: 0; font-family: sans-serif; }
             @media print {
-              @page { margin: 0; size: ${paperSize === 'Custom' ? `${tenant?.customWidth || 14}cm ${tenant?.customHeight || 21}cm` : 'auto'}; }
+              @page { margin: 0; size: ${paperSize === 'Custom' ? `${tenant?.customWidth || 14}cm ${tenant?.customHeight || 21}cm` : `${paperSize} portrait`}; }
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
           </style>
@@ -89,46 +101,54 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
               minHeight: `${minHeight}px`,
             }}
           >
-            {/* Render Custom Drag-and-Drop Headers/Logos */}
-            {printConfig.map((el: any) => (
-              <div
-                key={el.id}
-                style={{ 
-                  position: 'absolute', 
-                  left: el.x, 
-                  top: el.y,
-                  fontSize: el.fontSize,
-                  fontWeight: el.fontWeight,
-                  color: el.color,
-                  textAlign: el.textAlign || 'left',
-                  width: el.width || 'auto'
-                }}
-              >
-                {el.type === 'text' && (
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{el.content}</div>
-                )}
-                {el.type === 'image' && (
-                  <img src={el.content} alt="Logo" style={{ width: el.width, height: el.height, objectFit: 'contain' }} />
-                )}
-                {el.type === 'line' && (
-                  <div style={{ width: el.width, height: el.height, backgroundColor: el.color }} />
-                )}
-              </div>
-            ))}
+            {/* Render Custom Drag-and-Drop Headers/Logos with Dynamic Tokens */}
+            {printConfig.map((el: any) => {
+              let displayContent = el.content;
+              if (el.type === 'text' && displayContent) {
+                const patientName = prescription.patient?.name || '--';
+                const patientAge = calculateAge(prescription.patient?.dateOfBirth);
+                const patientGender = prescription.patient?.gender || '--';
+                const dateStr = new Date(prescription.createdAt).toLocaleDateString('en-GB');
+                const doctorName = `${prescription.doctor?.firstName || ''} ${prescription.doctor?.lastName || ''}`.trim() || 'Unknown';
+                
+                displayContent = displayContent
+                  .replace(/{PatientName}/g, patientName)
+                  .replace(/{PatientAge}/g, patientAge)
+                  .replace(/{PatientGender}/g, patientGender)
+                  .replace(/{Date}/g, dateStr)
+                  .replace(/{DoctorName}/g, doctorName);
+              }
+
+              return (
+                <div
+                  key={el.id}
+                  style={{ 
+                    position: 'absolute', 
+                    left: el.x, 
+                    top: el.y,
+                    fontSize: el.fontSize,
+                    fontWeight: el.fontWeight,
+                    color: el.color,
+                    textAlign: el.textAlign || 'left',
+                    width: el.width || 'auto'
+                  }}
+                >
+                  {el.type === 'text' && (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</div>
+                  )}
+                  {el.type === 'image' && (
+                    <img src={el.content} alt="Logo" style={{ width: el.width, height: el.height, objectFit: 'contain' }} />
+                  )}
+                  {el.type === 'line' && (
+                    <div style={{ width: el.width, height: el.height, backgroundColor: el.color }} />
+                  )}
+                </div>
+              );
+            })}
 
             {/* Render Prescription Content Body */}
             {/* We position the body content starting below the header area (e.g., top: 300px) */}
-            <div style={{ position: 'absolute', top: '350px', left: '50px', right: '50px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>
-                <div>
-                  <strong>Patient:</strong> {prescription.patient?.name} <br/>
-                  <strong>Age/Sex:</strong> {prescription.patient?.age || '--'} / {prescription.patient?.gender || '--'}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <strong>Date:</strong> {new Date(prescription.createdAt).toLocaleDateString('en-GB')} <br/>
-                  <strong>Doctor:</strong> Dr. {prescription.doctor?.firstName} {prescription.doctor?.lastName}
-                </div>
-              </div>
+            <div style={{ position: 'absolute', top: '300px', left: '50px', right: '50px' }}>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
                 <thead>
