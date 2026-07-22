@@ -46,4 +46,23 @@ export class SupabaseService {
     const { error } = await this.adminClient.auth.admin.deleteUser(authId);
     if (error) throw new InternalServerErrorException('Failed to rollback: Could not delete user from Supabase');
   }
+
+  async deleteImagesByUrls(urls: string[]): Promise<void> {
+    if (urls.length === 0) return;
+    
+    // Extract filenames from URLs (e.g. https://.../clinical-images/filename.jpg)
+    const filenames = urls.map(url => {
+      const parts = url.split('/');
+      return parts[parts.length - 1];
+    });
+
+    // Delete files in batches of 100 (Supabase limit)
+    for (let i = 0; i < filenames.length; i += 100) {
+      const batch = filenames.slice(i, i + 100);
+      const { error } = await this.adminClient.storage.from('clinical-images').remove(batch);
+      if (error) {
+        console.error('Failed to delete image batch from Supabase:', error.message);
+      }
+    }
+  }
 }

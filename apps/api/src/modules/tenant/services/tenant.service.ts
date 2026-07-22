@@ -347,6 +347,13 @@ export class TenantService {
       await tx.whatsAppMessage.deleteMany({ where: { tenantId } });
 
       // 2. Delete middle dependencies
+      const images = await tx.treatmentStageImage.findMany({ where: { tenantId }, select: { imageUrl: true } });
+      const imageUrls = images.map(img => img.imageUrl).filter(Boolean);
+      
+      if (imageUrls.length > 0) {
+        await this.supabaseService.deleteImagesByUrls(imageUrls);
+      }
+
       await tx.treatmentStageImage.deleteMany({ where: { tenantId } });
       await tx.treatmentStage.deleteMany({ where: { tenantId } });
       await tx.treatmentJourney.deleteMany({ where: { tenantId } });
