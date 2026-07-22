@@ -347,6 +347,7 @@ export class TenantService {
       await tx.whatsAppMessage.deleteMany({ where: { tenantId } });
 
       // 2. Delete middle dependencies
+      await tx.treatmentStageImage.deleteMany({ where: { tenantId } });
       await tx.treatmentStage.deleteMany({ where: { tenantId } });
       await tx.treatmentJourney.deleteMany({ where: { tenantId } });
       await tx.recallList.deleteMany({ where: { tenantId } });

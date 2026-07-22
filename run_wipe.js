@@ -43,6 +43,7 @@ async function resetDB() {
     await prisma.whatsAppMessage.deleteMany({ where: condition });
     await prisma.followUp.deleteMany({ where: condition });
     await prisma.recallList.deleteMany({ where: condition });
+    await prisma.treatmentStageImage.deleteMany({ where: condition });
     await prisma.treatmentStage.deleteMany({ where: condition });
     await prisma.treatmentJourney.deleteMany({ where: condition });
     
