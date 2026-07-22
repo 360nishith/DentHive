@@ -165,29 +165,31 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
             {/* We position the body content starting exactly at scaled top: 300px */}
             <div style={{ position: 'absolute', top: `${300 * scale}px`, left: '50px', right: '50px' }}>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', borderBottom: '2px solid #333' }}>
-                    <th style={{ padding: '8px 0' }}>Medicine</th>
-                    <th>Dosage</th>
-                    <th>Frequency</th>
-                    <th>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prescription.items.map((item: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '12px 0', wordBreak: 'break-word' }}>
-                        <div style={{ fontWeight: 'bold' }}>{item.medicineName}</div>
-                        {item.instructions && <div style={{ fontSize: '12px', color: '#666' }}>{item.instructions}</div>}
-                      </td>
-                      <td style={{ wordBreak: 'break-word' }}>{item.dosage || '-'}</td>
-                      <td style={{ wordBreak: 'break-word' }}>{item.frequency || '-'}</td>
-                      <td style={{ wordBreak: 'break-word' }}>{item.duration || '-'}</td>
+              {prescription.items && prescription.items.length > 0 && (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '2px solid #333' }}>
+                      <th style={{ padding: '8px 0' }}>Medicine</th>
+                      <th>Dosage</th>
+                      <th>Frequency</th>
+                      <th>Duration</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {prescription.items.map((item: any, i: number) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '12px 0', wordBreak: 'break-word' }}>
+                          <div style={{ fontWeight: 'bold' }}>{item.medicineName}</div>
+                          {item.instructions && <div style={{ fontSize: '12px', color: '#666' }}>{item.instructions}</div>}
+                        </td>
+                        <td style={{ wordBreak: 'break-word' }}>{item.dosage || '-'}</td>
+                        <td style={{ wordBreak: 'break-word' }}>{item.frequency || '-'}</td>
+                        <td style={{ wordBreak: 'break-word' }}>{item.duration || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
               {prescription.notes && (
                 <div style={{ marginTop: '40px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
