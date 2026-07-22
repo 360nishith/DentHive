@@ -52,7 +52,7 @@ export function StageImages({ stageId, tenantStatus }: { stageId: string, tenant
       const options = {
         maxSizeMB: 0.2, // 200KB limit
         maxWidthOrHeight: 1200,
-        useWebWorker: true,
+        useWebWorker: false, // Disabled web worker to prevent Next.js bundle issues
       };
       
       const compressedFile = await imageCompression(file, options);
@@ -83,9 +83,10 @@ export function StageImages({ stageId, tenantStatus }: { stageId: string, tenant
       toast.success('Image uploaded successfully');
       fetchImages();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image. Make sure the clinical-images bucket is set up publically in Supabase.');
+      const errorMsg = error.message || error.response?.data?.message || JSON.stringify(error) || 'Unknown error';
+      toast.error('Upload Failed: ' + errorMsg);
     } finally {
       setIsUploading(false);
       if (event.target) {
