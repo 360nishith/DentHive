@@ -481,8 +481,8 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             </div>
           ))}
           
-          <div className="absolute top-1/2 left-0 right-0 text-center opacity-20 pointer-events-none text-slate-400 font-bold uppercase tracking-widest">
-            Prescription Body Area
+          <div className="absolute top-[300px] left-0 right-0 text-center opacity-20 pointer-events-none text-slate-400 font-bold uppercase tracking-widest border-t border-dashed border-slate-300 pt-2">
+            Prescription Body Starts Here
           </div>
         </div>
       </div>

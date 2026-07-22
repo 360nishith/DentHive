@@ -73,8 +73,9 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
   const paperSize = tenant?.defaultPaperSize || 'A4';
   const customWidthPx = (tenant?.customWidth || 14) * 37.8;
   const customHeightPx = (tenant?.customHeight || 21) * 37.8;
-  const width = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 794 : paperSize === 'Letter' ? 816 : 595); // A4 approx 794px width at 96dpi, Letter approx 816px, A5 approx 595px
-  const minHeight = paperSize === 'Custom' ? customHeightPx : (paperSize === 'A4' ? 1122 : paperSize === 'Letter' ? 1056 : 842);
+  // Syncing EXACTLY with PrintLayoutDesigner.tsx dimensions
+  const width = paperSize === 'Custom' ? customWidthPx : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
+  const minHeight = paperSize === 'Custom' ? customHeightPx : 800;
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
@@ -147,8 +148,8 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
             })}
 
             {/* Render Prescription Content Body */}
-            {/* We position the body content starting below the header area (e.g., top: 300px) */}
-            <div style={{ position: 'absolute', top: '300px', left: '50px', right: '50px' }}>
+            {/* We position the body content starting below the header area exactly at top: 300px */}
+            <div style={{ position: 'absolute', top: '300px', left: '40px', right: '40px' }}>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
                 <thead>
