@@ -52,4 +52,21 @@ export class StagesService {
     if (result.count === 0) throw new NotFoundException('Stage not found');
     return { success: true };
   }
+
+  async addImage(tenantId: string, stageId: string, imageUrl: string) {
+    return this.prisma.treatmentStageImage.create({
+      data: {
+        tenantId,
+        treatmentStageId: stageId,
+        imageUrl
+      }
+    });
+  }
+
+  async getImages(tenantId: string, stageId: string) {
+    return this.prisma.treatmentStageImage.findMany({
+      where: { tenantId, treatmentStageId: stageId },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 }

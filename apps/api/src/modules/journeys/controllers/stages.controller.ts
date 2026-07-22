@@ -1,4 +1,4 @@
-import { Controller, Post, Patch, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Patch, Delete, Param, Body, UseGuards, Req, Get } from '@nestjs/common';
 import { StagesService } from '../services/stages.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -29,5 +29,17 @@ export class StagesController {
   @RequirePermissions('EDIT_PATIENT')
   async deleteStage(@Param('id') id: string) {
     return this.stagesService.deleteStage(id);
+  }
+
+  @Post('stages/:id/images')
+  @RequirePermissions('EDIT_PATIENT')
+  async addImage(@Param('id') stageId: string, @Body('imageUrl') imageUrl: string, @Req() req: any) {
+    return this.stagesService.addImage(req.user.tenantId, stageId, imageUrl);
+  }
+
+  @Get('stages/:id/images')
+  @RequirePermissions('VIEW_PATIENT')
+  async getImages(@Param('id') stageId: string, @Req() req: any) {
+    return this.stagesService.getImages(req.user.tenantId, stageId);
   }
 }

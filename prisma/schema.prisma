@@ -47,6 +47,7 @@ model Tenant {
   notifications        Notification[]
   prescriptions        Prescription[]
   doctorMedicines      DoctorMedicine[]
+  treatmentStageImages TreatmentStageImage[]
 
   @@index([subdomain])
   @@map("tenants")
@@ -262,11 +263,26 @@ model TreatmentStage {
 
   appointments Appointment[]
   followUps    FollowUp[]
+  images       TreatmentStageImage[]
   currentFor   TreatmentJourney[] @relation("CurrentStage")
 
   @@index([tenantId, journeyId])
   @@index([tenantId, status])
   @@map("treatment_stages")
+}
+
+model TreatmentStageImage {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String   @db.Uuid
+  treatmentStageId String   @db.Uuid
+  imageUrl         String   @db.VarChar(1024)
+  createdAt        DateTime @default(now()) @db.Timestamptz
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  treatmentStage TreatmentStage @relation(fields: [treatmentStageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, treatmentStageId])
+  @@map("treatment_stage_images")
 }
 
 // -----------------------------------------------------------------------------
