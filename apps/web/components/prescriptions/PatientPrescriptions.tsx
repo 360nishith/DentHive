@@ -104,14 +104,25 @@ export function PatientPrescriptions({ patientId, patientDoctorId, tenantStatus,
                   <div className="col-span-2 md:col-span-1">
                     <label className="text-xs font-semibold text-slate-500 mb-1 block">Medicine</label>
                     <input 
-                      list="medicines-list"
+                      list={`medicines-list-${i}`}
                       placeholder="e.g. Paracetamol"
                       className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none"
                       value={item.medicineName}
-                      onChange={e => updateItem(i, 'medicineName', e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const newItems = [...items];
+                        newItems[i].medicineName = val;
+                        
+                        const med = medicines.find(m => m.medicineName === val);
+                        if (med && med.dosage && !newItems[i].dosage) {
+                          newItems[i].dosage = med.dosage;
+                        }
+                        
+                        setItems(newItems);
+                      }}
                     />
-                    <datalist id="medicines-list">
-                      {medicines.map(m => <option key={m.id} value={m.name} />)}
+                    <datalist id={`medicines-list-${i}`}>
+                      {medicines.map(m => <option key={m.id} value={m.medicineName} />)}
                     </datalist>
                   </div>
                   <div>
