@@ -250,8 +250,24 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           <select 
             value={paperSize} 
             onChange={e => {
-              setPaperSize(e.target.value);
-              setFormData({ ...formData, defaultPaperSize: e.target.value });
+              const newSize = e.target.value;
+              const getCw = (ps: string, cWidth: number) => ps === 'Custom' ? cWidth * 37.8 : (ps === 'Letter' ? 612 : ps === 'A5' ? 450 : ps === 'HalfLetter' ? 450 : ps === 'A6' ? 300 : 600);
+              const oldCw = getCw(paperSize, customWidth);
+              const newCw = getCw(newSize, customWidth);
+              const scale = newCw / oldCw;
+
+              const rescaledElements = elements.map(el => ({
+                ...el,
+                x: el.x * scale,
+                y: el.y * scale,
+                width: el.width ? el.width * scale : el.width,
+                height: el.height ? el.height * scale : el.height,
+                fontSize: el.fontSize ? Math.max(8, el.fontSize * scale) : el.fontSize
+              }));
+
+              setElements(rescaledElements);
+              setPaperSize(newSize);
+              setFormData({ ...formData, defaultPaperSize: newSize, printConfig: { elements: rescaledElements } });
             }}
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"
           >
