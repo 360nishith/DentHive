@@ -15,7 +15,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   const [customWidth, setCustomWidth] = useState(formData.customWidth || 14);
   const [customHeight, setCustomHeight] = useState(formData.customHeight || 21);
 
-  const [showSnapLine, setShowSnapLine] = useState(false);
+  const [snapLines, setSnapLines] = useState<{x?: number, y?: number}[]>([]);
   const canvasWidth = paperSize === 'Custom' ? customWidth * 37.8 : (paperSize === 'A4' ? 600 : paperSize === 'Letter' ? 612 : 450);
 
   useEffect(() => {
@@ -135,9 +135,13 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
 
     if (draggingId) {
       let finalX = Math.max(0, newX - 20);
-      let isSnapping = false;
+      let finalY = Math.max(0, newY - 10);
+      
       const draggingEl = elements.find(e => e.id === draggingId);
       const elWidth = draggingEl?.width || 100;
+      const elHeight = draggingEl?.height || 30;
+
+      let newSnapLines: {x?: number, y?: number}[] = [];
 
       // Center snap logic (15px threshold)
       const elementCenterX = finalX + (elWidth / 2);
@@ -145,10 +149,38 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
       
       if (Math.abs(elementCenterX - canvasCenterX) < 15) {
         finalX = canvasCenterX - (elWidth / 2);
-        isSnapping = true;
+        newSnapLines.push({ x: canvasCenterX });
       }
       
-      setShowSnapLine(isSnapping);
+      // Snapping to other elements
+      elements.forEach(other => {
+        if (other.id === draggingId) return;
+        
+        const otherWidth = other.width || 100;
+        const otherHeight = other.height || 30;
+        
+        // Y snapping
+        const yTargets = [other.y, other.y + otherHeight, other.y + (otherHeight / 2)];
+        const myYPoints = [finalY, finalY + elHeight, finalY + (elHeight / 2)];
+        
+        for (let targetY of yTargets) {
+          if (Math.abs(myYPoints[0] - targetY) < 10) { finalY = targetY; newSnapLines.push({ y: targetY }); break; }
+          if (Math.abs(myYPoints[1] - targetY) < 10) { finalY = targetY - elHeight; newSnapLines.push({ y: targetY }); break; }
+          if (Math.abs(myYPoints[2] - targetY) < 10) { finalY = targetY - (elHeight / 2); newSnapLines.push({ y: targetY }); break; }
+        }
+
+        // X snapping
+        const xTargets = [other.x, other.x + otherWidth, other.x + (otherWidth / 2)];
+        const myXPoints = [finalX, finalX + elWidth, finalX + (elWidth / 2)];
+
+        for (let targetX of xTargets) {
+          if (Math.abs(myXPoints[0] - targetX) < 10) { finalX = targetX; newSnapLines.push({ x: targetX }); break; }
+          if (Math.abs(myXPoints[1] - targetX) < 10) { finalX = targetX - elWidth; newSnapLines.push({ x: targetX }); break; }
+          if (Math.abs(myXPoints[2] - targetX) < 10) { finalX = targetX - (elWidth / 2); newSnapLines.push({ x: targetX }); break; }
+        }
+      });
+
+      setSnapLines(newSnapLines);
 
       setElements(prev => prev.map(el => {
         if (el.id === draggingId) {
@@ -163,7 +195,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     if (draggingId || resizingId) {
       setDraggingId(null);
       setResizingId(null);
-      setShowSnapLine(false);
+      setSnapLines([]);
       // Finalize save to form state when dropping
       saveToForm(elements);
     }
@@ -374,9 +406,13 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             transform: paperSize === 'Custom' && customHeight > 22 ? 'scale(0.8)' : 'scale(1)'
           }}
         >
-          {showSnapLine && (
-            <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-400 z-0 pointer-events-none" style={{ left: '50%' }} />
-          )}
+          {snapLines.map((line, i) => (
+            line.x !== undefined ? (
+              <div key={`x-${i}`} className="absolute top-0 bottom-0 border-l-[1.5px] border-dashed border-pink-400 z-0 pointer-events-none" style={{ left: line.x }} />
+            ) : (
+              <div key={`y-${i}`} className="absolute left-0 right-0 border-t-[1.5px] border-dashed border-pink-400 z-0 pointer-events-none" style={{ top: line.y }} />
+            )
+          ))}
 
           {elements.map((el) => (
             <div
