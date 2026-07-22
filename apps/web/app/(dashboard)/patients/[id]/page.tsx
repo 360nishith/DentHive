@@ -15,7 +15,7 @@ import { ScheduleAppointmentModal } from '../../../../components/appointments/Sc
 import { PaymentModal } from '../../../../components/billing/PaymentModal';
 import { EditStageModal } from '../../../../components/journeys/EditStageModal';
 import { PatientPrescriptions } from '../../../../components/prescriptions/PatientPrescriptions';
-import { StageImages } from '../../../components/patients/StageImages';
+import { StageImages } from '../../../../components/patients/StageImages';
 
 function calcAge(dob: string | null): string {
   if (!dob) return '—';
