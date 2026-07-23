@@ -101,7 +101,7 @@ export class FollowUpsService {
         patientName: msg.patient.name,
         doctorName: msg.patient.doctor ? `Dr. ${msg.patient.doctor.firstName} ${msg.patient.doctor.lastName}` : null,
         triggerType: label,
-        status: msg.status === 'sent' || msg.status === 'delivered' || msg.status === 'read' ? 'PROCESSED' : 'PENDING',
+        status: msg.status,
         date: msg.createdAt
       });
     }
