@@ -192,7 +192,7 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
               )}
 
               {prescription.notes && (
-                <div style={{ marginTop: '40px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                <div style={{ marginTop: (prescription.items && prescription.items.length > 0) ? '40px' : '0', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                   <strong style={{ display: 'block', marginBottom: '5px' }}>Additional Advice / Notes:</strong>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{prescription.notes}</div>
                 </div>
