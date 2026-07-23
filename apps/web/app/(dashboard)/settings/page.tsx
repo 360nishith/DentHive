@@ -555,10 +555,21 @@ export default function SettingsPage() {
                         <MessageSquare className="w-5 h-5 text-indigo-600" />
                       </div>
                       <div>
-                        <h5 className="text-sm font-bold text-indigo-900">Want to save ₹{prices.standard - prices.discounted} every month?</h5>
-                        <p className="text-[13px] text-indigo-700 mt-1 leading-snug">
-                          Switch to the <strong>BYOS Plan</strong>. Use your own clinic's phone number for patient communications and your monthly subscription will automatically drop to <strong>₹{prices.discounted}/month</strong>! Contact our team for a one-time seamless Meta integration setup.
-                        </p>
+                        {prices.discounted > prices.standard ? (
+                          <>
+                            <h5 className="text-sm font-bold text-indigo-900">Want to use your own clinic's phone number?</h5>
+                            <p className="text-[13px] text-indigo-700 mt-1 leading-snug">
+                              Upgrade to the <strong>BYOS Plan</strong> for just <strong>₹{prices.discounted - prices.standard}</strong> more per month! Use your own dedicated WhatsApp number for all patient communications. Contact our team for a seamless Meta integration setup.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h5 className="text-sm font-bold text-indigo-900">Want to save ₹{prices.standard - prices.discounted} every month?</h5>
+                            <p className="text-[13px] text-indigo-700 mt-1 leading-snug">
+                              Switch to the <strong>BYOS Plan</strong>. Use your own clinic's phone number for patient communications and your monthly subscription will automatically drop to <strong>₹{prices.discounted}/month</strong>! Contact our team for a one-time seamless Meta integration setup.
+                            </p>
+                          </>
+                        )}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3">
                           <Button 
                             size="sm"
