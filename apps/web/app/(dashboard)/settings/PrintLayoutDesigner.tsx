@@ -377,6 +377,29 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               <span className="text-slate-400 text-sm">cm</span>
             </div>
           )}
+          
+          <div className="flex items-center gap-2 ml-4">
+            <label className="text-xs font-bold text-slate-500 uppercase">Body Start (Top Margin):</label>
+            <input 
+              type="range" 
+              min="100" 
+              max="800" 
+              value={formData.printConfig?.bodyTopMargin !== undefined ? formData.printConfig.bodyTopMargin : 300}
+              onChange={e => {
+                setFormData({
+                  ...formData,
+                  printConfig: {
+                    ...formData.printConfig,
+                    bodyTopMargin: Number(e.target.value)
+                  }
+                });
+              }}
+              className="w-24 accent-indigo-600"
+            />
+            <span className="text-xs font-mono font-medium text-slate-600">{formData.printConfig?.bodyTopMargin !== undefined ? formData.printConfig.bodyTopMargin : 300}px</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
           <Button onClick={resetToPreset} variant="outline" className="text-slate-600 border-slate-300">
             Reset to Preset
           </Button>
@@ -597,7 +620,13 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             </div>
           ))}
           
-          <div className="absolute top-[300px] left-0 right-0 text-center opacity-20 pointer-events-none text-slate-400 font-bold uppercase tracking-widest border-t border-dashed border-slate-300 pt-2">
+          <div 
+            className="absolute left-0 right-0 text-center opacity-40 pointer-events-none font-bold uppercase tracking-widest border-t border-dashed border-indigo-500 pt-2"
+            style={{ 
+              top: formData.printConfig?.bodyTopMargin !== undefined ? formData.printConfig.bodyTopMargin : 300,
+              color: '#6366f1'
+            }}
+          >
             Prescription Body Starts Here
           </div>
         </div>

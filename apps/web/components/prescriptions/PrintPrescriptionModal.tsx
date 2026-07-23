@@ -162,8 +162,8 @@ export function PrintPrescriptionModal({ prescription, onClose }: any) {
             })}
 
             {/* Render Prescription Content Body */}
-            {/* We position the body content starting exactly at scaled top: 300px */}
-            <div style={{ position: 'absolute', top: `${300 * scale}px`, left: '50px', right: '50px' }}>
+            {/* We position the body content starting exactly at scaled bodyTopMargin */}
+            <div style={{ position: 'absolute', top: `${(tenant?.printConfig?.bodyTopMargin !== undefined ? tenant.printConfig.bodyTopMargin : 300) * scale}px`, left: '50px', right: '50px' }}>
 
               {prescription.items && prescription.items.length > 0 && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
