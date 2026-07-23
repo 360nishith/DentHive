@@ -156,12 +156,16 @@ export default function SettingsPage() {
     }
   };
 
-  const deleteStaff = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove this staff member?')) return;
+  const deleteStaff = async (id: string) => {
+    const confirmation = prompt('Are you sure you want to remove this staff member? This will instantly revoke their access. Type "REMOVE" to confirm.');
+    if (confirmation !== 'REMOVE') {
+      alert('Removal cancelled.');
+      return;
+    }
     try {
-      await api.delete(`/users/${userId}`);
-      setStaff(staff.filter(s => s.id !== userId));
-    } catch (err: any) {
+      await api.delete(`/users/${id}`);
+      setStaff(staff.filter(s => s.id !== id));
+    } catch (err) {
       alert('Failed to remove staff');
     }
   };
