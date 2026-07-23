@@ -4,14 +4,23 @@ import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus, Move } from 'lu
 
 // Isolated component for contentEditable to prevent cursor jumping and state loss on re-renders
 const EditableText = ({ element, onUpdate, onSelect, isSelected }: any) => {
-  const contentRef = useRef(element.content.replace(/\n/g, '<br>'));
   const divRef = useRef<HTMLDivElement>(null);
+  const lastSentContent = useRef(element.content);
 
-  // Only update native DOM if the incoming prop changes from OUTSIDE (e.g., undo/preset)
+  // Initialize the DOM only once on mount
   useEffect(() => {
-    if (divRef.current && element.content.replace(/\n/g, '<br>') !== contentRef.current) {
-      contentRef.current = element.content.replace(/\n/g, '<br>');
-      divRef.current.innerHTML = contentRef.current;
+    if (divRef.current && !divRef.current.innerHTML) {
+      divRef.current.innerHTML = element.content.replace(/\n/g, '<br>');
+      lastSentContent.current = divRef.current.innerHTML;
+    }
+  }, []);
+
+  // Only update the native DOM if the incoming prop changes from OUTSIDE (e.g., Undo or Reset to Preset)
+  // We check against what we last sent to the parent to prevent the feedback loop from destroying the cursor
+  useEffect(() => {
+    if (divRef.current && element.content !== lastSentContent.current) {
+      divRef.current.innerHTML = element.content;
+      lastSentContent.current = element.content;
     }
   }, [element.content]);
 
@@ -25,8 +34,9 @@ const EditableText = ({ element, onUpdate, onSelect, isSelected }: any) => {
         e.stopPropagation();
       }}
       onInput={(e) => {
-        contentRef.current = e.currentTarget.innerHTML;
-        // Update parent state quietly without forcing a full DOM replace
+        // Save the EXACT string we are sending to the parent so we can ignore it when it comes back as a prop
+        lastSentContent.current = e.currentTarget.innerHTML;
+        // Update parent state quietly
         onUpdate(element.id, e.currentTarget.innerHTML);
       }}
       className="bg-transparent outline-none overflow-hidden"
@@ -41,7 +51,6 @@ const EditableText = ({ element, onUpdate, onSelect, isSelected }: any) => {
         height: element.height, 
         whiteSpace: 'pre-wrap' 
       }}
-      dangerouslySetInnerHTML={{ __html: contentRef.current }}
     />
   );
 };
