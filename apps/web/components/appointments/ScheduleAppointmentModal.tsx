@@ -35,8 +35,9 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
     
     Promise.all([
       supabase.auth.getSession(),
-      api.get('/users')
-    ]).then(([sessionRes, usersRes]) => {
+      api.get('/users'),
+      api.get(`/patients/${patientId}`)
+    ]).then(([sessionRes, usersRes, patientRes]) => {
       const session = sessionRes.data.session;
       const role = session?.user?.app_metadata?.role;
       if (role) setCurrentUserRole(role);
@@ -44,18 +45,20 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
       const dentistUsers = usersRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
       setDoctors(dentistUsers);
 
-      if (session?.user?.id && role !== 'STAFF') {
+      const assignedDoctorId = patientRes.data?.doctorId;
+      
+      if (assignedDoctorId) {
+        // Lock scheduling context strictly to the patient's assigned doctor
+        setDoctorId(assignedDoctorId);
+      } else if (session?.user?.id && role !== 'STAFF') {
+        // Fallback for new unassigned patients if user is a doctor
         const myDoc = dentistUsers.find((d: any) => d.authId === session.user.id);
-        if (myDoc) {
-          setDoctorId(myDoc.id);
-        } else {
-          setDoctorId('UNASSIGNED');
-        }
-      } else if (role === 'STAFF') {
+        setDoctorId(myDoc ? myDoc.id : 'UNASSIGNED');
+      } else {
         setDoctorId('UNASSIGNED');
       }
     }).catch(console.error);
-  }, [isOpen]);
+  }, [isOpen, patientId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -88,8 +91,14 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
         const start = new Date(date);
         const end = new Date(date);
         end.setDate(end.getDate() + 1);
+        
+        // Ensure we only fetch existing bookings for the selected doctor
         const res = await api.get('/appointments', {
-          params: { start: start.toISOString(), end: end.toISOString() }
+          params: { 
+            start: start.toISOString(), 
+            end: end.toISOString(), 
+            doctorId: doctorId && doctorId !== 'UNASSIGNED' ? doctorId : undefined 
+          }
         });
         
         // Filter out completed and cancelled appointments to exactly match the Calendar view
@@ -108,7 +117,7 @@ export function ScheduleAppointmentModal({ isOpen, onClose, patientId, stageId, 
     };
     
     fetchAppointments();
-  }, [date]);
+  }, [date, doctorId]);
 
   if (!isOpen || !stageId) return null;
 
