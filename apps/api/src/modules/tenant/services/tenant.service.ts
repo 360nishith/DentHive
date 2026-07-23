@@ -215,7 +215,7 @@ export class TenantService {
 
     if (data.upiVpa !== undefined) {
       await this.prisma.user.updateMany({
-        where: { authId: userId },
+        where: { id: userId },
         data: { upiVpa: data.upiVpa }
       });
     }
