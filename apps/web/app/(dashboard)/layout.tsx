@@ -17,22 +17,48 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push('/login');
-        return;
+    let isMounted = true;
+    
+    const checkAuth = async (retries = 3) => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        // If there's an error (like a network failure on wake), retry after a short delay
+        if (error && retries > 0) {
+          setTimeout(() => {
+            if (isMounted) checkAuth(retries - 1);
+          }, 2000);
+          return;
+        }
+
+        if (!data.session) {
+          router.push('/login');
+          return;
+        }
+        
+        const tenantId = data.session.user?.app_metadata?.tenantId;
+        if (!tenantId) {
+          router.push('/onboarding');
+          return;
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        if (retries > 0) {
+          setTimeout(() => {
+            if (isMounted) checkAuth(retries - 1);
+          }, 2000);
+        } else {
+          router.push('/login');
+        }
       }
-      
-      const tenantId = data.session.user?.app_metadata?.tenantId;
-      if (!tenantId) {
-        router.push('/onboarding');
-        return;
-      }
-      
-      setLoading(false);
     };
+    
     checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   if (loading) {
