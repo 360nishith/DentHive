@@ -75,7 +75,7 @@ export class TenantService {
     let upiVpa = '';
     if (userId) {
       const user = await this.prisma.user.findUnique({
-        where: { authId: userId },
+        where: { id: userId },
         select: { upiVpa: true }
       });
       if (user && user.upiVpa) {
