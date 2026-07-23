@@ -81,6 +81,13 @@ export class UsersService {
       WHERE "tenantId" = ${tenantId}::uuid AND "doctorId" = ${targetUserId}::uuid
     `;
 
+    // SYNC: Also remove the deleted doctor from their active treatment journeys so they appear globally stalled
+    await this.prisma.$executeRaw`
+      UPDATE treatment_journeys
+      SET "doctorId" = NULL
+      WHERE "tenantId" = ${tenantId}::uuid AND "doctorId" = ${targetUserId}::uuid AND status = 'ACTIVE'
+    `;
+
     // SECURITY: Fire immediately. The receptionist's active token is now dead.
     await this.revocationService.revokeUserAccess(targetUserId);
 

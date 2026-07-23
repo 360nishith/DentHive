@@ -112,6 +112,16 @@ export class PatientsService {
       where: { id: patient.id },
       data: updateData,
     });
+    
+    // SYNC: If the patient's assigned doctor changed, automatically sync this to their active treatment journeys
+    // so they properly show up in the new doctor's stalled/pending follow-up lists!
+    if ('doctorId' in updateData) {
+      await this.prisma.treatmentJourney.updateMany({
+        where: { patientId: patient.id, status: 'ACTIVE' },
+        data: { doctorId: updateData.doctorId }
+      });
+    }
+
     return this.prisma.patient.findFirst({ where: { id: patient.id } });
   }
 
