@@ -123,6 +123,11 @@ export class AdminService {
         }
         await tx.treatmentTemplate.deleteMany({ where: { tenantId: id } });
         
+        // 6.5 Clinical Records & Images
+        await tx.prescription.deleteMany({ where: { tenantId: id } });
+        await tx.doctorMedicine.deleteMany({ where: { tenantId: id } });
+        await tx.treatmentStageImage.deleteMany({ where: { tenantId: id } });
+
         // 7. Entities (Users and Patients)
         await tx.file.deleteMany({ where: { tenantId: id } });
         await tx.patient.deleteMany({ where: { tenantId: id } });
