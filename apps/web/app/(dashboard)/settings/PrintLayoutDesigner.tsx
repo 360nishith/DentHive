@@ -2,6 +2,50 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus, Move } from 'lucide-react';
 
+// Isolated component for contentEditable to prevent cursor jumping and state loss on re-renders
+const EditableText = ({ element, onUpdate, onSelect, isSelected }: any) => {
+  const contentRef = useRef(element.content.replace(/\n/g, '<br>'));
+  const divRef = useRef<HTMLDivElement>(null);
+
+  // Only update native DOM if the incoming prop changes from OUTSIDE (e.g., undo/preset)
+  useEffect(() => {
+    if (divRef.current && element.content.replace(/\n/g, '<br>') !== contentRef.current) {
+      contentRef.current = element.content.replace(/\n/g, '<br>');
+      divRef.current.innerHTML = contentRef.current;
+    }
+  }, [element.content]);
+
+  return (
+    <div 
+      ref={divRef}
+      contentEditable
+      suppressContentEditableWarning
+      onPointerDown={(e) => {
+        onSelect(element.id);
+        e.stopPropagation();
+      }}
+      onInput={(e) => {
+        contentRef.current = e.currentTarget.innerHTML;
+        // Update parent state quietly without forcing a full DOM replace
+        onUpdate(element.id, e.currentTarget.innerHTML);
+      }}
+      className="bg-transparent outline-none overflow-hidden"
+      style={{ 
+        fontSize: element.fontSize, 
+        fontWeight: element.fontWeight, 
+        color: element.color, 
+        textAlign: element.textAlign || 'left', 
+        minHeight: '30px', 
+        minWidth: '100px', 
+        width: element.width, 
+        height: element.height, 
+        whiteSpace: 'pre-wrap' 
+      }}
+      dangerouslySetInnerHTML={{ __html: contentRef.current }}
+    />
+  );
+};
+
 export default function PrintLayoutDesigner({ formData, setFormData, onSave, saving }: any) {
   // We'll store elements in printConfig.elements. 
   // Each element: { id: string, type: 'text' | 'image', content: string, x: number, y: number, width?: number, height?: number, fontSize?: number, fontWeight?: string, color?: string }
@@ -230,11 +274,31 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
   };
 
   const updateElementContent = (id: string, content: string) => {
-    saveToForm(elements.map(e => e.id === id ? { ...e, content } : e));
+    setElements(prev => {
+      const newElements = prev.map(e => e.id === id ? { ...e, content } : e);
+      setFormData((oldForm: any) => ({
+        ...oldForm,
+        printConfig: {
+          ...oldForm.printConfig,
+          elements: newElements
+        }
+      }));
+      return newElements;
+    });
   };
 
   const updateElementProp = (id: string, prop: string, value: any) => {
-    saveToForm(elements.map(e => e.id === id ? { ...e, [prop]: value } : e));
+    setElements(prev => {
+      const newElements = prev.map(e => e.id === id ? { ...e, [prop]: value } : e);
+      setFormData((oldForm: any) => ({
+        ...oldForm,
+        printConfig: {
+          ...oldForm.printConfig,
+          elements: newElements
+        }
+      }));
+      return newElements;
+    });
   };
 
   const selectedEl = elements.find(e => e.id === selectedId);
@@ -478,17 +542,11 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               }}
             >
               {el.type === 'text' && (
-                <div 
-                  contentEditable
-                  suppressContentEditableWarning
-                  onPointerDown={(e) => {
-                    setSelectedId(el.id);
-                    e.stopPropagation();
-                  }}
-                  onBlur={(e) => updateElementContent(el.id, e.currentTarget.innerHTML)}
-                  className="bg-transparent outline-none overflow-hidden"
-                  style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, textAlign: el.textAlign || 'left', minHeight: '30px', minWidth: '100px', width: el.width, height: el.height, whiteSpace: 'pre-wrap' }}
-                  dangerouslySetInnerHTML={{ __html: el.content.replace(/\n/g, '<br>') }}
+                <EditableText
+                  element={el}
+                  onUpdate={updateElementContent}
+                  onSelect={setSelectedId}
+                  isSelected={selectedId === el.id}
                 />
               )}
               {el.type === 'image' && (
