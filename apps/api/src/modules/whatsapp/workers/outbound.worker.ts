@@ -4,7 +4,10 @@ import { Logger } from '@nestjs/common';
 import { MetaApiService } from '../services/meta-api.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-@Processor('whatsapp')
+@Processor('whatsapp', {
+  skipStalledCheck: true,
+  drainDelay: 60000
+})
 export class OutboundWorker extends WorkerHost {
   private readonly logger = new Logger(OutboundWorker.name);
 

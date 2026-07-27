@@ -3,7 +3,10 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-@Processor('analytics-cron')
+@Processor('analytics-cron', {
+  skipStalledCheck: true,
+  drainDelay: 60000
+})
 export class AnalyticsCronProcessor extends WorkerHost {
   private readonly logger = new Logger(AnalyticsCronProcessor.name);
 

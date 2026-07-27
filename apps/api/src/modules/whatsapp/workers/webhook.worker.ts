@@ -4,7 +4,10 @@ import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-@Processor('whatsapp-webhooks')
+@Processor('whatsapp-webhooks', {
+  skipStalledCheck: true,
+  drainDelay: 60000
+})
 export class WebhookWorker extends WorkerHost {
   private readonly logger = new Logger(WebhookWorker.name);
 

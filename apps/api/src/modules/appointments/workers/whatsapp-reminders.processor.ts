@@ -4,7 +4,10 @@ import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
-@Processor('whatsapp-reminders')
+@Processor('whatsapp-reminders', {
+  skipStalledCheck: true,
+  drainDelay: 60000
+})
 export class WhatsappRemindersProcessor extends WorkerHost {
   private readonly logger = new Logger(WhatsappRemindersProcessor.name);
 

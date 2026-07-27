@@ -3,7 +3,10 @@ import { Job } from 'bullmq';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Logger } from '@nestjs/common';
 
-@Processor('follow-up-automation')
+@Processor('follow-up-automation', {
+  skipStalledCheck: true,
+  drainDelay: 60000
+})
 export class FollowUpAutomationWorker extends WorkerHost {
   private readonly logger = new Logger(FollowUpAutomationWorker.name);
 
