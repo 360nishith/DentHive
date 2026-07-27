@@ -51,7 +51,8 @@ import { PrescriptionsModule } from './modules/prescriptions/prescriptions.modul
             port: parseInt(url.port || '6379'),
             password: url.password || undefined,
             username: url.username || undefined,
-            tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined
+            tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+            maxRetriesPerRequest: null
           };
         }
         
