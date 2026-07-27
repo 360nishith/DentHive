@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
-export class ReminderService {
+export class ReminderService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ReminderService.name);
 
   constructor(
@@ -16,6 +16,30 @@ export class ReminderService {
   @OnEvent('appointment.created')
   async handleAppointmentCreated(appointment: any) {
     await this.scheduleSameDayReminder(appointment.tenantId, appointment.id, appointment.scheduledStart);
+  }
+
+  async onApplicationBootstrap() {
+    this.logger.log('Syncing pending reminders to Redis queue...');
+    try {
+      const pendingReminders = await this.prisma.appointmentReminder.findMany({
+        where: { status: 'PENDING' }
+      });
+
+      for (const reminder of pendingReminders) {
+        const delay = reminder.scheduledFor.getTime() - new Date().getTime();
+        if (delay > 0) {
+          // Use a custom jobId to ensure we don't duplicate jobs if Redis wasn't actually wiped
+          await this.reminderQueue.add(
+            'send-reminder', 
+            { reminderId: reminder.id, tenantId: reminder.tenantId }, 
+            { delay, jobId: `reminder_${reminder.id}` }
+          );
+        }
+      }
+      this.logger.log(`Successfully synced ${pendingReminders.length} reminders to Redis.`);
+    } catch (error) {
+      this.logger.error('Failed to sync pending reminders to Redis', error);
+    }
   }
 
   @OnEvent('appointment.updated')
@@ -72,7 +96,11 @@ export class ReminderService {
       }
     });
 
-    await this.reminderQueue.add('send-reminder', { reminderId: reminder.id, tenantId }, { delay });
+    await this.reminderQueue.add(
+      'send-reminder', 
+      { reminderId: reminder.id, tenantId }, 
+      { delay, jobId: `reminder_${reminder.id}` }
+    );
     this.logger.log(`Scheduled 9:00 AM Same-Day reminder for appointment ${appointmentId}`);
   }
 }
