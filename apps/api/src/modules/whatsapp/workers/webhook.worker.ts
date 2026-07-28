@@ -6,7 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Processor('whatsapp-webhooks', {
   skipStalledCheck: true,
-  drainDelay: 300000
+  drainDelay: 5000
 })
 export class WebhookWorker extends WorkerHost {
   private readonly logger = new Logger(WebhookWorker.name);

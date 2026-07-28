@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 
 @Processor('whatsapp-reminders', {
   skipStalledCheck: true,
-  drainDelay: 300000
+  drainDelay: 5000
 })
 export class WhatsappRemindersProcessor extends WorkerHost {
   private readonly logger = new Logger(WhatsappRemindersProcessor.name);

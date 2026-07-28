@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
 
 @Processor('follow-up-automation', {
   skipStalledCheck: true,
-  drainDelay: 300000
+  drainDelay: 5000
 })
 export class FollowUpAutomationWorker extends WorkerHost {
   private readonly logger = new Logger(FollowUpAutomationWorker.name);

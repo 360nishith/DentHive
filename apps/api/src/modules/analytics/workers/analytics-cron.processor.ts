@@ -5,7 +5,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 @Processor('analytics-cron', {
   skipStalledCheck: true,
-  drainDelay: 300000
+  drainDelay: 5000
 })
 export class AnalyticsCronProcessor extends WorkerHost {
   private readonly logger = new Logger(AnalyticsCronProcessor.name);

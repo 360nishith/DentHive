@@ -6,7 +6,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 @Processor('whatsapp', {
   skipStalledCheck: true,
-  drainDelay: 300000
+  drainDelay: 5000
 })
 export class OutboundWorker extends WorkerHost {
   private readonly logger = new Logger(OutboundWorker.name);
