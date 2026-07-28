@@ -172,7 +172,7 @@ export class FollowUpsService {
         const latestAppt = allAppts[0];
         latestApptId = latestAppt.id;
         latestApptDate = latestAppt.scheduledStart;
-        if (latestAppt.status === 'CANCELLED') stallReason = 'Patient Cancelled';
+        if (latestAppt.status === 'CANCELLED') stallReason = 'Appointment Cancelled';
         else if (latestAppt.status === 'RESCHEDULE_REQUESTED') stallReason = 'Requested Reschedule';
         else if (latestAppt.status === 'NO_SHOW') stallReason = 'No Show';
         else if (latestAppt.status === 'COMPLETED') stallReason = 'Needs Next Appt';
