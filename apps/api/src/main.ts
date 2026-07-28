@@ -6,7 +6,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   
   // Increase payload limit to support large base64 image uploads (e.g., clinic logo in print layout)
-  app.use(json({ limit: '10mb' }));
+  // Also extract rawBody for webhook signature verification before the stream is consumed
+  app.use(json({ 
+    limit: '10mb',
+    verify: (req: any, res, buf) => {
+      if (req.originalUrl && req.originalUrl.includes('webhooks')) {
+        req.rawBody = buf;
+      }
+    }
+  }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
   
   // Enable CORS for the Next.js Frontend

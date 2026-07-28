@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
-import { RawBodyMiddleware } from './common/middleware/raw-body.middleware';
+
 import { PrismaService } from './prisma/prisma.service';
 import { RedisModule } from './common/redis/redis.module';
 
@@ -86,11 +86,5 @@ export class AppModule {
       .exclude('webhooks/(.*)', 'health')
       .forRoutes('*');
 
-    consumer
-      .apply(RawBodyMiddleware)
-      .forRoutes(
-        { path: 'webhooks/razorpay', method: RequestMethod.POST },
-        { path: 'webhooks/whatsapp', method: RequestMethod.POST }
-      );
   }
 }
