@@ -331,9 +331,9 @@ export default function GuidePage() {
             </div>
             <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
               <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" /> Print & WhatsApp
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Instant PDF Generation
               </h3>
-              <p className="text-slate-600 text-sm">Generate a perfectly formatted PDF prescription. Print it out for the patient on the spot, or fire it directly to their WhatsApp instantly.</p>
+              <p className="text-slate-600 text-sm">Generate a perfectly formatted, professional PDF prescription with one click, ready to be printed and handed to the patient on the spot.</p>
             </div>
           </div>
         </section>
