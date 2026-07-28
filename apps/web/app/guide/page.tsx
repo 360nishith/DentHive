@@ -1,11 +1,10 @@
+'use client';
+
 import React from 'react';
 import { Calendar, Phone, Zap, TrendingUp, Printer, Home, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'DentHive - Clinic User Guide',
-  description: 'The complete guide to using DentHive for your dental clinic.',
-};
+
 
 export default function GuidePage() {
   return (
