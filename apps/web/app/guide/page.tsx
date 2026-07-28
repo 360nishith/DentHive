@@ -136,17 +136,17 @@ export default function GuidePage() {
             <div className="bg-rose-100 p-3 rounded-lg">
               <TrendingUp className="w-6 h-6 text-rose-600" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-800">4. Billing & Revenue Recovery</h2>
+            <h2 className="text-3xl font-bold text-slate-800">4. Revenue Collection</h2>
           </div>
           
           <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-            Eliminate awkward payment conversations. DentHive allows you to instantly generate secure Razorpay payment links and send them directly to a patient's WhatsApp with one click.
+            Eliminate awkward payment conversations at the front desk. DentHive allows you to instantly generate a secure UPI payment link and send it directly to a patient's WhatsApp with one click.
           </p>
 
           <div className="bg-slate-100 rounded-xl overflow-hidden mb-6 border border-slate-200 flex items-center justify-center min-h-[300px] print:break-inside-avoid">
              <img 
               src="/guide/billing.png" 
-              alt="Billing and Payments Dashboard" 
+              alt="Revenue Collection Dashboard" 
               className="w-full h-auto object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
@@ -159,15 +159,15 @@ export default function GuidePage() {
           <div className="grid md:grid-cols-2 gap-6 print:grid-cols-2">
             <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
               <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" /> Instant Payment Links
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Instant UPI Links
               </h3>
-              <p className="text-slate-600 text-sm">Simply enter the treatment amount and click send. The patient receives a professional WhatsApp message with a secure link to pay via UPI, Credit Card, or NetBanking.</p>
+              <p className="text-slate-600 text-sm">Simply enter the treatment amount and click send. The patient receives a professional WhatsApp message with a secure link that opens directly in Google Pay, PhonePe, or Paytm.</p>
             </div>
             <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
               <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" /> Automated Tracking
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Zero Transaction Fees
               </h3>
-              <p className="text-slate-600 text-sm">Once the patient completes the payment on their phone, your Revenue Recovery dashboard updates automatically to show the payment was successful.</p>
+              <p className="text-slate-600 text-sm">Because DentHive generates direct UPI links tied to the doctor's VPA, 100% of the money goes directly into the clinic's bank account instantly, with zero gateway fees.</p>
             </div>
           </div>
         </section>
