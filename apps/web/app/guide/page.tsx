@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Phone, Zap, TrendingUp, Printer, Home, CheckCircle } from 'lucide-react';
+import { Calendar, Phone, Zap, TrendingUp, Printer, Home, CheckCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 
 
