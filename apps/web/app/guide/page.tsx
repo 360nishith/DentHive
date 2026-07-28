@@ -28,15 +28,29 @@ export default function GuidePage() {
       </div>
 
       <main className="max-w-4xl mx-auto p-8 print:p-0 bg-white shadow-sm my-8 print:my-0 print:shadow-none print:w-full">
-        
+        {/* Title Page / Header */}
         <div className="border-b-4 border-indigo-500 pb-8 mb-12 text-center pt-8">
           <div className="inline-flex items-center justify-center p-4 bg-indigo-50 rounded-full mb-6">
             <Zap className="w-12 h-12 text-indigo-600" />
           </div>
           <h1 className="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">DentHive User Guide</h1>
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-8">
             The complete handbook for automating your clinic, filling your chairs, and recovering lost revenue effortlessly.
           </p>
+
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-left text-sm max-w-2xl mx-auto print:hidden shadow-sm">
+            <strong>👋 Clinic Owner Instructions:</strong> To add your screenshots to this guide, take screenshots of your app and save them with these exact names in your `apps/web/public/guide` folder:
+            <ul className="list-disc pl-5 mt-2 font-mono text-xs">
+              <li>scheduling.png</li>
+              <li>whatsapp.png</li>
+              <li>followups.png</li>
+              <li>billing.png</li>
+              <li>templates.png</li>
+              <li>custom-journey.png</li>
+              <li>patient-profile.png</li>
+            </ul>
+            Refresh this page after adding the files, and they will magically appear below!
+          </div>
         </div>
 
         <section className="mb-16 print:break-inside-avoid">
@@ -153,7 +167,7 @@ export default function GuidePage() {
               <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" /> Automated Tracking
               </h3>
-              <p className="text-slate-600 text-sm">Once the patient completes the payment on their phone, your dashboard updates automatically to show the invoice as Paid.</p>
+              <p className="text-slate-600 text-sm">Once the patient completes the payment on their phone, your Revenue Recovery dashboard updates automatically to show the payment was successful.</p>
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Bell, CheckCircle2, HelpCircle, Activity, Users, Calendar, IndianRupee, Settings, Menu, X, LogOut } from 'lucide-react';
+import { Bell, CheckCircle2, HelpCircle, Activity, Users, Calendar, IndianRupee, Settings, Menu, X, LogOut, BookOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import api from '../../lib/axios';
 import { useRouter, usePathname } from 'next/navigation';
@@ -145,6 +145,15 @@ export function Topbar() {
               <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
             )}
             <Bell className="h-5 w-5" />
+          </button>
+
+          <button 
+            onClick={() => router.push('/guide')}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-colors mr-1"
+            title="User Guide"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Guide</span>
           </button>
 
           <button 
