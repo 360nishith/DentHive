@@ -48,6 +48,8 @@ export default function GuidePage() {
               <li>templates.png</li>
               <li>custom-journey.png</li>
               <li>patient-profile.png</li>
+              <li>prescription.png</li>
+              <li>staff.png</li>
             </ul>
             Refresh this page after adding the files, and they will magically appear below!
           </div>
@@ -291,6 +293,88 @@ export default function GuidePage() {
                 <CheckCircle className="w-4 h-4 text-emerald-500" /> WhatsApp Logs
               </h3>
               <p className="text-slate-600 text-sm">See a complete audit trail of every automated WhatsApp message sent to the patient and whether they confirmed, rescheduled, or ignored it.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-16 print:break-before-page">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-orange-100 p-3 rounded-lg">
+              <Printer className="w-6 h-6 text-orange-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800">8. Digital Prescriptions</h2>
+          </div>
+          
+          <p className="text-lg text-slate-600 mb-6 leading-relaxed">
+            Throw away your physical prescription pads. DentHive features a fully customizable digital prescription generator that allows you to print or send beautiful, branded Rx documents instantly.
+          </p>
+
+          <div className="bg-slate-100 rounded-xl overflow-hidden mb-6 border border-slate-200 flex items-center justify-center min-h-[300px] print:break-inside-avoid">
+             <img 
+              src="/guide/prescription.png" 
+              alt="Digital Prescription Generator" 
+              className="w-full h-auto object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('bg-slate-100');
+                e.currentTarget.parentElement!.innerHTML = '<div class="text-center p-12"><p class="text-slate-400 font-medium">Add prescription.png to public/guide/</p></div>';
+              }}
+            />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 print:grid-cols-2">
+            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Visual Layout Designer
+              </h3>
+              <p className="text-slate-600 text-sm">Drag and drop your clinic logo, doctor's credentials, and text fields in the Settings to perfectly match your brand's physical letterhead.</p>
+            </div>
+            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Print & WhatsApp
+              </h3>
+              <p className="text-slate-600 text-sm">Generate a perfectly formatted PDF prescription. Print it out for the patient on the spot, or fire it directly to their WhatsApp instantly.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-16 print:break-before-page">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-emerald-100 p-3 rounded-lg">
+              <Users className="w-6 h-6 text-emerald-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800">9. Staff Management</h2>
+          </div>
+          
+          <p className="text-lg text-slate-600 mb-6 leading-relaxed">
+            Running a busy clinic is a team effort. DentHive makes it incredibly simple to add unlimited staff members and control exactly what they can see and do.
+          </p>
+
+          <div className="bg-slate-100 rounded-xl overflow-hidden mb-6 border border-slate-200 flex items-center justify-center min-h-[300px] print:break-inside-avoid">
+             <img 
+              src="/guide/staff.png" 
+              alt="Staff Management Dashboard" 
+              className="w-full h-auto object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('bg-slate-100');
+                e.currentTarget.parentElement!.innerHTML = '<div class="text-center p-12"><p class="text-slate-400 font-medium">Add staff.png to public/guide/</p></div>';
+              }}
+            />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 print:grid-cols-2">
+            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Role-Based Access
+              </h3>
+              <p className="text-slate-600 text-sm">Assign roles like "Dentist" or "Receptionist". Dentists only see their own assigned patients and schedules, while Receptionists can manage the entire clinic's calendar.</p>
+            </div>
+            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Secure Collaboration
+              </h3>
+              <p className="text-slate-600 text-sm">Invite staff members via email. They create their own secure login, ensuring accountability and security for all clinic operations.</p>
             </div>
           </div>
         </section>
