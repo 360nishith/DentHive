@@ -106,14 +106,14 @@ export class WebhookWorker extends WorkerHost {
 
             if (!appointment) continue;
 
-            // FIRST PRESS IS FINAL PRESS: Ignore any button press if the appointment is already confirmed, rescheduled, or cancelled
-            if (appointment.status !== 'SCHEDULED') {
+            // Ignore if the appointment is already completed, cancelled, or a no-show
+            if (appointment.status === 'COMPLETED' || appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW') {
               this.logger.log(`Ignoring button press ${messagePayload}. Appointment ${appointment.id} is already ${appointment.status}`);
               continue;
             }
 
             // 3. State Transition
-            if (messagePayload === 'CONFIRM_NEXT_VISIT' || messagePayload === '1' || messagePayload === 'CONFIRM') {
+            if (messagePayload.includes('CONFIRM') || messagePayload === '1') {
               await this.prisma.appointment.update({
                 where: { id: reminder.appointmentId }, 
                 data: { status: 'CONFIRMED' }
@@ -121,7 +121,7 @@ export class WebhookWorker extends WorkerHost {
               this.eventEmitter.emit('appointment.confirmed', appointment);
               this.logger.log(`Appointment ${reminder.appointmentId} CONFIRMED via WhatsApp`);
               
-            } else if (messagePayload === 'REQUEST_RESCHEDULE' || messagePayload === '2' || messagePayload === 'RESCHEDULE') {
+            } else if (messagePayload.includes('RESCHEDULE') || messagePayload === '2') {
               // 1. Update appointment status to trigger UI alerts and Stalled Logic
               await this.prisma.appointment.update({
                 where: { id: reminder.appointmentId },
@@ -151,7 +151,7 @@ export class WebhookWorker extends WorkerHost {
               });
               this.logger.log(`Patient requested reschedule for Appointment ${reminder.appointmentId}`);
               
-            } else if (messagePayload === 'CANCEL_APPOINTMENT' || messagePayload === '3' || messagePayload === 'CANCEL') {
+            } else if (messagePayload.includes('CANCEL') || messagePayload === '3') {
               await this.prisma.appointment.update({
                 where: { id: reminder.appointmentId }, 
                 data: { status: 'CANCELLED' }
