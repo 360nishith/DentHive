@@ -594,7 +594,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                         })}
 
                         {/* Add custom stage button at the end */}
-                        {journey.status === 'ACTIVE' && (
+                        {journey.status === 'ACTIVE' && tenantStatus === 'ACTIVE' && (
                           <div className="flex flex-col items-center relative z-10 w-[80px]">
                             <button
                               onClick={() => setEditingStage({ journeyId: journey.id, stageId: null, name: '', cost: 0 })}
