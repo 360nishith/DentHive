@@ -211,12 +211,36 @@ export default function SettingsPage() {
   };
 
   const handleUpgradeCycle = async () => {
-    if (!confirm('This will instantly charge you the prorated difference and switch you to the selected billing cycle. Do you want to proceed?')) return;
+    if (!confirm('This will immediately charge you the prorated difference and switch you to the selected billing cycle. Do you want to proceed?')) return;
     setUpgradingCycle(true);
     try {
-      await api.post('/billing/upgrade-cycle', { billingCycle });
-      alert('Plan upgraded successfully! Your cycle has been shifted.');
-      window.location.reload();
+      const res = await api.post('/billing/upgrade-cycle', { billingCycle });
+      const order = res.data;
+      
+      const cycleText = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Month' : 'Monthly');
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        order_id: order.id,
+        name: formData.name || 'DentHive',
+        description: `Upgrade to ${cycleText} Plan`,
+        handler: async function (response: any) {
+          alert('Plan upgraded successfully! Your cycle has been shifted.');
+          window.location.reload();
+        },
+        prefill: {
+          name: 'Admin',
+        },
+        theme: {
+          color: '#4f46e5'
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert('Payment failed. Please try again.');
+      });
+      rzp.open();
     } catch (err: any) {
       alert('Failed to upgrade cycle: ' + (err.response?.data?.message || err.message));
     } finally {
@@ -228,17 +252,17 @@ export default function SettingsPage() {
     setSubscribing(true);
     try {
       const res = await api.post('/billing/checkout', { billingCycle });
-      const subscription = res.data;
+      const order = res.data;
       
       const cycleText = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Month' : 'Monthly');
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        subscription_id: subscription.id,
+        order_id: order.id,
         name: formData.name || 'DentHive',
-        description: `${cycleText} Autopilot Subscription`,
+        description: `${cycleText} Pre-Paid Pass`,
         handler: async function (response: any) {
-          alert(`Subscription Activated! You will now be automatically billed on your ${cycleText} cycle.`);
+          alert(`Payment Successful! Your clinic is now activated for the ${cycleText} cycle.`);
           window.location.reload();
         },
         prefill: {

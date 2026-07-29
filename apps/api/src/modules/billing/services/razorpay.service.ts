@@ -14,97 +14,51 @@ export class RazorpayService {
     });
   }
 
-  // Helper to dynamically get or create a plan based on the .env price
-  async getOrCreatePlan(planType: 'STANDARD' | 'BYOS', priceInRupees: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
-    const priceInPaise = priceInRupees * 100;
+  async createOrder(tenantId: string, planType: 'STANDARD' | 'BYOS', priceInRupees: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly', isUpgrade: boolean = false) {
+    const priceInPaise = Math.round(priceInRupees * 100);
     const cycleSuffix = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Months' : 'Monthly');
-    const planName = `DentHive ${planType} ${cycleSuffix} - ${priceInRupees}`;
 
-    // 1. Fetch existing plans from Razorpay
     try {
-      const existingPlans = await this.razorpay.plans.all();
-      const existingPlan = existingPlans.items.find(
-        (p: any) => p.item.name === planName && p.item.amount === priceInPaise
-      );
-      if (existingPlan) {
-        return existingPlan.id;
-      }
-    } catch (err) {
-      console.error('Error fetching plans', err);
-    }
-
-    // 2. If it doesn't exist, generate a new plan dynamically
-    try {
-      const newPlan = await this.razorpay.plans.create({
-        period: billingCycle === 'annual' ? "yearly" : "monthly",
-        interval: billingCycle === 'semi_annual' ? 6 : 1,
-        item: {
-          name: planName,
-          amount: priceInPaise,
-          currency: "INR",
-          description: `DentHive ${planType} ${cycleSuffix} Subscription`
+      const order = await this.razorpay.orders.create({
+        amount: priceInPaise,
+        currency: "INR",
+        notes: {
+          tenantId,
+          planType,
+          billingCycle,
+          isUpgrade: isUpgrade ? 'true' : 'false'
         }
       });
-      return newPlan.id;
+      return order;
     } catch (err: any) {
-      console.error('Error creating plan', err);
+      console.error('Failed to create Razorpay order', err);
       const errorMessage = err.error?.description || err.message || 'Unknown Razorpay error';
-      throw new BadRequestException(`Failed to generate subscription plan: ${errorMessage}`);
+      throw new BadRequestException(`Failed to generate order: ${errorMessage}`);
     }
   }
 
-  async createSubscription(tenantId: string, planType: 'STANDARD' | 'BYOS', priceInRupees: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
-    const planId = await this.getOrCreatePlan(planType, priceInRupees, billingCycle);
-
-    // Create the subscription mandate
-    const subscription = await this.razorpay.subscriptions.create({
-      plan_id: planId,
-      total_count: billingCycle === 'annual' ? 10 : (billingCycle === 'semi_annual' ? 20 : 120), // 10 years of auto-billing
-      customer_notify: 1,
-      notes: { tenantId, planType, billingCycle }
-    });
-
-    return subscription;
-  }
-
-  async getSubscription(subscriptionId: string) {
+  async createPaymentLink(tenantId: string, amountInRupees: number, description: string, customerDetails: { name: string, email: string, contact: string }) {
     try {
-      return await this.razorpay.subscriptions.fetch(subscriptionId);
-    } catch (err) {
-      console.error('Failed to fetch Razorpay subscription', err);
-      return null;
-    }
-  }
-
-  async cancelSubscription(subscriptionId: string) {
-    try {
-      // cancel_at_cycle_end: 1 ensures they get what they paid for this month
-      await this.razorpay.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
-      return true;
-    } catch (err) {
-      console.error('Failed to cancel Razorpay subscription', err);
-      throw new BadRequestException('Failed to cancel subscription in Razorpay');
-    }
-  }
-
-  async updateSubscriptionPlan(subscriptionId: string, newPlanType: 'STANDARD' | 'BYOS', newPrice: number, billingCycle?: 'monthly' | 'semi_annual' | 'annual') {
-    let cycleToUse = billingCycle;
-    if (!cycleToUse) {
-      const existingSub = await this.getSubscription(subscriptionId);
-      cycleToUse = (existingSub?.notes?.billingCycle as 'monthly' | 'semi_annual' | 'annual') || 'monthly';
-    }
-
-    const newPlanId = await this.getOrCreatePlan(newPlanType, newPrice, cycleToUse);
-    try {
-      await this.razorpay.subscriptions.update(subscriptionId, {
-        plan_id: newPlanId,
-        schedule_change_at: 'now' // Immediate Proration as requested!
+      const paymentLink = await this.razorpay.paymentLink.create({
+        amount: Math.round(amountInRupees * 100),
+        currency: "INR",
+        accept_partial: false,
+        description,
+        customer: customerDetails,
+        notify: {
+          sms: true,
+          email: true
+        },
+        reminder_enable: true,
+        notes: {
+          tenantId,
+          isProratedUpgrade: 'true'
+        }
       });
-      return true;
-    } catch (err: any) {
-      console.error('Failed to update Razorpay subscription', err);
-      const errorMessage = err.error?.description || err.message || 'Unknown Razorpay error';
-      throw new BadRequestException(`Failed to update subscription in Razorpay: ${errorMessage}`);
+      return paymentLink.short_url;
+    } catch (err) {
+      console.error('Failed to create payment link', err);
+      return null;
     }
   }
 
@@ -184,5 +138,77 @@ export class RazorpayService {
       where: { tenantId },
       data: { status: 'HALTED' } // Will cause READ_ONLY mode once expiry passes
     });
+  }
+
+  // Handle successful prepaid order capture
+  async handleOrderPaid(payload: any) {
+    const paymentEntity = payload.payload.payment?.entity;
+    const orderId = paymentEntity?.order_id;
+    
+    if (!orderId) return;
+
+    try {
+      const order = await this.razorpay.orders.fetch(orderId);
+      const tenantId = order.notes?.tenantId;
+      const planType = order.notes?.planType || 'STANDARD';
+      const billingCycle = order.notes?.billingCycle || 'monthly';
+      
+      if (!tenantId) {
+        console.error('Razorpay Webhook: Missing tenantId in order notes');
+        return;
+      }
+
+      // Calculate new expiration date
+      const currentSub = await this.prisma.subscription.findFirst({
+        where: { tenantId }
+      });
+
+      let currentEnd = currentSub && currentSub.currentPeriodEnd > new Date() ? currentSub.currentPeriodEnd : new Date();
+      
+      let daysToAdd = 30;
+      if (billingCycle === 'annual') daysToAdd = 365;
+      if (billingCycle === 'semi_annual') daysToAdd = 180;
+
+      // If it's an upgrade mid-cycle (like adding a doctor), we don't extend the days. We just process the payment.
+      // Wait, if they are upgrading cycle (Monthly -> Annual), we DO extend the days.
+      // We will let the billing cycle note dictate the extension, unless it's a mid-cycle doctor addition (which we can flag as isUpgrade=true in notes)
+      
+      const isUpgrade = order.notes?.isUpgrade === 'true';
+      if (!isUpgrade) {
+         currentEnd.setDate(currentEnd.getDate() + daysToAdd);
+      }
+
+      if (currentSub) {
+        await this.prisma.subscription.update({
+          where: { id: currentSub.id },
+          data: {
+            status: 'ACTIVE',
+            currentPeriodEnd: currentEnd,
+            planTier: planType,
+            // If they are moving to Prepaid, we can clear razorpaySubId so cron jobs know it's not a subscription anymore
+            razorpaySubId: null,
+            cancelAtPeriodEnd: false
+          }
+        });
+      } else {
+        await this.prisma.subscription.create({
+          data: {
+            tenantId,
+            planTier: planType,
+            status: 'ACTIVE',
+            currentPeriodEnd: currentEnd
+          }
+        });
+      }
+
+      // Un-suspend the tenant if they were suspended
+      await this.prisma.tenant.update({
+        where: { id: tenantId },
+        data: { status: 'ACTIVE' }
+      });
+
+    } catch (err) {
+      console.error('Failed to process prepaid order', err);
+    }
   }
 }

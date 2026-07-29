@@ -61,8 +61,8 @@ export class BillingController {
       finalPrice = Math.round(finalPrice * 12 * 0.80); // 12 months, 20% off
     }
 
-    const subscription = await this.razorpayService.createSubscription(req.user.tenantId, planType, finalPrice, cycle);
-    return subscription;
+    const order = await this.razorpayService.createOrder(req.user.tenantId, planType, finalPrice, cycle);
+    return order;
   }
 
   @Post('upgrade-cycle')
@@ -105,8 +105,22 @@ export class BillingController {
       finalPrice = Math.round(finalPrice * 12 * 0.80);
     }
 
-    await this.razorpayService.updateSubscriptionPlan(sub.razorpaySubId, planType, finalPrice, cycle);
-    return { success: true };
+    // Prorate discount based on remaining days of current subscription
+    const now = new Date();
+    const periodEnd = new Date(sub.currentPeriodEnd);
+    let proratedDiscount = 0;
+    
+    if (periodEnd > now) {
+      const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Assume current price per day based on monthly rate
+      const currentPricePerDay = (basePrice + (activeDentists * extraPricePerDentist)) / 30;
+      proratedDiscount = Math.round(daysLeft * currentPricePerDay);
+    }
+    
+    finalPrice = Math.max(0, finalPrice - proratedDiscount);
+
+    const order = await this.razorpayService.createOrder(req.user.tenantId, planType, finalPrice, cycle, true);
+    return order;
   }
 
   @Post('cancel')

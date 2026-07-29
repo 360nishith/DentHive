@@ -20,6 +20,8 @@ export class WebhooksController {
       await this.razorpayService.handleSubscriptionHalted(payload);
     } else if (payload.event === 'subscription.charged') {
       await this.razorpayService.handleSubscriptionCharged(payload);
+    } else if (payload.event === 'order.paid') {
+      await this.razorpayService.handleOrderPaid(payload);
     }
     
     return { received: true }; 

@@ -51,47 +51,59 @@ export class SubscriptionService {
       where: { tenantId, status: 'ACTIVE' }
     });
     
-    if (!sub || !sub.razorpaySubId) {
-      this.logger.warn(`No active Razorpay subscription found for tenant ${tenantId}. Skipping per-seat billing sync.`);
+    if (!sub) {
+      this.logger.warn(`No active subscription found for tenant ${tenantId}. Skipping per-seat billing sync.`);
       return;
     }
 
-    // 2. Count active dentists (including the ADMIN owner, if they are counted. Wait, we'll count all active users who are DENTIST or ADMIN).
-    // Let's assume ADMIN is included in the base plan, so we only charge extra for additional DENTISTs.
-    const activeDentists = await this.prisma.user.count({
-      where: {
-        tenantId,
-        status: 'ACTIVE',
-        role: { name: 'DENTIST' } // Count only extra dentists
-      }
+    // Calculate remaining days
+    const now = new Date();
+    const periodEnd = new Date(sub.currentPeriodEnd);
+    if (periodEnd <= now) return; // Expired anyway
+
+    const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // 2. Calculate prorated price for ONE new doctor
+    const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
+    // Discount based on how many days are left in a 30-day period
+    let proratedAmount = Math.round(extraPricePerDentist * (daysLeft / 30));
+
+    if (proratedAmount <= 0) return;
+
+    this.logger.log(`Generating prorated Payment Link for tenant ${tenantId} for new doctor. Amount: ₹${proratedAmount}`);
+
+    // Get tenant admin details for the payment link
+    const tenantOwner = await this.prisma.user.findFirst({
+      where: { tenantId, role: { name: 'DENTIST' } },
+      orderBy: { createdAt: 'asc' }
     });
 
-    // 3. Calculate new price
-    let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
-    if (sub.planTier === 'BYOS') {
-      basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
-    }
-    const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
-    
-    let newPrice = basePrice + (activeDentists * extraPricePerDentist);
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
 
-    // Fetch the cycle from Razorpay to apply cycle discounts
-    const razorpaySub = await this.razorpayService.getSubscription(sub.razorpaySubId);
-    const cycle = (razorpaySub?.notes?.billingCycle as 'monthly' | 'semi_annual' | 'annual') || 'monthly';
+    // 4. Generate Payment Link via Razorpay
+    const paymentLinkUrl = await this.razorpayService.createPaymentLink(
+      tenantId,
+      proratedAmount,
+      `DentHive: Prorated charge for adding a new doctor (${daysLeft} days remaining in billing cycle)`,
+      {
+        name: tenantOwner?.firstName || tenant?.name || 'Clinic Admin',
+        email: tenantOwner?.email || tenant?.contactEmail || 'admin@clinic.com',
+        contact: tenantOwner?.phoneNumber || tenant?.contactPhone || '+910000000000'
+      }
+    );
 
-    if (cycle === 'semi_annual') {
-      newPrice = Math.round(newPrice * 6 * 0.9);
-    } else if (cycle === 'annual') {
-      newPrice = Math.round(newPrice * 12 * 0.8);
-    }
+    // 5. Notify the user in the app
+    const message = paymentLinkUrl 
+      ? `A new doctor was added to your clinic. Please pay the prorated invoice of ₹${proratedAmount} for the remaining ${daysLeft} days in your billing cycle to activate their access: ${paymentLinkUrl}`
+      : `A new doctor was added to your clinic. Please contact support to pay the prorated invoice of ₹${proratedAmount}.`;
 
-    this.logger.log(`Syncing per-seat billing for tenant ${tenantId}. Active Extra Dentists: ${activeDentists}. New Total Price: ${newPrice} (Cycle: ${cycle})`);
-
-    // 4. Update Razorpay
-    try {
-      await this.razorpayService.updateSubscriptionPlan(sub.razorpaySubId, sub.planTier as 'STANDARD' | 'BYOS', newPrice, cycle);
-    } catch (e) {
-      this.logger.error(`Failed to sync per-seat billing with Razorpay for tenant ${tenantId}`, e);
-    }
+    await this.prisma.notification.create({
+      data: {
+        tenantId,
+        title: 'New Doctor Added - Payment Required',
+        message,
+        type: 'WARNING'
+      }
+    });
   }
 }
