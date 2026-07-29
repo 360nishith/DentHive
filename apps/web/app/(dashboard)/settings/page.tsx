@@ -172,24 +172,8 @@ export default function SettingsPage() {
   };
 
   const [subscribing, setSubscribing] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
   const [upgradingCycle, setUpgradingCycle] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'semi_annual' | 'annual'>('monthly');
-
-  const handleCancelSubscription = async () => {
-    if (!confirm('Are you sure you want to cancel your autopilot subscription? You will not be charged again, and your access will drop to Read-Only at the end of your current billing cycle.')) return;
-    
-    setCancelling(true);
-    try {
-      await api.post('/billing/cancel');
-      alert('Subscription cancelled successfully. You will not be charged again.');
-      window.location.reload();
-    } catch (e: any) {
-      alert('Failed to cancel subscription.');
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   const handleResetDemo = async () => {
     const confirmation = prompt('DANGER: This will instantly wipe ALL patients, appointments, and revenue from the database. It cannot be undone. Type "RESET" to confirm.');
@@ -693,15 +677,6 @@ export default function SettingsPage() {
                           >
                             {upgradingCycle ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                             {upgradingCycle ? 'Upgrading...' : 'Switch to Selected Plan'}
-                          </Button>
-                          <Button 
-                            onClick={handleCancelSubscription}
-                            disabled={cancelling || upgradingCycle}
-                            variant="outline"
-                            className="w-full border-red-200 text-red-600 hover:bg-red-50 text-sm h-10 font-bold transition-colors"
-                          >
-                            {cancelling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            {cancelling ? 'Cancelling...' : 'Cancel Auto-Renewal'}
                           </Button>
                         </div>
                       )
