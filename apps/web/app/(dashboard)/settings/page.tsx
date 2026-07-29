@@ -194,29 +194,28 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpgradeCycle = async () => {
-    if (!confirm('This will immediately charge you the prorated difference and switch you to the selected billing cycle. Do you want to proceed?')) return;
-    setUpgradingCycle(true);
+  const [payingArrears, setPayingArrears] = useState(false);
+
+  const handlePayArrears = async () => {
+    setPayingArrears(true);
     try {
-      const res = await api.post('/billing/upgrade-cycle', { billingCycle });
+      const res = await api.post('/billing/pay-arrears');
       const order = res.data;
       
-      const cycleText = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Month' : 'Monthly');
-
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         order_id: order.id,
         name: formData.name || 'DentHive',
-        description: `Upgrade to ${cycleText} Plan`,
+        description: `Pay Outstanding Balance`,
         handler: async function (response: any) {
-          alert('Plan upgraded successfully! Your cycle has been shifted.');
+          alert('Outstanding balance paid successfully! Thank you.');
           window.location.reload();
         },
         prefill: {
           name: 'Admin',
         },
         theme: {
-          color: '#4f46e5'
+          color: '#ef4444' // red theme for arrears
         }
       };
 
@@ -226,9 +225,9 @@ export default function SettingsPage() {
       });
       rzp.open();
     } catch (err: any) {
-      alert('Failed to upgrade cycle: ' + (err.response?.data?.message || err.message));
+      alert('Failed to initialize payment: ' + (err.response?.data?.message || err.message));
     } finally {
-      setUpgradingCycle(false);
+      setPayingArrears(false);
     }
   };
 
@@ -650,15 +649,37 @@ export default function SettingsPage() {
                         onClick={() => setBillingCycle('semi_annual')}
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'semi_annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
                       >
-                        6 Months <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">10% OFF</span>
+                        6 Months <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">5% OFF</span>
                       </button>
                       <button
                         onClick={() => setBillingCycle('annual')}
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
                       >
-                        Annual <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">20% OFF</span>
+                        Annual <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">10% OFF</span>
                       </button>
                     </div>
+
+                    {tenant?.pendingArrears > 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col gap-3">
+                        <div className="flex items-start gap-3">
+                          <AlertOctagon className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+                          <div>
+                            <h4 className="text-sm font-bold text-red-900">Outstanding Balance: ₹{tenant.pendingArrears}</h4>
+                            <p className="text-xs text-red-700 mt-1">
+                              You have unpaid charges for adding new doctors mid-cycle. This balance will be automatically added to your next pass purchase, or you can pay it right now to clear your account.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handlePayArrears}
+                          disabled={payingArrears}
+                          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold h-10"
+                        >
+                          {payingArrears ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {payingArrears ? 'Initializing...' : `Pay ₹${tenant.pendingArrears} Now`}
+                        </Button>
+                      </div>
+                    )}
 
                     {tenant?.subscriptions?.some((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)) ? (
                       tenant.subscriptions.find((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)).cancelAtPeriodEnd ? (
@@ -672,21 +693,11 @@ export default function SettingsPage() {
                         <div className="flex flex-col gap-2">
                           <Button 
                             onClick={handleSubscribe} 
-                            disabled={subscribing || upgradingCycle}
+                            disabled={subscribing}
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base h-12 shadow-md disabled:opacity-70"
                           >
                             {subscribing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                             {subscribing ? 'Initializing...' : 'Buy Pass / Extend Time'}
-                          </Button>
-                          <Button 
-                            onClick={handleUpgradeCycle} 
-                            disabled={upgradingCycle || subscribing}
-                            variant="outline"
-                            className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-sm h-10 font-bold transition-colors"
-                            title="If you are switching from Monthly to Annual, use this to get a prorated discount for your unused days!"
-                          >
-                            {upgradingCycle ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            {upgradingCycle ? 'Calculating...' : 'Switch Cycle (Apply Prorated Discount)'}
                           </Button>
                         </div>
                       )

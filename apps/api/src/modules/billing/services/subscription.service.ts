@@ -70,37 +70,23 @@ export class SubscriptionService {
 
     if (proratedAmount <= 0) return;
 
-    this.logger.log(`Generating prorated Payment Link for tenant ${tenantId} for new doctor. Amount: ₹${proratedAmount}`);
+    this.logger.log(`Adding prorated arrears for tenant ${tenantId} for new doctor. Amount: ₹${proratedAmount}`);
 
-    // Get tenant admin details for the payment link
-    const tenantOwner = await this.prisma.user.findFirst({
-      where: { tenantId, role: { name: 'DENTIST' } },
-      orderBy: { createdAt: 'asc' }
+    // Add to pendingArrears
+    await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        pendingArrears: { increment: proratedAmount }
+      }
     });
 
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
-
-    // 4. Generate Payment Link via Razorpay
-    const paymentLinkUrl = await this.razorpayService.createPaymentLink(
-      tenantId,
-      proratedAmount,
-      `DentHive: Prorated charge for adding a new doctor (${daysLeft} days remaining in billing cycle)`,
-      {
-        name: tenantOwner?.firstName || tenant?.name || 'Clinic Admin',
-        email: tenantOwner?.email || tenant?.contactEmail || 'admin@clinic.com',
-        contact: tenantOwner?.phoneNumber || tenant?.contactPhone || '+910000000000'
-      }
-    );
-
     // 5. Notify the user in the app
-    const message = paymentLinkUrl 
-      ? `A new doctor was added to your clinic. Please pay the prorated invoice of ₹${proratedAmount} for the remaining ${daysLeft} days in your billing cycle to activate their access: ${paymentLinkUrl}`
-      : `A new doctor was added to your clinic. Please contact support to pay the prorated invoice of ₹${proratedAmount}.`;
+    const message = `A new doctor was added to your clinic. ₹${proratedAmount} has been added to your pending arrears for the remaining ${daysLeft} days in your billing cycle. Please go to the Settings page to pay this balance.`;
 
     await this.prisma.notification.create({
       data: {
         tenantId,
-        title: 'New Doctor Added - Payment Required',
+        title: 'Outstanding Balance Added',
         message,
         type: 'WARNING'
       }

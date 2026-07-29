@@ -56,72 +56,32 @@ export class BillingController {
     let finalPrice = basePrice + (activeDentists * extraPricePerDentist);
 
     if (cycle === 'semi_annual') {
-      finalPrice = Math.round(finalPrice * 6 * 0.90); // 6 months, 10% off
+      finalPrice = Math.round(finalPrice * 6 * 0.95); // 6 months, 5% off
     } else if (cycle === 'annual') {
-      finalPrice = Math.round(finalPrice * 12 * 0.80); // 12 months, 20% off
+      finalPrice = Math.round(finalPrice * 12 * 0.90); // 12 months, 10% off
+    }
+
+    if (tenant?.pendingArrears && tenant.pendingArrears > 0) {
+      finalPrice += tenant.pendingArrears;
     }
 
     const order = await this.razorpayService.createOrder(req.user.tenantId, planType, finalPrice, cycle);
     return order;
   }
 
-  @Post('upgrade-cycle')
-  async upgradeCycle(@Req() req: any, @Body() body: { billingCycle: 'monthly' | 'semi_annual' | 'annual' }) {
-    const cycle = body.billingCycle;
-    if (!cycle) throw new Error('billingCycle is required');
-
-    const sub = await this.prisma.subscription.findFirst({
-      where: { tenantId: req.user.tenantId, status: 'ACTIVE' }
-    });
-
-    if (!sub || !sub.razorpaySubId) {
-      throw new Error('No active subscription found to upgrade.');
-    }
-
+  @Post('pay-arrears')
+  async payArrears(@Req() req: any) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
     
-    let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
-    let planType: 'STANDARD' | 'BYOS' = 'STANDARD';
-    
-    if (tenant?.waPhoneNumberId && tenant?.waAccessToken) {
-      basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
-      planType = 'BYOS';
+    if (!tenant || !tenant.pendingArrears || tenant.pendingArrears <= 0) {
+      throw new Error('No pending arrears to pay');
     }
 
-    const activeDentists = await this.prisma.user.count({
-      where: {
-        tenantId: req.user.tenantId,
-        role: { name: 'DENTIST' },
-        isActive: true
-      }
-    });
-
-    const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
-    let finalPrice = basePrice + (activeDentists * extraPricePerDentist);
-
-    if (cycle === 'semi_annual') {
-      finalPrice = Math.round(finalPrice * 6 * 0.90);
-    } else if (cycle === 'annual') {
-      finalPrice = Math.round(finalPrice * 12 * 0.80);
-    }
-
-    // Prorate discount based on remaining days of current subscription
-    const now = new Date();
-    const periodEnd = new Date(sub.currentPeriodEnd);
-    let proratedDiscount = 0;
-    
-    if (periodEnd > now) {
-      const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      // Assume current price per day based on monthly rate
-      const currentPricePerDay = (basePrice + (activeDentists * extraPricePerDentist)) / 30;
-      proratedDiscount = Math.round(daysLeft * currentPricePerDay);
-    }
-    
-    finalPrice = Math.max(0, finalPrice - proratedDiscount);
-
-    const order = await this.razorpayService.createOrder(req.user.tenantId, planType, finalPrice, cycle, true);
+    // Pass 'ARREARS' as the plan type so the webhook knows how to handle it
+    const order = await this.razorpayService.createOrder(req.user.tenantId, 'ARREARS' as any, tenant.pendingArrears, 'monthly');
     return order;
   }
+
 
   @Post('cancel')
   async cancelSubscription(@Req() req: any) {

@@ -179,15 +179,9 @@ export class RazorpayService {
       let daysToAdd = 30;
       if (billingCycle === 'annual') daysToAdd = 365;
       if (billingCycle === 'semi_annual') daysToAdd = 180;
+      if (planType === 'ARREARS') daysToAdd = 0;
 
-      // If it's an upgrade mid-cycle (like adding a doctor), we don't extend the days. We just process the payment.
-      // Wait, if they are upgrading cycle (Monthly -> Annual), we DO extend the days.
-      // We will let the billing cycle note dictate the extension, unless it's a mid-cycle doctor addition (which we flag as isProratedUpgrade=true in notes)
-      
-      const isProratedUpgrade = order.notes?.isProratedUpgrade === 'true';
-      if (!isProratedUpgrade) {
-         currentEnd.setDate(currentEnd.getDate() + daysToAdd);
-      }
+      currentEnd.setDate(currentEnd.getDate() + daysToAdd);
 
       if (currentSub) {
         await this.prisma.subscription.update({
@@ -212,10 +206,13 @@ export class RazorpayService {
         });
       }
 
-      // Un-suspend the tenant if they were suspended
+      // Un-suspend the tenant if they were suspended, and clear their pending arrears
       await this.prisma.tenant.update({
         where: { id: tenantId },
-        data: { status: 'ACTIVE' }
+        data: { 
+          status: 'ACTIVE',
+          pendingArrears: 0
+        }
       });
 
     } catch (err) {

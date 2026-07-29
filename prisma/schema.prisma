@@ -25,6 +25,7 @@ model Tenant {
   contactPhone     String? @db.VarChar(50)
   defaultPaperSize String  @default("A4") @db.VarChar(10)
   printConfig      Json?   @db.JsonB
+  pendingArrears   Float   @default(0)
 
   createdAt DateTime  @default(now()) @db.Timestamptz
   updatedAt DateTime  @updatedAt @db.Timestamptz
