@@ -551,15 +551,15 @@ export default function SettingsPage() {
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h3 className="font-bold text-xl text-slate-900">
-                        DentHive {tenant?.waAccessToken ? 'BYOS' : 'Unified'} 
+                        DentHive {(tenant?.waAccessToken && tenant?.waPhoneNumberId) ? 'BYOS' : 'Unified'} 
                         {billingCycle === 'annual' ? ' Annual' : (billingCycle === 'semi_annual' ? ' 6-Month' : '')} Plan
                       </h3>
-                      <p className="text-slate-500 text-sm mt-1">{tenant?.waAccessToken ? 'Bring your own WhatsApp SIM.' : 'Everything you need to run your clinic.'}</p>
+                      <p className="text-slate-500 text-sm mt-1">{(tenant?.waAccessToken && tenant?.waPhoneNumberId) ? 'Bring your own WhatsApp SIM.' : 'Everything you need to run your clinic.'}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-slate-900">
                         ₹{(() => {
-                          const base = tenant?.waAccessToken ? prices.discounted : prices.standard;
+                          const base = (tenant?.waAccessToken && tenant?.waPhoneNumberId) ? prices.discounted : prices.standard;
                           const dentistCount = staff.filter(s => s.role?.name === 'DENTIST').length;
                           const extraCost = (prices as any).extraDoctor ? dentistCount * (prices as any).extraDoctor : dentistCount * 2000;
                           let finalPrice = base + extraCost;
@@ -590,7 +590,7 @@ export default function SettingsPage() {
                   <ul className="space-y-3 mb-6">
                     {[
                       'Unlimited Patient Journeys & Appointments', 
-                      `Automated WhatsApp Reminders & Recalls via ${tenant?.waAccessToken ? 'Your Own SIM' : 'DentalHive SIM'}`, 
+                      `Automated WhatsApp Reminders & Recalls via ${(tenant?.waAccessToken && tenant?.waPhoneNumberId) ? 'Your Own SIM' : 'DentalHive SIM'}`, 
                       'Advanced Revenue Analytics', 
                       'Dynamic UPI QR Generation', 
                       'Unlimited Staff Accounts'
@@ -602,7 +602,7 @@ export default function SettingsPage() {
                     ))}
                   </ul>
 
-                  {!tenant?.waAccessToken && (
+                  {!(tenant?.waAccessToken && tenant?.waPhoneNumberId) && (
                     <div className="mb-6 p-4 bg-indigo-50/80 border border-indigo-100 rounded-xl flex items-start space-x-3">
                       <div className="p-2 bg-white rounded-lg shrink-0 shadow-sm border border-indigo-100/50">
                         <MessageSquare className="w-5 h-5 text-indigo-600" />

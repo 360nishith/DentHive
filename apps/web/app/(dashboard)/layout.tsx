@@ -45,12 +45,20 @@ export default function DashboardLayout({
         }
         
         try {
-          const userRes = await api.get('/users/me');
+          const [userRes, tenantRes] = await Promise.all([
+            api.get('/users/me'),
+            api.get('/tenant')
+          ]);
+          
+          const role = data.session.user?.app_metadata?.role;
+          
           if (userRes.data?.status === 'ARREARS_PENDING') {
+            setIsBlocked(true);
+          } else if (tenantRes.data?.status === 'READ_ONLY' && role !== 'ADMIN') {
             setIsBlocked(true);
           }
         } catch (e) {
-          console.error("Failed to fetch user profile", e);
+          console.error("Failed to fetch profile or tenant status", e);
         }
 
         setLoading(false);
