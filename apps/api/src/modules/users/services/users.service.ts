@@ -29,6 +29,9 @@ export class UsersService {
   }
 
   async updateRole(tenantId: string, targetUserId: string, newRole: string) {
+    const roleRecord = await this.prisma.role.findUnique({ where: { id: newRole } });
+    if (!roleRecord) throw new NotFoundException('Role not found');
+
     const user = await this.prisma.user.updateMany({
       where: { id: targetUserId, tenantId }, 
       data: { roleId: newRole }
@@ -38,6 +41,14 @@ export class UsersService {
 
     // SECURITY: Force the user to re-authenticate to receive a new JWT with updated claims.
     await this.revocationService.revokeUserAccess(targetUserId);
+
+    // Notify billing to calculate prorated arrears if they were upgraded to DENTIST mid-cycle
+    this.eventEmitter.emit('staff.status_changed', {
+      tenantId,
+      user: { id: targetUserId },
+      role: roleRecord.name,
+      status: 'ACTIVE'
+    });
 
     return { success: true };
   }
