@@ -108,6 +108,7 @@ export class AuthService {
           authId,
           tenantId,
           roleId: role.id,
+          email: dto.email,
           firstName: dto.firstName,
           lastName: dto.lastName,
           status: 'ACTIVE',
