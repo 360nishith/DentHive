@@ -46,9 +46,10 @@ export class RazorpayService {
         }
       });
       return newPlan.id;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating plan', err);
-      throw new BadRequestException('Failed to generate subscription plan dynamically.');
+      const errorMessage = err.error?.description || err.message || 'Unknown Razorpay error';
+      throw new BadRequestException(`Failed to generate subscription plan: ${errorMessage}`);
     }
   }
 
