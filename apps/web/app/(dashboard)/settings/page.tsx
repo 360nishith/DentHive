@@ -521,7 +521,10 @@ export default function SettingsPage() {
                 <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h3 className="font-bold text-xl text-slate-900">DentHive {tenant?.waAccessToken ? 'BYOS' : 'Unified'} Plan</h3>
+                      <h3 className="font-bold text-xl text-slate-900">
+                        DentHive {tenant?.waAccessToken ? 'BYOS' : 'Unified'} 
+                        {billingCycle === 'annual' ? ' Annual' : (billingCycle === 'semi_annual' ? ' 6-Month' : '')} Plan
+                      </h3>
                       <p className="text-slate-500 text-sm mt-1">{tenant?.waAccessToken ? 'Bring your own WhatsApp SIM.' : 'Everything you need to run your clinic.'}</p>
                     </div>
                     <div className="text-right">
@@ -530,13 +533,26 @@ export default function SettingsPage() {
                           const base = tenant?.waAccessToken ? prices.discounted : prices.standard;
                           const dentistCount = staff.filter(s => s.role?.name === 'DENTIST').length;
                           const extraCost = (prices as any).extraDoctor ? dentistCount * (prices as any).extraDoctor : dentistCount * 2000;
-                          return base + extraCost;
+                          let finalPrice = base + extraCost;
+                          if (billingCycle === 'semi_annual') {
+                            finalPrice = Math.round(finalPrice * 6 * 0.9);
+                          } else if (billingCycle === 'annual') {
+                            finalPrice = Math.round(finalPrice * 12 * 0.8);
+                          }
+                          return finalPrice.toLocaleString('en-IN');
                         })()}
-                        <span className="text-sm font-medium text-slate-500">/month</span>
+                        <span className="text-sm font-medium text-slate-500">
+                          {billingCycle === 'annual' ? '/year' : (billingCycle === 'semi_annual' ? '/6-months' : '/month')}
+                        </span>
                       </p>
                       {staff.filter(s => s.role?.name === 'DENTIST').length > 0 && (
                         <p className="text-xs text-slate-500 mt-1">
-                          (Includes ₹{((prices as any).extraDoctor || 2000) * staff.filter(s => s.role?.name === 'DENTIST').length} for {staff.filter(s => s.role?.name === 'DENTIST').length} extra dentist{staff.filter(s => s.role?.name === 'DENTIST').length > 1 ? 's' : ''})
+                          (Includes ₹{(() => {
+                            const extra = ((prices as any).extraDoctor || 2000) * staff.filter(s => s.role?.name === 'DENTIST').length;
+                            if (billingCycle === 'semi_annual') return Math.round(extra * 6 * 0.9).toLocaleString('en-IN');
+                            if (billingCycle === 'annual') return Math.round(extra * 12 * 0.8).toLocaleString('en-IN');
+                            return extra.toLocaleString('en-IN');
+                          })()} for {staff.filter(s => s.role?.name === 'DENTIST').length} extra dentist{staff.filter(s => s.role?.name === 'DENTIST').length > 1 ? 's' : ''})
                         </p>
                       )}
                     </div>
