@@ -39,6 +39,7 @@ export function Sidebar() {
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('ADMIN'); // Default to ADMIN for now
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [tenantStatus, setTenantStatus] = useState('ACTIVE');
 
   useEffect(() => {
     const load = async () => {
@@ -66,6 +67,7 @@ export function Sidebar() {
       try {
         const res = await api.get('/tenant');
         if (res.data?.name) setClinicName(res.data.name);
+        if (res.data?.status) setTenantStatus(res.data.status);
       } catch (e) {
         // keep default
       }
@@ -112,6 +114,24 @@ export function Sidebar() {
           }
           
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          
+          const isPatientsTab = item.name === 'Patients';
+          const isDisabled = isPatientsTab && tenantStatus === 'READ_ONLY';
+
+          if (isDisabled) {
+            return (
+              <div
+                key={item.name}
+                id={`tour-${item.name.toLowerCase().replace(/ /g, '-')}`}
+                title={isCollapsed ? `${item.name} (Locked)` : undefined}
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-4 py-3 rounded-xl text-[15px] font-medium transition-colors opacity-50 cursor-not-allowed text-slate-400 bg-slate-50`}
+              >
+                <item.icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-slate-400`} />
+                {!isCollapsed && <span>{item.name} <span className="ml-2 text-[10px] uppercase font-bold text-red-500">Locked</span></span>}
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.name}
