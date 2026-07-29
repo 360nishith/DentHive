@@ -54,12 +54,12 @@ export function Topbar() {
 
       const created = new Date(res.data.createdAt).getTime();
       const used = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
-      setDaysLeft(Math.max(0, 14 - used));
+      setDaysLeft(Math.max(0, 30 - used));
 
       // Dynamically compute the status based on time if they haven't paid
       let computedStatus = res.data.status;
       if (!isActuallySubscribed) {
-        if (activeSub || used > 14) {
+        if (activeSub || used > 30) {
           computedStatus = 'READ_ONLY';
         } else {
           computedStatus = 'TRIAL';

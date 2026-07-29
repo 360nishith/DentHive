@@ -41,7 +41,7 @@ export default function LandingPage() {
             </p>
             <div className="flex justify-center gap-4">
               <Link href="/login" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
-                Start Your 14-Day Free Trial <ArrowRight className="w-5 h-5" />
+                Start Your 30-Day Free Trial <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
           </div>

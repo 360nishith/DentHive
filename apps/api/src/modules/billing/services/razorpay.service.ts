@@ -15,9 +15,10 @@ export class RazorpayService {
   }
 
   // Helper to dynamically get or create a plan based on the .env price
-  async getOrCreatePlan(planType: 'STANDARD' | 'BYOS', priceInRupees: number) {
+  async getOrCreatePlan(planType: 'STANDARD' | 'BYOS', priceInRupees: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
     const priceInPaise = priceInRupees * 100;
-    const planName = `DentHive ${planType} - ${priceInRupees}`;
+    const cycleSuffix = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Months' : 'Monthly');
+    const planName = `DentHive ${planType} ${cycleSuffix} - ${priceInRupees}`;
 
     // 1. Fetch existing plans from Razorpay
     try {
@@ -35,13 +36,13 @@ export class RazorpayService {
     // 2. If it doesn't exist, generate a new plan dynamically
     try {
       const newPlan = await this.razorpay.plans.create({
-        period: "monthly",
-        interval: 1,
+        period: billingCycle === 'annual' ? "yearly" : "monthly",
+        interval: billingCycle === 'semi_annual' ? 6 : 1,
         item: {
           name: planName,
           amount: priceInPaise,
           currency: "INR",
-          description: `DentHive ${planType} Monthly Subscription`
+          description: `DentHive ${planType} ${cycleSuffix} Subscription`
         }
       });
       return newPlan.id;
@@ -51,15 +52,15 @@ export class RazorpayService {
     }
   }
 
-  async createSubscription(tenantId: string, planType: 'STANDARD' | 'BYOS', priceInRupees: number) {
-    const planId = await this.getOrCreatePlan(planType, priceInRupees);
+  async createSubscription(tenantId: string, planType: 'STANDARD' | 'BYOS', priceInRupees: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
+    const planId = await this.getOrCreatePlan(planType, priceInRupees, billingCycle);
 
     // Create the subscription mandate
     const subscription = await this.razorpay.subscriptions.create({
       plan_id: planId,
-      total_count: 120, // 10 years of auto-billing
+      total_count: billingCycle === 'annual' ? 10 : (billingCycle === 'semi_annual' ? 20 : 120), // 10 years of auto-billing
       customer_notify: 1,
-      notes: { tenantId, planType }
+      notes: { tenantId, planType, billingCycle }
     });
 
     return subscription;
@@ -76,12 +77,12 @@ export class RazorpayService {
     }
   }
 
-  async updateSubscriptionPlan(subscriptionId: string, newPlanType: 'STANDARD' | 'BYOS', newPrice: number) {
-    const newPlanId = await this.getOrCreatePlan(newPlanType, newPrice);
+  async updateSubscriptionPlan(subscriptionId: string, newPlanType: 'STANDARD' | 'BYOS', newPrice: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
+    const newPlanId = await this.getOrCreatePlan(newPlanType, newPrice, billingCycle);
     try {
       await this.razorpay.subscriptions.update(subscriptionId, {
         plan_id: newPlanId,
-        schedule_change_at: 'cycle_end' // Swap happens on the next billing date!
+        schedule_change_at: 'now' // Immediate Proration as requested!
       });
       return true;
     } catch (err) {

@@ -32,7 +32,8 @@ export class BillingController {
   }
 
   @Post('checkout')
-  async createCheckout(@Req() req: any) {
+  async createCheckout(@Req() req: any, @Body() body: { billingCycle?: 'monthly' | 'semi_annual' | 'annual' }) {
+    const cycle = body.billingCycle || 'monthly';
     const tenant = await this.prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
     
     let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
@@ -52,9 +53,15 @@ export class BillingController {
     });
 
     const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
-    const finalPrice = basePrice + (activeDentists * extraPricePerDentist);
+    let finalPrice = basePrice + (activeDentists * extraPricePerDentist);
 
-    const subscription = await this.razorpayService.createSubscription(req.user.tenantId, planType, finalPrice);
+    if (cycle === 'semi_annual') {
+      finalPrice = Math.round(finalPrice * 6 * 0.90); // 6 months, 10% off
+    } else if (cycle === 'annual') {
+      finalPrice = Math.round(finalPrice * 12 * 0.80); // 12 months, 20% off
+    }
+
+    const subscription = await this.razorpayService.createSubscription(req.user.tenantId, planType, finalPrice, cycle);
     return subscription;
   }
 

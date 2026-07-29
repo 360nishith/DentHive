@@ -14,7 +14,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import api from '../../lib/axios';
@@ -146,6 +147,17 @@ export function Sidebar() {
 
       {/* User Profile + Logout */}
       <div className="p-4 border-t border-slate-100 space-y-1">
+        <a 
+          href="https://wa.me/916361953329?text=Hi! I need help with my DentHive dashboard." 
+          target="_blank" 
+          rel="noreferrer"
+          title={isCollapsed ? 'Tech Support' : undefined}
+          className={`flex items-center ${isCollapsed ? 'justify-center w-full p-3' : 'w-full px-4 py-3'} rounded-xl text-[15px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors mb-2`}
+        >
+          <MessageCircle className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-emerald-500`} />
+          {!isCollapsed && <span>Tech Support</span>}
+        </a>
+
         {/* User info */}
         {!isCollapsed && (
           <div className="flex items-center px-4 py-3 rounded-xl bg-slate-50 mb-1">

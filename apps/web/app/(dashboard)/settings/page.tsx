@@ -122,7 +122,8 @@ export default function SettingsPage() {
     e.preventDefault();
     if (inviteForm.roleName === 'DENTIST') {
       const extraCost = (prices as any).extraDoctor || 2000;
-      const confirmBilling = confirm(`Adding a DENTIST will add an extra seat to your subscription and increase your monthly bill by ₹${extraCost}. Do you want to proceed?`);
+      const isTrial = tenant?.status === 'TRIAL';
+      const confirmBilling = confirm(`Adding a DENTIST is free during your trial, but will add ₹${extraCost}/month to your subscription once the trial ends or if you are already on a paid plan. Do you want to proceed?`);
       if (!confirmBilling) return;
     }
 
@@ -172,6 +173,7 @@ export default function SettingsPage() {
 
   const [subscribing, setSubscribing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'semi_annual' | 'annual'>('monthly');
 
   const handleCancelSubscription = async () => {
     if (!confirm('Are you sure you want to cancel your autopilot subscription? You will not be charged again, and your access will drop to Read-Only at the end of your current billing cycle.')) return;
@@ -210,16 +212,18 @@ export default function SettingsPage() {
   const handleSubscribe = async () => {
     setSubscribing(true);
     try {
-      const res = await api.post('/billing/checkout');
+      const res = await api.post('/billing/checkout', { billingCycle });
       const subscription = res.data;
+      
+      const cycleText = billingCycle === 'annual' ? 'Annual' : (billingCycle === 'semi_annual' ? '6-Month' : 'Monthly');
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
         name: formData.name || 'DentHive',
-        description: 'Monthly Autopilot Subscription',
+        description: `${cycleText} Autopilot Subscription`,
         handler: async function (response: any) {
-          alert('Subscription Activated! You will now be automatically billed every month.');
+          alert(`Subscription Activated! You will now be automatically billed on your ${cycleText} cycle.`);
           window.location.reload();
         },
         prefill: {
@@ -487,8 +491,8 @@ export default function SettingsPage() {
                       (() => {
                         const hasOldSub = tenant?.subscriptions?.some((s: any) => ['ACTIVE', 'PENDING'].includes(s.status));
                         const daysUsed = tenant?.createdAt ? Math.floor((Date.now() - new Date(tenant.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                        const isExpired = hasOldSub || daysUsed > 14;
-                        const daysLeft = Math.max(0, 14 - daysUsed);
+                        const isExpired = hasOldSub || daysUsed > 30;
+                        const daysLeft = Math.max(0, 30 - daysUsed);
 
                         return (
                           <>
@@ -502,9 +506,9 @@ export default function SettingsPage() {
                             </h2>
                             <p className="text-sm text-slate-500 mt-1">
                               {isExpired ? (
-                                <>{hasOldSub ? 'Your subscription has expired. Please renew to restore full access to your dashboard.' : 'Your 14-day free trial has expired. Please subscribe to restore full access to your dashboard.'}</>
+                                <>{hasOldSub ? 'Your subscription has expired. Please renew to restore full access to your dashboard.' : 'Your 30-day free trial has expired. Please subscribe to restore full access to your dashboard.'}</>
                               ) : (
-                                <>Your 14-day trial expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}. Subscribe to prevent service interruption.</>
+                                <>Your 30-day trial expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}. Subscribe to prevent service interruption.</>
                               )}
                             </p>
                           </>
@@ -614,14 +618,36 @@ export default function SettingsPage() {
                       </Button>
                     )
                   ) : (
-                    <Button 
-                      onClick={handleSubscribe} 
-                      disabled={subscribing}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base h-12 shadow-md disabled:opacity-70"
-                    >
-                      {subscribing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                      {subscribing ? 'Initializing Checkout...' : 'Subscribe Now via Razorpay'}
-                    </Button>
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                        <button
+                          onClick={() => setBillingCycle('monthly')}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${billingCycle === 'monthly' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                        >
+                          Monthly
+                        </button>
+                        <button
+                          onClick={() => setBillingCycle('semi_annual')}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'semi_annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                        >
+                          6 Months <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">10% OFF</span>
+                        </button>
+                        <button
+                          onClick={() => setBillingCycle('annual')}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                        >
+                          Annual <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">20% OFF</span>
+                        </button>
+                      </div>
+                      <Button 
+                        onClick={handleSubscribe} 
+                        disabled={subscribing}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base h-12 shadow-md disabled:opacity-70"
+                      >
+                        {subscribing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                        {subscribing ? 'Initializing Checkout...' : 'Subscribe Now via Razorpay'}
+                      </Button>
+                    </div>
                   )}
                   <p className="text-xs text-center text-slate-400 mt-3 font-medium flex items-center justify-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Secure payment powered by Razorpay

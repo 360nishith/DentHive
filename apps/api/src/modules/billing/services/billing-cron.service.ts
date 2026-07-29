@@ -16,9 +16,9 @@ export class BillingCronService {
   async checkExpiredTrials() {
     this.logger.log('Running daily expired trial check...');
 
-    // 15 days ago
+    // 31 days ago (allow 30 full days)
     const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() - 15);
+    expirationDate.setDate(expirationDate.getDate() - 31);
 
     const expiredTenants = await this.prisma.tenant.findMany({
       where: {
@@ -45,7 +45,7 @@ export class BillingCronService {
           data: {
             tenantId: t,
             title: 'Trial Expired - Read Only Mode',
-            message: 'Your 14-day free trial has expired. You can still view your data, but you must subscribe to add new patients or book appointments.',
+            message: 'Your 30-day free trial has expired. You can still view your data, but you must subscribe to add new patients or book appointments.',
             type: 'ERROR'
           }
         });
