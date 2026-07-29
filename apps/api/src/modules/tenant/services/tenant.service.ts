@@ -114,7 +114,7 @@ export class TenantService {
     
     let computedStatus = tenant.status;
     if (!activeSub) {
-      if (hasOldSub || daysUsed > 14) {
+      if (hasOldSub || daysUsed >= 30) {
         computedStatus = 'READ_ONLY';
       } else {
         computedStatus = 'TRIAL';
