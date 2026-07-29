@@ -101,9 +101,10 @@ export class RazorpayService {
         schedule_change_at: 'now' // Immediate Proration as requested!
       });
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update Razorpay subscription', err);
-      throw new BadRequestException('Failed to update subscription in Razorpay');
+      const errorMessage = err.error?.description || err.message || 'Unknown Razorpay error';
+      throw new BadRequestException(`Failed to update subscription in Razorpay: ${errorMessage}`);
     }
   }
 
