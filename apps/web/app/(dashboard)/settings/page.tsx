@@ -564,9 +564,9 @@ export default function SettingsPage() {
                           const extraCost = (prices as any).extraDoctor ? dentistCount * (prices as any).extraDoctor : dentistCount * 2000;
                           let finalPrice = base + extraCost;
                           if (billingCycle === 'semi_annual') {
-                            finalPrice = Math.round(finalPrice * 6 * 0.9);
+                            finalPrice = Math.round(finalPrice * 6 * 0.95);
                           } else if (billingCycle === 'annual') {
-                            finalPrice = Math.round(finalPrice * 12 * 0.8);
+                            finalPrice = Math.round(finalPrice * 12 * 0.90);
                           }
                           return finalPrice.toLocaleString('en-IN');
                         })()}
@@ -578,8 +578,8 @@ export default function SettingsPage() {
                         <p className="text-xs text-slate-500 mt-1">
                           (Includes ₹{(() => {
                             const extra = ((prices as any).extraDoctor || 2000) * staff.filter(s => s.role?.name === 'DENTIST').length;
-                            if (billingCycle === 'semi_annual') return Math.round(extra * 6 * 0.9).toLocaleString('en-IN');
-                            if (billingCycle === 'annual') return Math.round(extra * 12 * 0.8).toLocaleString('en-IN');
+                            if (billingCycle === 'semi_annual') return Math.round(extra * 6 * 0.95).toLocaleString('en-IN');
+                            if (billingCycle === 'annual') return Math.round(extra * 12 * 0.90).toLocaleString('en-IN');
                             return extra.toLocaleString('en-IN');
                           })()} for {staff.filter(s => s.role?.name === 'DENTIST').length} extra dentist{staff.filter(s => s.role?.name === 'DENTIST').length > 1 ? 's' : ''})
                         </p>
