@@ -65,6 +65,50 @@ export class BillingController {
     return subscription;
   }
 
+  @Post('upgrade-cycle')
+  async upgradeCycle(@Req() req: any, @Body() body: { billingCycle: 'monthly' | 'semi_annual' | 'annual' }) {
+    const cycle = body.billingCycle;
+    if (!cycle) throw new Error('billingCycle is required');
+
+    const sub = await this.prisma.subscription.findFirst({
+      where: { tenantId: req.user.tenantId, status: 'ACTIVE' }
+    });
+
+    if (!sub || !sub.razorpaySubId) {
+      throw new Error('No active subscription found to upgrade.');
+    }
+
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
+    
+    let basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499');
+    let planType: 'STANDARD' | 'BYOS' = 'STANDARD';
+    
+    if (tenant?.waPhoneNumberId && tenant?.waAccessToken) {
+      basePrice = parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999');
+      planType = 'BYOS';
+    }
+
+    const activeDentists = await this.prisma.user.count({
+      where: {
+        tenantId: req.user.tenantId,
+        role: { name: 'DENTIST' },
+        isActive: true
+      }
+    });
+
+    const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
+    let finalPrice = basePrice + (activeDentists * extraPricePerDentist);
+
+    if (cycle === 'semi_annual') {
+      finalPrice = Math.round(finalPrice * 6 * 0.90);
+    } else if (cycle === 'annual') {
+      finalPrice = Math.round(finalPrice * 12 * 0.80);
+    }
+
+    await this.razorpayService.updateSubscriptionPlan(sub.razorpaySubId, planType, finalPrice, cycle);
+    return { success: true };
+  }
+
   @Post('cancel')
   async cancelSubscription(@Req() req: any) {
     const activeSub = await this.prisma.subscription.findFirst({

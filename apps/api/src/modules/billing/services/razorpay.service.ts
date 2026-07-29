@@ -66,6 +66,15 @@ export class RazorpayService {
     return subscription;
   }
 
+  async getSubscription(subscriptionId: string) {
+    try {
+      return await this.razorpay.subscriptions.fetch(subscriptionId);
+    } catch (err) {
+      console.error('Failed to fetch Razorpay subscription', err);
+      return null;
+    }
+  }
+
   async cancelSubscription(subscriptionId: string) {
     try {
       // cancel_at_cycle_end: 1 ensures they get what they paid for this month
@@ -77,8 +86,14 @@ export class RazorpayService {
     }
   }
 
-  async updateSubscriptionPlan(subscriptionId: string, newPlanType: 'STANDARD' | 'BYOS', newPrice: number, billingCycle: 'monthly' | 'semi_annual' | 'annual' = 'monthly') {
-    const newPlanId = await this.getOrCreatePlan(newPlanType, newPrice, billingCycle);
+  async updateSubscriptionPlan(subscriptionId: string, newPlanType: 'STANDARD' | 'BYOS', newPrice: number, billingCycle?: 'monthly' | 'semi_annual' | 'annual') {
+    let cycleToUse = billingCycle;
+    if (!cycleToUse) {
+      const existingSub = await this.getSubscription(subscriptionId);
+      cycleToUse = (existingSub?.notes?.billingCycle as 'monthly' | 'semi_annual' | 'annual') || 'monthly';
+    }
+
+    const newPlanId = await this.getOrCreatePlan(newPlanType, newPrice, cycleToUse);
     try {
       await this.razorpay.subscriptions.update(subscriptionId, {
         plan_id: newPlanId,

@@ -173,6 +173,7 @@ export default function SettingsPage() {
 
   const [subscribing, setSubscribing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [upgradingCycle, setUpgradingCycle] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'semi_annual' | 'annual'>('monthly');
 
   const handleCancelSubscription = async () => {
@@ -206,6 +207,20 @@ export default function SettingsPage() {
       alert('Failed to wipe demo data: ' + (e.response?.data?.message || e.message));
     } finally {
       setWiping(false);
+    }
+  };
+
+  const handleUpgradeCycle = async () => {
+    if (!confirm('This will instantly charge you the prorated difference and switch you to the selected billing cycle. Do you want to proceed?')) return;
+    setUpgradingCycle(true);
+    try {
+      await api.post('/billing/upgrade-cycle', { billingCycle });
+      alert('Plan upgraded successfully! Your cycle has been shifted.');
+      window.location.reload();
+    } catch (err: any) {
+      alert('Failed to upgrade cycle: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUpgradingCycle(false);
     }
   };
 
@@ -615,46 +630,58 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  {tenant?.subscriptions?.some((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)) ? (
-                    tenant.subscriptions.find((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)).cancelAtPeriodEnd ? (
-                      <Button 
-                        disabled
-                        className="w-full bg-slate-200 text-slate-500 text-base h-12 font-bold cursor-not-allowed"
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                      <button
+                        onClick={() => setBillingCycle('monthly')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${billingCycle === 'monthly' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
                       >
-                        Cancellation Pending
-                      </Button>
+                        Monthly
+                      </button>
+                      <button
+                        onClick={() => setBillingCycle('semi_annual')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'semi_annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                      >
+                        6 Months <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">10% OFF</span>
+                      </button>
+                      <button
+                        onClick={() => setBillingCycle('annual')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
+                      >
+                        Annual <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">20% OFF</span>
+                      </button>
+                    </div>
+
+                    {tenant?.subscriptions?.some((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)) ? (
+                      tenant.subscriptions.find((s: any) => ['ACTIVE', 'PENDING'].includes(s.status)).cancelAtPeriodEnd ? (
+                        <Button 
+                          disabled
+                          className="w-full bg-slate-200 text-slate-500 text-base h-12 font-bold cursor-not-allowed"
+                        >
+                          Cancellation Pending
+                        </Button>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <Button 
+                            onClick={handleUpgradeCycle} 
+                            disabled={upgradingCycle}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base h-12 shadow-md disabled:opacity-70"
+                          >
+                            {upgradingCycle ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                            {upgradingCycle ? 'Upgrading...' : 'Switch to Selected Plan'}
+                          </Button>
+                          <Button 
+                            onClick={handleCancelSubscription}
+                            disabled={cancelling || upgradingCycle}
+                            variant="outline"
+                            className="w-full border-red-200 text-red-600 hover:bg-red-50 text-sm h-10 font-bold transition-colors"
+                          >
+                            {cancelling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {cancelling ? 'Cancelling...' : 'Cancel Auto-Renewal'}
+                          </Button>
+                        </div>
+                      )
                     ) : (
-                      <Button 
-                        onClick={handleCancelSubscription}
-                        disabled={cancelling}
-                        className="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-base h-12 shadow-sm font-bold transition-colors"
-                      >
-                        {cancelling ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                        {cancelling ? 'Cancelling...' : 'Cancel Auto-Renewal'}
-                      </Button>
-                    )
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                        <button
-                          onClick={() => setBillingCycle('monthly')}
-                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${billingCycle === 'monthly' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                        >
-                          Monthly
-                        </button>
-                        <button
-                          onClick={() => setBillingCycle('semi_annual')}
-                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'semi_annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                        >
-                          6 Months <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">10% OFF</span>
-                        </button>
-                        <button
-                          onClick={() => setBillingCycle('annual')}
-                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${billingCycle === 'annual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                        >
-                          Annual <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full">20% OFF</span>
-                        </button>
-                      </div>
                       <Button 
                         onClick={handleSubscribe} 
                         disabled={subscribing}
@@ -663,8 +690,9 @@ export default function SettingsPage() {
                         {subscribing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                         {subscribing ? 'Initializing Checkout...' : 'Subscribe Now via Razorpay'}
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
                   <p className="text-xs text-center text-slate-400 mt-3 font-medium flex items-center justify-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Secure payment powered by Razorpay
                   </p>

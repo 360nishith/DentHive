@@ -73,13 +73,23 @@ export class SubscriptionService {
     }
     const extraPricePerDentist = parseInt(process.env.NEXT_PUBLIC_EXTRA_DOCTOR_PRICE_INR || '2000');
     
-    const newPrice = basePrice + (activeDentists * extraPricePerDentist);
+    let newPrice = basePrice + (activeDentists * extraPricePerDentist);
 
-    this.logger.log(`Syncing per-seat billing for tenant ${tenantId}. Active Extra Dentists: ${activeDentists}. New Total Price: ${newPrice}`);
+    // Fetch the cycle from Razorpay to apply cycle discounts
+    const razorpaySub = await this.razorpayService.getSubscription(sub.razorpaySubId);
+    const cycle = (razorpaySub?.notes?.billingCycle as 'monthly' | 'semi_annual' | 'annual') || 'monthly';
+
+    if (cycle === 'semi_annual') {
+      newPrice = Math.round(newPrice * 6 * 0.9);
+    } else if (cycle === 'annual') {
+      newPrice = Math.round(newPrice * 12 * 0.8);
+    }
+
+    this.logger.log(`Syncing per-seat billing for tenant ${tenantId}. Active Extra Dentists: ${activeDentists}. New Total Price: ${newPrice} (Cycle: ${cycle})`);
 
     // 4. Update Razorpay
     try {
-      await this.razorpayService.updateSubscriptionPlan(sub.razorpaySubId, sub.planTier as 'STANDARD' | 'BYOS', newPrice);
+      await this.razorpayService.updateSubscriptionPlan(sub.razorpaySubId, sub.planTier as 'STANDARD' | 'BYOS', newPrice, cycle);
     } catch (e) {
       this.logger.error(`Failed to sync per-seat billing with Razorpay for tenant ${tenantId}`, e);
     }
