@@ -671,12 +671,22 @@ export default function SettingsPage() {
                       ) : (
                         <div className="flex flex-col gap-2">
                           <Button 
-                            onClick={handleUpgradeCycle} 
-                            disabled={upgradingCycle}
+                            onClick={handleSubscribe} 
+                            disabled={subscribing || upgradingCycle}
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base h-12 shadow-md disabled:opacity-70"
                           >
-                            {upgradingCycle ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                            {upgradingCycle ? 'Upgrading...' : 'Switch to Selected Plan'}
+                            {subscribing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                            {subscribing ? 'Initializing...' : 'Buy Pass / Extend Time'}
+                          </Button>
+                          <Button 
+                            onClick={handleUpgradeCycle} 
+                            disabled={upgradingCycle || subscribing}
+                            variant="outline"
+                            className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-sm h-10 font-bold transition-colors"
+                            title="If you are switching from Monthly to Annual, use this to get a prorated discount for your unused days!"
+                          >
+                            {upgradingCycle ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {upgradingCycle ? 'Calculating...' : 'Switch Cycle (Apply Prorated Discount)'}
                           </Button>
                         </div>
                       )
