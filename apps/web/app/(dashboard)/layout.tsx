@@ -6,7 +6,8 @@ import { supabase } from '../../lib/supabase';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { Topbar } from '../../components/layout/Topbar';
 import { ProductTour } from '../../components/layout/ProductTour';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import api from '../../lib/axios';
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -42,6 +44,15 @@ export default function DashboardLayout({
           return;
         }
         
+        try {
+          const userRes = await api.get('/users/me');
+          if (userRes.data?.status === 'ARREARS_PENDING') {
+            setIsBlocked(true);
+          }
+        } catch (e) {
+          console.error("Failed to fetch user profile", e);
+        }
+
         setLoading(false);
       } catch (err) {
         if (retries > 0) {
@@ -65,6 +76,38 @@ export default function DashboardLayout({
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-50">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isBlocked) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden">
+          <div className="bg-red-600 p-6 flex flex-col items-center justify-center text-white">
+            <AlertCircle className="w-12 h-12 mb-4 opacity-90" />
+            <h2 className="text-xl font-bold text-center">Account Pending Activation</h2>
+          </div>
+          <div className="p-8 text-center">
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              Your account has been added to the clinic successfully, but it is currently locked pending payment of arrears by the clinic administrator.
+            </p>
+            <p className="text-sm font-medium text-slate-900 bg-slate-50 p-4 rounded-lg">
+              Please contact your clinic owner or administrator to complete the payment via the Settings dashboard.
+            </p>
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push('/login');
+                }}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
