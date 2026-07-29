@@ -215,6 +215,15 @@ export class RazorpayService {
         }
       });
 
+      // Activate any newly added doctors that were waiting for arrears to be paid
+      await this.prisma.user.updateMany({
+        where: { tenantId, status: 'ARREARS_PENDING' },
+        data: {
+          isActive: true,
+          status: 'ACTIVE'
+        }
+      });
+
     } catch (err) {
       console.error('Failed to process prepaid order', err);
     }

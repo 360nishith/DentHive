@@ -36,16 +36,16 @@ export class SubscriptionService {
   @OnEvent('staff.created')
   async handleStaffCreated(payload: { tenantId: string, user: any, role: string }) {
     if (payload.role !== 'DENTIST') return;
-    await this.syncPerSeatBilling(payload.tenantId);
+    await this.syncPerSeatBilling(payload.tenantId, payload.user.id);
   }
 
   @OnEvent('staff.status_changed')
   async handleStaffStatusChanged(payload: { tenantId: string, user: any, role: string, status: string }) {
     if (payload.role !== 'DENTIST') return;
-    await this.syncPerSeatBilling(payload.tenantId);
+    await this.syncPerSeatBilling(payload.tenantId, payload.user.id);
   }
 
-  private async syncPerSeatBilling(tenantId: string) {
+  private async syncPerSeatBilling(tenantId: string, userId?: string) {
     // 1. Get the current active subscription
     const sub = await this.prisma.subscription.findFirst({
       where: { tenantId, status: 'ACTIVE' }
@@ -79,6 +79,16 @@ export class SubscriptionService {
         pendingArrears: { increment: proratedAmount }
       }
     });
+
+    if (userId) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          isActive: false,
+          status: 'ARREARS_PENDING'
+        }
+      });
+    }
 
     // 5. Notify the user in the app
     const message = `A new doctor was added to your clinic. ₹${proratedAmount} has been added to your pending arrears for the remaining ${daysLeft} days in your billing cycle. Please go to the Settings page to pay this balance.`;
