@@ -23,7 +23,7 @@ export class UsersService {
 
   async listStaff(tenantId: string) {
     return this.prisma.user.findMany({
-      where: { tenantId, status: 'ACTIVE' },
+      where: { tenantId, status: { in: ['ACTIVE', 'ARREARS_PENDING'] } },
       select: { id: true, authId: true, email: true, firstName: true, lastName: true, roleId: true, status: true, role: true }
     });
   }

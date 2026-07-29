@@ -433,7 +433,14 @@ export default function SettingsPage() {
                   return (
                     <div key={i} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg bg-slate-50">
                       <div>
-                        <p className="font-semibold text-slate-900">{s.firstName} {s.lastName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900">{s.firstName} {s.lastName}</p>
+                          {s.status === 'ARREARS_PENDING' && (
+                            <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              Payment Pending
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500">{s.email}</p>
                       </div>
                       <div className="flex items-center gap-4">
