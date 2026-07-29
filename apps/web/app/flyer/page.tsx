@@ -28,8 +28,9 @@ export default function FlyerPage() {
         <div className="bg-indigo-900 text-white p-12 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           <div className="relative z-10">
-            <div className="inline-flex items-center justify-center p-4 bg-white/10 rounded-2xl mb-6 backdrop-blur-sm border border-white/20">
-              <img src="/logo.png" alt="DentHive Logo" className="w-16 h-16 rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <div className="inline-flex flex-col items-center justify-center p-4 bg-white/10 rounded-2xl mb-6 backdrop-blur-sm border border-white/20">
+              <img src="/logo.png" alt="DentHive Logo" className="w-16 h-16 rounded-xl mb-2" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <span className="text-xl font-bold tracking-wide text-white">DentHive</span>
             </div>
             <h1 className="text-5xl font-extrabold mb-6 tracking-tight leading-tight">
               Stop Losing Money to <span className="text-rose-400">No-Shows</span> & Empty Chairs
@@ -82,49 +83,63 @@ export default function FlyerPage() {
           </div>
         </div>
 
-        {/* CORE FEATURES GRID */}
-        <div className="p-12">
-          <h2 className="text-3xl font-black text-center text-slate-900 mb-10">Everything you need to scale your clinic.</h2>
+        {/* CORE FEATURES */}
+        <div className="p-12 space-y-16">
+          <h2 className="text-4xl font-black text-center text-slate-900 mb-12">Everything you need to scale your clinic.</h2>
           
-          <div className="grid grid-cols-2 gap-8">
-            <div className="flex gap-4">
-              <div className="bg-indigo-100 p-3 rounded-lg h-fit shrink-0">
+          {/* Feature 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center print:grid-cols-2 print:break-inside-avoid">
+            <div>
+              <div className="bg-indigo-100 p-3 rounded-lg w-fit mb-4">
                 <Smartphone className="w-6 h-6 text-indigo-700" />
               </div>
-              <div>
-                <h4 className="font-bold text-slate-900 text-lg mb-1">WhatsApp Automation</h4>
-                <p className="text-slate-600 text-sm leading-relaxed">Instantly send appointment confirmations, 24hr reminders, and custom treatment updates directly to the patient's phone. No app required for them.</p>
-              </div>
+              <h4 className="font-bold text-slate-900 text-2xl mb-3">WhatsApp Automation</h4>
+              <p className="text-slate-600 text-lg leading-relaxed">Instantly send appointment confirmations, 24hr reminders, and custom treatment updates directly to the patient's phone. No app required for them.</p>
             </div>
-            
-            <div className="flex gap-4">
-              <div className="bg-orange-100 p-3 rounded-lg h-fit shrink-0">
+            <div className="bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+               <img src="/guide/whatsapp.png" alt="WhatsApp Automation" className="w-full h-auto object-cover" />
+            </div>
+          </div>
+          
+          {/* Feature 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center print:grid-cols-2 print:break-inside-avoid">
+            <div className="order-2 md:order-1 print:order-1 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+               <img src="/guide/prescription.png" alt="Digital Prescriptions" className="w-full h-auto object-cover" />
+            </div>
+            <div className="order-1 md:order-2 print:order-2">
+              <div className="bg-orange-100 p-3 rounded-lg w-fit mb-4">
                 <Printer className="w-6 h-6 text-orange-700" />
               </div>
-              <div>
-                <h4 className="font-bold text-slate-900 text-lg mb-1">Digital Prescriptions</h4>
-                <p className="text-slate-600 text-sm leading-relaxed">Throw away the prescription pad. Generate beautiful, branded PDF prescriptions with one click and fire them straight to WhatsApp or print them on the spot.</p>
-              </div>
+              <h4 className="font-bold text-slate-900 text-2xl mb-3">Digital Prescriptions</h4>
+              <p className="text-slate-600 text-lg leading-relaxed">Throw away the prescription pad. Generate beautiful, branded PDF prescriptions with one click and fire them straight to WhatsApp or print them on the spot.</p>
             </div>
+          </div>
 
-            <div className="flex gap-4">
-              <div className="bg-emerald-100 p-3 rounded-lg h-fit shrink-0">
+          {/* Feature 3 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center print:grid-cols-2 print:break-inside-avoid">
+            <div>
+              <div className="bg-emerald-100 p-3 rounded-lg w-fit mb-4">
                 <TrendingUp className="w-6 h-6 text-emerald-700" />
               </div>
-              <div>
-                <h4 className="font-bold text-slate-900 text-lg mb-1">Revenue Recovery (Zero Fees)</h4>
-                <p className="text-slate-600 text-sm leading-relaxed">Send direct UPI payment links via WhatsApp. The patient taps, pays via GPay/PhonePe, and the money goes directly to your bank with absolutely zero transaction fees.</p>
-              </div>
+              <h4 className="font-bold text-slate-900 text-2xl mb-3">Revenue Recovery (Zero Fees)</h4>
+              <p className="text-slate-600 text-lg leading-relaxed">Send direct UPI payment links via WhatsApp. The patient taps, pays via GPay/PhonePe, and the money goes directly to your bank with absolutely zero transaction fees.</p>
             </div>
+            <div className="bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+               <img src="/guide/billing.png" alt="Revenue Recovery" className="w-full h-auto object-cover" />
+            </div>
+          </div>
 
-            <div className="flex gap-4">
-              <div className="bg-purple-100 p-3 rounded-lg h-fit shrink-0">
+          {/* Feature 4 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center print:grid-cols-2 print:break-inside-avoid">
+            <div className="order-2 md:order-1 print:order-1 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+               <img src="/guide/followups.png" alt="Stalled Patient Revival" className="w-full h-auto object-cover" />
+            </div>
+            <div className="order-1 md:order-2 print:order-2">
+              <div className="bg-purple-100 p-3 rounded-lg w-fit mb-4">
                 <Users className="w-6 h-6 text-purple-700" />
               </div>
-              <div>
-                <h4 className="font-bold text-slate-900 text-lg mb-1">Stalled Patient Revival</h4>
-                <p className="text-slate-600 text-sm leading-relaxed">DentHive's AI automatically flags patients who stopped showing up mid-treatment and helps your staff revive those high-value journeys effortlessly.</p>
-              </div>
+              <h4 className="font-bold text-slate-900 text-2xl mb-3">Stalled Patient Revival</h4>
+              <p className="text-slate-600 text-lg leading-relaxed">DentHive's AI automatically flags patients who stopped showing up mid-treatment and helps your staff revive those high-value journeys effortlessly.</p>
             </div>
           </div>
         </div>
@@ -145,19 +160,19 @@ export default function FlyerPage() {
                 <div className="bg-indigo-600 p-2 rounded-full shrink-0">
                   <Users className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-medium text-lg text-slate-200">Nishith</span>
+                <span className="font-medium text-lg text-slate-200">Nishith Dharmaraj</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-600 p-2 rounded-full shrink-0">
                   <Phone className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-medium text-lg text-slate-200">+91 XXXXX XXXXX</span>
+                <span className="font-medium text-lg text-slate-200">+91 6361953329</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-600 p-2 rounded-full shrink-0">
                   <ArrowRight className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-medium text-lg text-slate-200">hello@denthive.in</span>
+                <span className="font-medium text-lg text-slate-200">denthive.support@gmail.com</span>
               </div>
             </div>
           </div>

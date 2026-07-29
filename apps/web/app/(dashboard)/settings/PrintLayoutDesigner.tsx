@@ -410,9 +410,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col xl:flex-row gap-4 items-start w-full">
         {/* Toolbar */}
-        <div className="w-48 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 h-fit">
+        <div className="w-full xl:w-48 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 h-fit shrink-0">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tools</h3>
           <button onClick={addTextElement} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
             <Type className="w-4 h-4 text-slate-500" /> Add Text
@@ -539,13 +539,14 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           </div>
         </div>
 
-        {/* Canvas */}
-        <div 
-          ref={canvasRef}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-          onPointerDown={() => setSelectedId(null)}
+        {/* Canvas Wrapper */}
+        <div className="w-full overflow-x-auto pb-8">
+          <div 
+            ref={canvasRef}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            onPointerDown={() => setSelectedId(null)}
           className="flex-1 bg-white border border-slate-300 rounded-sm shadow-sm relative overflow-hidden"
           style={{ 
             height: `${canvasHeight}px`, 
@@ -629,6 +630,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
           >
             Prescription Body Starts Here
           </div>
+        </div>
         </div>
       </div>
     </div>

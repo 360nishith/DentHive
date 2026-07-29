@@ -30,8 +30,9 @@ export default function GuidePage() {
       <main className="max-w-4xl mx-auto p-8 print:p-0 bg-white shadow-sm my-8 print:my-0 print:shadow-none print:w-full">
         {/* Title Page / Header */}
         <div className="border-b-4 border-indigo-500 pb-8 mb-12 text-center pt-8">
-          <div className="inline-flex items-center justify-center p-4 bg-indigo-50 rounded-2xl mb-6">
-            <img src="/logo.png" alt="DentHive Logo" className="w-16 h-16 rounded-xl shadow-sm" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div className="inline-flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-2xl mb-6">
+            <img src="/logo.png" alt="DentHive Logo" className="w-16 h-16 rounded-xl shadow-sm mb-2" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <span className="text-xl font-bold tracking-wide text-indigo-900">DentHive</span>
           </div>
           <h1 className="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">DentHive User Guide</h1>
           <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-8">
