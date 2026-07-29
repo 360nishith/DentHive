@@ -182,10 +182,10 @@ export class RazorpayService {
 
       // If it's an upgrade mid-cycle (like adding a doctor), we don't extend the days. We just process the payment.
       // Wait, if they are upgrading cycle (Monthly -> Annual), we DO extend the days.
-      // We will let the billing cycle note dictate the extension, unless it's a mid-cycle doctor addition (which we can flag as isUpgrade=true in notes)
+      // We will let the billing cycle note dictate the extension, unless it's a mid-cycle doctor addition (which we flag as isProratedUpgrade=true in notes)
       
-      const isUpgrade = order.notes?.isUpgrade === 'true';
-      if (!isUpgrade) {
+      const isProratedUpgrade = order.notes?.isProratedUpgrade === 'true';
+      if (!isProratedUpgrade) {
          currentEnd.setDate(currentEnd.getDate() + daysToAdd);
       }
 
