@@ -62,6 +62,17 @@ export class RazorpayService {
     }
   }
 
+  async cancelSubscription(subscriptionId: string) {
+    try {
+      // cancel_at_cycle_end: 1 ensures they get what they paid for this month
+      await this.razorpay.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
+      return true;
+    } catch (err) {
+      console.error('Failed to cancel Razorpay subscription', err);
+      throw new BadRequestException('Failed to cancel subscription in Razorpay');
+    }
+  }
+
   async verifyWebhookSignature(body: any, signature: string) {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'webhook_secret';
     const expectedSignature = crypto
