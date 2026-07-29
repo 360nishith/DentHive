@@ -21,6 +21,20 @@ export class TenantCacheService {
     }
   }
 
+  async checkAndSetOrderProcessed(orderId: string): Promise<boolean> {
+    const key = `order_processed:${orderId}`;
+    try {
+      const isProcessed = await this.redis.get(key);
+      if (isProcessed) return true;
+      // Set with 7 days TTL (604800 seconds)
+      await this.redis.set(key, 'true', 'EX', 604800);
+      return false;
+    } catch (e) {
+      this.logger.error(`Redis check failed for ${key}`, e);
+      return false; // If redis fails, assume not processed to not block legit payments
+    }
+  }
+
   async getStatusSafely(tenantId: string): Promise<string> {
     const key = `tenant_status:${tenantId}`;
     try {

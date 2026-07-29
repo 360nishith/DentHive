@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { TenantCacheService } from '../../tenant/services/tenant-cache.service';
 import * as crypto from 'crypto';
 const Razorpay = require('razorpay');
 
@@ -7,7 +8,10 @@ const Razorpay = require('razorpay');
 export class RazorpayService {
   private razorpay: any;
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private tenantCache: TenantCacheService
+  ) {
     this.razorpay = new Razorpay({
       key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_xxx',
       key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret_xxx',
@@ -157,6 +161,13 @@ export class RazorpayService {
     const orderId = paymentEntity?.order_id;
     
     if (!orderId) return;
+
+    // Idempotency check: Don't process the same order twice
+    const alreadyProcessed = await this.tenantCache.checkAndSetOrderProcessed(orderId);
+    if (alreadyProcessed) {
+      console.log(`Order ${orderId} was already processed, skipping duplicate webhook.`);
+      return;
+    }
 
     try {
       const order = await this.razorpay.orders.fetch(orderId);
