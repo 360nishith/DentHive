@@ -314,12 +314,12 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Drag-and-Drop Print Designer</h2>
           <p className="text-sm text-slate-500">Design your exact prescription pad layout here.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
           <select 
             value={paperSize} 
             onChange={e => {
@@ -399,11 +399,11 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
             <span className="text-xs font-mono font-medium text-slate-600">{formData.printConfig?.bodyTopMargin !== undefined ? formData.printConfig.bodyTopMargin : 300}px</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={resetToPreset} variant="outline" className="text-slate-600 border-slate-300">
+        <div className="flex flex-wrap gap-2 w-full xl:w-auto justify-end">
+          <Button onClick={resetToPreset} variant="outline" className="flex-1 xl:flex-none text-slate-600 border-slate-300">
             Reset to Preset
           </Button>
-          <Button onClick={onSave} disabled={saving} className="bg-indigo-600 text-white shadow-sm">
+          <Button onClick={onSave} disabled={saving} className="flex-1 xl:flex-none bg-indigo-600 text-white shadow-sm">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             Save Layout
           </Button>
@@ -414,18 +414,20 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         {/* Toolbar */}
         <div className="w-full xl:w-48 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 h-fit shrink-0">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tools</h3>
-          <button onClick={addTextElement} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            <Type className="w-4 h-4 text-slate-500" /> Add Text
-          </button>
-          <button onClick={addImageElement} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            <ImageIcon className="w-4 h-4 text-slate-500" /> Add Logo
-          </button>
-          <button onClick={addRxBadge} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            <Layout className="w-4 h-4 text-slate-500" /> Add Rx Badge
-          </button>
-          <button onClick={addHorizontalLine} className="flex items-center gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-            <Minus className="w-4 h-4 text-slate-500" /> Add Line
-          </button>
+          <div className="grid grid-cols-2 xl:grid-cols-1 gap-2">
+            <button onClick={addTextElement} className="flex items-center justify-center xl:justify-start gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
+              <Type className="w-4 h-4 text-slate-500" /> Add Text
+            </button>
+            <button onClick={addImageElement} className="flex items-center justify-center xl:justify-start gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
+              <ImageIcon className="w-4 h-4 text-slate-500" /> Add Logo
+            </button>
+            <button onClick={addRxBadge} className="flex items-center justify-center xl:justify-start gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
+              <Layout className="w-4 h-4 text-slate-500" /> Rx Badge
+            </button>
+            <button onClick={addHorizontalLine} className="flex items-center justify-center xl:justify-start gap-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
+              <Minus className="w-4 h-4 text-slate-500" /> Add Line
+            </button>
+          </div>
           
           {selectedEl && (
             <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
