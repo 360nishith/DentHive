@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { Topbar } from '../../components/layout/Topbar';
-import { ProductTour } from '../../components/layout/ProductTour';
+import dynamic from 'next/dynamic';
 import { Loader2, AlertCircle } from 'lucide-react';
 import api from '../../lib/axios';
+
+const ProductTour = dynamic(() => import('../../components/layout/ProductTour').then(mod => mod.ProductTour), { ssr: false });
+
 
 export default function DashboardLayout({
   children,
