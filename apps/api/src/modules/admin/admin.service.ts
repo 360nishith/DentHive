@@ -14,43 +14,45 @@ export class AdminService {
   ) {}
 
   async overrideBilling(tenantId: string, status: string, daysToAdd: number) {
-    await this.prisma.tenant.update({
-      where: { id: tenantId },
-      data: { status }
-    });
-
-    if (daysToAdd > 0) {
-      const currentSub = await this.prisma.subscription.findFirst({
-        where: { tenantId }
+    return require('../../common/context/als').als.run({ tenantId: undefined }, async () => {
+      await this.prisma.tenant.update({
+        where: { id: tenantId },
+        data: { status }
       });
 
-      let currentEnd = currentSub && currentSub.currentPeriodEnd > new Date() ? currentSub.currentPeriodEnd : new Date();
-      currentEnd.setDate(currentEnd.getDate() + daysToAdd);
+      if (daysToAdd > 0) {
+        const currentSub = await this.prisma.subscription.findFirst({
+          where: { tenantId }
+        });
 
-      if (currentSub) {
-        await this.prisma.subscription.update({
-          where: { id: currentSub.id },
-          data: {
-            status: 'ACTIVE',
-            currentPeriodEnd: currentEnd,
-            cancelAtPeriodEnd: false
-          }
-        });
-      } else {
-        await this.prisma.subscription.create({
-          data: {
-            tenantId,
-            planTier: 'STANDARD',
-            status: 'ACTIVE',
-            currentPeriodEnd: currentEnd
-          }
-        });
+        let currentEnd = currentSub && currentSub.currentPeriodEnd > new Date() ? currentSub.currentPeriodEnd : new Date();
+        currentEnd.setDate(currentEnd.getDate() + daysToAdd);
+
+        if (currentSub) {
+          await this.prisma.subscription.update({
+            where: { id: currentSub.id },
+            data: {
+              status: 'ACTIVE',
+              currentPeriodEnd: currentEnd,
+              cancelAtPeriodEnd: false
+            }
+          });
+        } else {
+          await this.prisma.subscription.create({
+            data: {
+              tenantId,
+              planTier: 'STANDARD',
+              status: 'ACTIVE',
+              currentPeriodEnd: currentEnd
+            }
+          });
+        }
       }
-    }
 
-    // Force flush the cache so the iron gate picks up the new status instantly
-    await this.tenantCacheService.setStatus(tenantId, status);
-    return { success: true };
+      // Force flush the cache so the iron gate picks up the new status instantly
+      await this.tenantCacheService.setStatus(tenantId, status);
+      return { success: true };
+    });
   }
 
   async getDashboardStats() {
