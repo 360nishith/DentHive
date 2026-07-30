@@ -49,7 +49,7 @@ export class AdminService {
     }
 
     // Force flush the cache so the iron gate picks up the new status instantly
-    await this.tenantCacheService.flushTenant(tenantId);
+    await this.tenantCacheService.setStatus(tenantId, status);
     return { success: true };
   }
 
