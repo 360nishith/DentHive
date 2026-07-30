@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { TenantCacheService } from '../../modules/tenant/services/tenant-cache.service';
 import { parse } from 'csv-parse/sync';
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,8 +9,49 @@ import { createClient } from '@supabase/supabase-js';
 export class AdminService {
   constructor(
     private prisma: PrismaService,
-    private supabaseService: SupabaseService
+    private supabaseService: SupabaseService,
+    private tenantCacheService: TenantCacheService
   ) {}
+
+  async overrideBilling(tenantId: string, status: string, daysToAdd: number) {
+    await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { status }
+    });
+
+    if (daysToAdd > 0) {
+      const currentSub = await this.prisma.subscription.findFirst({
+        where: { tenantId }
+      });
+
+      let currentEnd = currentSub && currentSub.currentPeriodEnd > new Date() ? currentSub.currentPeriodEnd : new Date();
+      currentEnd.setDate(currentEnd.getDate() + daysToAdd);
+
+      if (currentSub) {
+        await this.prisma.subscription.update({
+          where: { id: currentSub.id },
+          data: {
+            status: 'ACTIVE',
+            currentPeriodEnd: currentEnd,
+            cancelAtPeriodEnd: false
+          }
+        });
+      } else {
+        await this.prisma.subscription.create({
+          data: {
+            tenantId,
+            planTier: 'STANDARD',
+            status: 'ACTIVE',
+            currentPeriodEnd: currentEnd
+          }
+        });
+      }
+    }
+
+    // Force flush the cache so the iron gate picks up the new status instantly
+    await this.tenantCacheService.flushTenant(tenantId);
+    return { success: true };
+  }
 
   async getDashboardStats() {
     const tenants: any = await this.prisma.tenant.findMany({

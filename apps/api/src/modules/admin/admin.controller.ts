@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Param, UseGuards, Post, UseInterceptors, UploadedFile, BadRequestException, Body } from '@nestjs/common';
+import { Controller, Get, Delete, Param, UseGuards, Post, UseInterceptors, UploadedFile, BadRequestException, Body, Patch } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
@@ -22,6 +22,11 @@ export class AdminController {
   @Delete('tenants/:id')
   async deleteTenant(@Param('id') id: string) {
     return this.adminService.deleteTenant(id);
+  }
+
+  @Patch('tenants/:id/billing')
+  async overrideBilling(@Param('id') id: string, @Body() body: { status: string, daysToAdd: number }) {
+    return this.adminService.overrideBilling(id, body.status, body.daysToAdd || 0);
   }
 
   @Post('tenants/:id/import-csv')

@@ -24,6 +24,15 @@ export default function SuperAdminPage() {
   });
   const [inviting, setInviting] = useState(false);
 
+  // Billing Override Modal State
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const [billingForm, setBillingForm] = useState({
+    status: 'ACTIVE',
+    daysToAdd: 30
+  });
+  const [updatingBilling, setUpdatingBilling] = useState(false);
+
   useEffect(() => {
     const checkAuthAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -81,6 +90,28 @@ export default function SuperAdminPage() {
       alert(err.response?.data?.message || 'Failed to invite clinic');
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleBillingOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTenant) return;
+    setUpdatingBilling(true);
+    try {
+      await api.patch(`/admin/tenants/${selectedTenant.id}/billing`, {
+        status: billingForm.status,
+        daysToAdd: Number(billingForm.daysToAdd)
+      });
+      alert('Billing successfully overridden! They are unlocked.');
+      setShowBillingModal(false);
+      
+      // Refresh list
+      const res = await api.get('/admin/tenants');
+      setTenants(res.data);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update billing');
+    } finally {
+      setUpdatingBilling(false);
     }
   };
 
@@ -216,6 +247,17 @@ export default function SuperAdminPage() {
                         />
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                       </label>
+                      <button
+                        onClick={() => {
+                          setSelectedTenant(t);
+                          setBillingForm({ status: 'ACTIVE', daysToAdd: 30 });
+                          setShowBillingModal(true);
+                        }}
+                        className="p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded transition-colors"
+                        title="Override Billing"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      </button>
                       <button 
                         onClick={() => handleDeleteTenant(t.id, t.name)}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
@@ -276,6 +318,60 @@ export default function SuperAdminPage() {
                 <button type="button" onClick={() => setShowInviteModal(false)} className="flex-1 px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium transition-colors">Cancel</button>
                 <button type="submit" disabled={inviting} className="flex-1 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors disabled:opacity-50">
                   {inviting ? 'Inviting...' : 'Create Client'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Billing Override Modal */}
+      {showBillingModal && selectedTenant && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Billing Override</h2>
+              <button onClick={() => setShowBillingModal(false)} className="text-slate-400 hover:text-slate-600">×</button>
+            </div>
+            <p className="text-sm text-slate-500 mb-6">Forcefully update billing status for <strong>{selectedTenant.name}</strong>. This bypasses the payment gateway.</p>
+            <form onSubmit={handleBillingOverrideSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">New Status</label>
+                <select 
+                  value={billingForm.status}
+                  onChange={e => setBillingForm({...billingForm, status: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="ACTIVE">ACTIVE (Unlocked)</option>
+                  <option value="READ_ONLY">READ ONLY (Expired)</option>
+                  <option value="PAST_DUE">PAST DUE (Suspended)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Add Free Days</label>
+                <input 
+                  type="number"
+                  value={billingForm.daysToAdd}
+                  onChange={e => setBillingForm({...billingForm, daysToAdd: Number(e.target.value)})}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  min="0"
+                />
+                <p className="text-xs text-slate-500 mt-1">Number of days to extend their current subscription.</p>
+              </div>
+              <div className="flex justify-end pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowBillingModal(false)}
+                  className="mr-3 px-4 py-2 text-slate-600 hover:text-slate-800"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={updatingBilling}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {updatingBilling ? 'Updating...' : 'Force Update'}
                 </button>
               </div>
             </form>
