@@ -1,2 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { typescript: { ignoreBuildErrors: true }, eslint: { ignoreDuringBuilds: true }, productionBrowserSourceMaps: false }; module.exports = nextConfig;
+const nextConfig = { 
+  output: 'export',
+  typescript: { ignoreBuildErrors: true }, 
+  eslint: { ignoreDuringBuilds: true }, 
+  productionBrowserSourceMaps: false 
+}; 
+module.exports = nextConfig;
