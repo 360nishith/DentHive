@@ -59,6 +59,12 @@ export default function DashboardLayout({
             setIsBlocked(true);
           } else if (tenantRes.data?.status === 'READ_ONLY' && role !== 'ADMIN') {
             setIsBlocked(true);
+          } else if ((tenantRes.data?.status === 'PAST_DUE' || tenantRes.data?.status === 'SUSPENDED') && role !== 'ADMIN') {
+            setIsBlocked(true);
+          } else if ((tenantRes.data?.status === 'PAST_DUE' || tenantRes.data?.status === 'SUSPENDED') && role === 'ADMIN') {
+            if (window.location.pathname !== '/settings') {
+              router.push('/settings');
+            }
           }
         } catch (e) {
           console.error("Failed to fetch profile or tenant status", e);

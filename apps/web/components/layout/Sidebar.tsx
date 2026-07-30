@@ -116,7 +116,9 @@ export function Sidebar() {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           
           const isPatientsTab = item.name === 'Patients';
-          const isDisabled = isPatientsTab && tenantStatus === 'READ_ONLY';
+          const isDisabled = 
+            (isPatientsTab && tenantStatus === 'READ_ONLY') || 
+            ((tenantStatus === 'PAST_DUE' || tenantStatus === 'SUSPENDED') && item.name !== 'Settings');
 
           if (isDisabled) {
             return (
