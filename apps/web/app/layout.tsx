@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Toaster } from 'react-hot-toast';
 
+export const runtime = 'edge';
+
 export const metadata: Metadata = {
   title: 'DentHive - Clinic Management',
   description: 'Multi-Tenant SaaS for Dental Clinics',
