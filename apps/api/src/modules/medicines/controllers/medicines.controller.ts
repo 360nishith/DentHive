@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { MedicinesService } from '../services/medicines.service';
 import { AuthGuard } from '@nestjs/passport';
+import { TenantStatusGuard } from '../../../common/guards/tenant-status.guard';
 
 @Controller('medicines')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), TenantStatusGuard)
 export class MedicinesController {
   constructor(private readonly medicinesService: MedicinesService) {}
 

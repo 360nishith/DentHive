@@ -27,10 +27,31 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       // Inject tenantId globally for isolated queries, EXCEPT for models that don't have it
       const globalModelsWithoutTenantId = ['Tenant', 'Role'];
       if (params.model && !globalModelsWithoutTenantId.includes(params.model)) {
-        if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+        if (['findMany', 'count', 'aggregate', 'updateMany', 'deleteMany'].includes(params.action)) {
            if (!params.args.where) params.args.where = {};
            params.args.where.tenantId = tenantId;
         }
+
+        if (['findUnique', 'findFirst'].includes(params.action)) {
+           params.action = 'findFirst';
+           if (!params.args.where) params.args.where = {};
+           params.args.where.tenantId = tenantId;
+        }
+
+        if (['update', 'delete'].includes(params.action)) {
+           const delegateName = params.model.charAt(0).toLowerCase() + params.model.slice(1);
+           const delegate = (this as any)[delegateName];
+           if (delegate) {
+             const record = await delegate.findFirst({
+               where: params.args.where,
+               select: { id: true }
+             });
+             if (!record) {
+               throw new Error(`Access denied or record not found in tenant ${tenantId}`);
+             }
+           }
+        }
+
         if (['create', 'update', 'upsert'].includes(params.action)) {
            if (!params.args.data) params.args.data = {};
            params.args.data.tenantId = tenantId;
@@ -41,17 +62,37 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       if (role === 'DENTIST' && userId) {
         const isolatedModels = ['Patient', 'Appointment', 'TreatmentJourney', 'Payment'];
         if (params.model && isolatedModels.includes(params.model)) {
-          if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'updateMany', 'deleteMany', 'update', 'delete'].includes(params.action)) {
+          if (['findMany', 'count', 'aggregate', 'updateMany', 'deleteMany'].includes(params.action)) {
             if (!params.args.where) params.args.where = {};
-            // Allow explicit queries for unassigned patients (doctorId = null).
-            // If they are not querying for unassigned, force isolation to their own ID.
             if (params.args.where.doctorId !== null) {
               params.args.where.doctorId = userId;
             }
           }
+          
+          if (['findUnique', 'findFirst'].includes(params.action)) {
+            params.action = 'findFirst';
+            if (!params.args.where) params.args.where = {};
+            if (params.args.where.doctorId !== null) {
+              params.args.where.doctorId = userId;
+            }
+          }
+
+          if (['update', 'delete'].includes(params.action)) {
+             const delegateName = params.model.charAt(0).toLowerCase() + params.model.slice(1);
+             const delegate = (this as any)[delegateName];
+             if (delegate) {
+               const record = await delegate.findFirst({
+                 where: params.args.where,
+                 select: { id: true }
+               });
+               if (!record) {
+                 throw new Error(`Access denied: Record does not belong to doctor ${userId}`);
+               }
+             }
+          }
+
           if (['create', 'update', 'upsert'].includes(params.action)) {
             if (!params.args.data) params.args.data = {};
-            // Allow assigning to any doctor. Only default to self if not provided.
             if (params.args.data.doctorId === undefined) {
               params.args.data.doctorId = userId;
             }

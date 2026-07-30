@@ -31,6 +31,11 @@ export class OutboundWorker extends WorkerHost {
           return;
         }
 
+        if (dbMsg.status === 'SENT' || dbMsg.status === 'FAILED') {
+          this.logger.log(`Message ${messageId} already processed with status ${dbMsg.status}. Skipping.`);
+          return { success: true, metaId: dbMsg.payload?.metaMessageId };
+        }
+
         const response = await this.metaApi.sendTemplateMessage(dbMsg.tenantId, to, template, 'en', components);
         
         // Update DB record with the Meta message ID and status
@@ -75,6 +80,11 @@ export class OutboundWorker extends WorkerHost {
         if (!dbMsg) {
           this.logger.error(`Message ${messageId} not found in DB`);
           return;
+        }
+
+        if (dbMsg.status === 'SENT' || dbMsg.status === 'FAILED') {
+          this.logger.log(`Text Message ${messageId} already processed with status ${dbMsg.status}. Skipping.`);
+          return { success: true, metaId: dbMsg.payload?.metaMessageId };
         }
 
         const response = await this.metaApi.sendTextMessage(dbMsg.tenantId, to, text);

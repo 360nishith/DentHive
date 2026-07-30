@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Patch, Delete, Body, Req, UseGuards, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { TenantService } from '../services/tenant.service';
 import { AuthGuard } from '@nestjs/passport';
+import { TenantStatusGuard } from '../../../common/guards/tenant-status.guard';
 
 @Controller('tenant')
 export class TenantController {
@@ -14,13 +15,13 @@ export class TenantController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt')) // Must be fully onboarded (have tenantId)
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard) // Must be fully onboarded (have tenantId)
   async getMyClinic(@Req() req: any) {
     return this.tenantService.getMyClinic(req.user.tenantId, req.user.email, req.user.id);
   }
 
   @Patch()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard)
   async updateClinic(@Req() req: any, @Body() body: any) {
     if (req.user.role === 'STAFF') {
       throw new Error('Unauthorized');
@@ -49,19 +50,19 @@ export class TenantController {
   }
 
   @Get('notifications')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard)
   async getNotifications(@Req() req: any) {
     return this.tenantService.getNotifications(req.user.tenantId, req.user.id, req.user.role);
   }
 
   @Patch('notifications/read-all')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard)
   async markNotificationsRead(@Req() req: any) {
     return this.tenantService.markNotificationsRead(req.user.tenantId, req.user.id, req.user.role);
   }
 
   @Get('export')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard)
   async exportData(@Req() req: any) {
     if (req.user.role === 'STAFF') {
       throw new UnauthorizedException('Unauthorized');
@@ -70,7 +71,7 @@ export class TenantController {
   }
 
   @Delete('demo-data')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), TenantStatusGuard)
   async resetDemoData(@Req() req: any) {
     const allowedEmails = ['nishithdharmaraj@gmail.com', 'salesdemo@denthive.in', 'doctordemo@denthive.in'];
     if (!allowedEmails.includes(req.user.email)) {

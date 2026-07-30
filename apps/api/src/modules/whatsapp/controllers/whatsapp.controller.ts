@@ -2,9 +2,10 @@ import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { WhatsAppService } from '../services/whatsapp.service';
+import { TenantStatusGuard } from '../../../common/guards/tenant-status.guard';
 
 @Controller('whatsapp')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), TenantStatusGuard, RolesGuard)
 export class WhatsAppController {
   constructor(private readonly whatsappService: WhatsAppService) {}
 
