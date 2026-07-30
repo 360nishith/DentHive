@@ -40,9 +40,14 @@ export default function LandingPage() {
               Automate your WhatsApp reminders, streamline patient journeys, and supercharge your clinic's revenue with zero manual effort.
             </p>
             <div className="flex justify-center gap-4">
-              <Link href="/login" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
+              <a 
+                href="https://wa.me/916361953329?text=Hi!%20I%20would%20like%20to%20start%20my%2030-day%20free%20trial%20of%20DentHive."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:-translate-y-0.5"
+              >
                 Start Your 30-Day Free Trial <ArrowRight className="w-5 h-5" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>
