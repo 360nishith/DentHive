@@ -333,7 +333,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                 </label>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={saveProfile} disabled={savingProfile}>
+                <Button size="sm" onClick={handleSaveProfile} disabled={savingProfile}>
                   <Check className="w-4 h-4 mr-1" />
                   {savingProfile ? 'Saving...' : 'Save'}
                 </Button>
