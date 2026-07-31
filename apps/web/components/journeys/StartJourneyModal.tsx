@@ -29,13 +29,7 @@ export function StartJourneyModal({ isOpen, onClose, patientId, onJourneyStarted
     setLoading(true);
     try {
       const res = await api.get('/journey-templates');
-      if (res.data.length === 0) {
-        await api.post('/journey-templates/seed/default');
-        const res2 = await api.get('/journey-templates');
-        setTemplates(res2.data);
-      } else {
-        setTemplates(res.data);
-      }
+      setTemplates(res.data);
     } catch (err) {
       console.error('Failed to fetch templates', err);
     } finally {
