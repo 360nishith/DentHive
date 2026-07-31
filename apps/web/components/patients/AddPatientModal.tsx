@@ -25,6 +25,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
   const [error, setError] = useState('');
   const [doctors, setDoctors] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState('');
+  const [currentUserId, setCurrentUserId] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
