@@ -149,7 +149,7 @@ export class PatientsService {
 
   async getClinicalNotes(tenantId: string, patientId: string) {
     return this.prisma.clinicalNote.findMany({
-      where: { patientId },
+      where: { patientId, tenantId },
       include: {
         author: {
           select: {
