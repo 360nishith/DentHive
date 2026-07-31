@@ -42,6 +42,7 @@ export class SubscriptionService {
   @OnEvent('staff.status_changed')
   async handleStaffStatusChanged(payload: { tenantId: string, user: any, role: string, status: string }) {
     if (payload.role !== 'DENTIST') return;
+    if (payload.status === 'ARCHIVED') return; // Do nothing if deleted, just let the next cycle handle it
     await this.syncPerSeatBilling(payload.tenantId, payload.user.id);
   }
 
