@@ -4,13 +4,15 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { TenantCacheService } from '../../modules/tenant/services/tenant-cache.service';
 import { parse } from 'csv-parse/sync';
 import { createClient } from '@supabase/supabase-js';
+import { RazorpayService } from '../../modules/billing/services/razorpay.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private supabaseService: SupabaseService,
-    private tenantCacheService: TenantCacheService
+    private tenantCacheService: TenantCacheService,
+    private razorpayService: RazorpayService
   ) {}
 
   async overrideBilling(tenantId: string, status: string, daysToAdd: number) {
@@ -84,12 +86,15 @@ export class AdminService {
       }
     }
 
+    const recentPayments = await this.razorpayService.getRecentPayments();
+
     return {
       totalMRR,
       activeSubscriptions,
       activeTrials,
       expiredTrials,
-      totalTenants: tenants.length
+      totalTenants: tenants.length,
+      recentPayments
     };
   }
 
@@ -125,6 +130,7 @@ export class AdminService {
         staffCount: t._count?.users || 0,
         isBYOS: !!t.waAccessToken,
         status: derivedStatus,
+        expiryDate: activeSub ? activeSub.currentPeriodEnd : null,
         mrr: activeSub ? (t.waAccessToken ? parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_DISCOUNTED || '1999') : parseInt(process.env.NEXT_PUBLIC_SAAS_PRICE_STANDARD || '2499')) : 0
       };
     });

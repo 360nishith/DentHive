@@ -135,15 +135,7 @@ export default function SuperAdminPage() {
       </div>
 
       {/* Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="p-6">
-          <div className="flex items-center text-slate-500 mb-4">
-            <IndianRupee className="w-5 h-5 mr-2 text-emerald-500" />
-            <span className="font-semibold text-sm uppercase tracking-wider">Total MRR</span>
-          </div>
-          <div className="text-3xl font-black text-slate-900">₹{stats?.totalMRR?.toLocaleString()}</div>
-        </Card>
-        
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="p-6">
           <div className="flex items-center text-slate-500 mb-4">
             <TrendingUp className="w-5 h-5 mr-2 text-indigo-500" />
@@ -169,8 +161,43 @@ export default function SuperAdminPage() {
         </Card>
       </div>
 
-      {/* Tenants Table */}
-      <Card className="overflow-hidden">
+      {/* Recent Payments & Tenants Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
+        {/* Recent Payments Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="overflow-hidden h-full">
+            <div className="p-4 border-b border-slate-100 bg-slate-50">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center">
+                <IndianRupee className="w-4 h-4 mr-2 text-emerald-600" />
+                Recent Razorpay Payments
+              </h2>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {stats?.recentPayments?.length > 0 ? stats.recentPayments.map((p: any) => (
+                <div key={p.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                  <div>
+                    <div className="font-bold text-slate-900">₹{(p.amount / 100).toLocaleString()}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {new Date(p.created_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] uppercase font-bold rounded-full">
+                      {p.status}
+                    </span>
+                    <div className="text-[10px] text-slate-400 mt-1 uppercase">{p.method}</div>
+                  </div>
+                </div>
+              )) : (
+                <div className="p-8 text-center text-slate-400 text-sm">No recent payments</div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Tenants Table */}
+        <div className="lg:col-span-3">
+          <Card className="overflow-hidden">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-900">All Clinics ({tenants.length})</h2>
         </div>
@@ -184,8 +211,8 @@ export default function SuperAdminPage() {
                 <th className="p-4">Stats</th>
                 <th className="p-4">Plan Type</th>
                 <th className="p-4">Status</th>
-                <th className="p-4">MRR</th>
-                <th className="p-4">Actions</th>
+                <th className="p-4">Expiry Date</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
@@ -216,11 +243,11 @@ export default function SuperAdminPage() {
                     {t.status === 'TRIAL' && <span className="bg-amber-100 text-amber-700 px-2.5 py-1 text-[10px] uppercase font-black rounded-full tracking-wider">Trial</span>}
                     {t.status === 'EXPIRED' && <span className="bg-red-100 text-red-700 px-2.5 py-1 text-[10px] uppercase font-black rounded-full tracking-wider">Expired</span>}
                   </td>
-                  <td className="p-4 font-bold text-slate-900">
-                    ₹{t.mrr}
+                  <td className="p-4 font-bold text-slate-700 text-sm">
+                    {t.expiryDate ? new Date(t.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
                   </td>
                   <td className="p-4">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end">
                       <label className="cursor-pointer p-2 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors" title="Upload Patients CSV">
                         <input 
                           type="file" 
@@ -273,6 +300,8 @@ export default function SuperAdminPage() {
           </table>
         </div>
       </Card>
+      </div>
+      </div>
 
       {showInviteModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">

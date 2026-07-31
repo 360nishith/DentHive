@@ -239,4 +239,14 @@ export class RazorpayService {
       console.error('Failed to process prepaid order', err);
     }
   }
+
+  async getRecentPayments() {
+    try {
+      const data = await this.razorpay.payments.all({ count: 10 });
+      return data.items || [];
+    } catch (err) {
+      console.error('Failed to fetch recent payments from Razorpay', err);
+      return [];
+    }
+  }
 }
