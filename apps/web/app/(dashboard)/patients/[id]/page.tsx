@@ -140,6 +140,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [viewingNote, setViewingNote] = useState<any>(null);
 
   const handleAddNote = async () => {
     if (!newNoteContent.trim()) return;
@@ -763,8 +764,12 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
               ) : (
                 <div className="space-y-4">
                   {clinicalNotes.map(note => (
-                    <div key={note.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-sm text-slate-800 whitespace-pre-wrap mb-2">{note.content}</p>
+                    <div 
+                      key={note.id} 
+                      className="p-4 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 hover:border-indigo-200 transition-all group"
+                      onClick={() => setViewingNote(note)}
+                    >
+                      <p className="text-sm text-slate-800 whitespace-pre-wrap mb-3 line-clamp-3 break-words group-hover:text-indigo-950 transition-colors">{note.content}</p>
                       <div className="flex justify-between items-center text-xs text-slate-400">
                         <span>By: {note.author ? `${note.author.firstName} ${note.author.lastName} (${note.author.role?.name})` : 'Unknown'}</span>
                         <span>{new Date(note.createdAt).toLocaleString('en-GB')}</span>
@@ -805,6 +810,28 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
               <Button onClick={handleAddNote} disabled={savingNote || !newNoteContent.trim()}>
                 {savingNote ? 'Saving...' : 'Save Note'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewingNote && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+              <div>
+                <h3 className="font-bold text-slate-900">Clinical Note</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  By {viewingNote.author ? `${viewingNote.author.firstName} ${viewingNote.author.lastName} (${viewingNote.author.role?.name})` : 'Unknown'} • {new Date(viewingNote.createdAt).toLocaleString('en-GB')}
+                </p>
+              </div>
+              <button onClick={() => setViewingNote(null)} className="text-slate-400 hover:text-slate-600 mt-1"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <p className="text-sm text-slate-800 whitespace-pre-wrap break-words leading-relaxed">{viewingNote.content}</p>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setViewingNote(null)}>Close</Button>
             </div>
           </div>
         </div>
