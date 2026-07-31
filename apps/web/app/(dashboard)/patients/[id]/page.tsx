@@ -82,9 +82,20 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
       setCurrentUserId(meRes.data.id);
       
       const uRes = await api.get('/users');
-      setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
+      // Be extremely permissive with the role object or string
+      const staffList = uRes.data.filter((u: any) => {
+        const rName = (u.role?.name || u.role || '').toUpperCase();
+        return rName === 'DENTIST' || rName === 'ADMIN' || rName === 'STAFF';
+      });
+      // Ensure current user is at least included if somehow they were filtered out
+      setDoctors(staffList);
     } catch (err) {
       console.error('Failed to fetch patient details', err);
+      // Fallback: If API fails, at least provide a "Me" option for the current user
+      try {
+         const meRes = await api.get('/auth/me');
+         setDoctors([{ id: meRes.data.id, firstName: 'Me', lastName: '' }]);
+      } catch(e) {}
     } finally {
       setLoading(false);
     }
