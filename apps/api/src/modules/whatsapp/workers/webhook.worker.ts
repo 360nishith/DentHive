@@ -106,9 +106,15 @@ export class WebhookWorker extends WorkerHost {
 
             if (!appointment) continue;
 
-            // Ignore if the appointment is already completed, cancelled, or a no-show
-            if (appointment.status === 'COMPLETED' || appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW') {
-              this.logger.log(`Ignoring button press ${messagePayload}. Appointment ${appointment.id} is already ${appointment.status}`);
+            // If the appointment is already completed, ignore everything
+            if (appointment.status === 'COMPLETED') {
+              this.logger.log(`Ignoring button press ${messagePayload}. Appointment ${appointment.id} is already COMPLETED`);
+              continue;
+            }
+
+            // If it's cancelled or a no-show, only ignore "Confirm". Let Cancel/Reschedule through to generate follow-ups!
+            if ((appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW') && (messagePayload.includes('CONFIRM') || messagePayload === '1')) {
+              this.logger.log(`Ignoring Confirm press. Appointment ${appointment.id} is already ${appointment.status}`);
               continue;
             }
 
