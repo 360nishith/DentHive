@@ -319,7 +319,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   onChange={e => setEditDoctorId(e.target.value)}
                   className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
-                  <option value="">Select Doctor...</option>
+                  <option value="" disabled>Select Doctor...</option>
                   <option value="UNASSIGNED">-- Unassigned --</option>
                   {doctors.map(d => (
                     <option key={d.id} value={d.id}>

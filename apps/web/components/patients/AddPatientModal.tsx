@@ -205,7 +205,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                   onChange={(e) => setDoctorId(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors appearance-none"
                 >
-                  <option value="">Select Doctor...</option>
+                  <option value="" disabled>Select Doctor...</option>
                   <option value="UNASSIGNED">-- Unassigned --</option>
                   {doctors.map(doc => (
                     <option key={doc.id} value={doc.id}>
