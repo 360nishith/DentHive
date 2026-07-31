@@ -378,6 +378,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         <div>
           <h2 className="text-lg font-bold text-slate-900">Drag-and-Drop Print Designer</h2>
           <p className="text-sm text-slate-500">Design your exact prescription pad layout here.</p>
+          <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5">
+            <span className="font-medium text-slate-500">Tip:</span> Select an item, press <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-mono text-slate-600 shadow-sm leading-none">Esc</kbd> to stop typing, then use <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-mono text-slate-600 shadow-sm leading-none">↑ ↓ ← →</kbd> to nudge precisely.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
           <select 
