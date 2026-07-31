@@ -719,10 +719,10 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
           <Card>
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Clinical Notes</h2>
-              <Button variant="ghost" size="sm">Add</Button>
+              <span className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-indigo-700 bg-indigo-100 rounded-full">Coming Soon</span>
             </div>
             <div className="p-6">
-              <p className="text-sm text-slate-500 italic">No notes have been added yet.</p>
+              <p className="text-sm text-slate-500 italic">Advanced clinical note-taking with AI summaries is arriving in v2.3.</p>
             </div>
           </Card>
 
