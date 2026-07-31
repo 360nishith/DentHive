@@ -49,6 +49,7 @@ model Tenant {
   prescriptions        Prescription[]
   doctorMedicines      DoctorMedicine[]
   treatmentStageImages TreatmentStageImage[]
+  clinicalNotes        ClinicalNote[]
 
   @@index([subdomain])
   @@map("tenants")
@@ -108,6 +109,7 @@ model User {
   appointments      Appointment[]      @relation("DoctorAppointments")
   payments          Payment[]          @relation("DoctorPayments")
   prescriptions     Prescription[]     @relation("DoctorPrescriptions")
+  clinicalNotes     ClinicalNote[]     @relation("AuthorNotes")
   doctorMedicines   DoctorMedicine[]   @relation("DoctorMedicines")
 
   @@index([tenantId, email])
@@ -143,11 +145,30 @@ model Patient {
   whatsappMessages  WhatsAppMessage[]
   recallLists       RecallList[]
   prescriptions     Prescription[]
+  clinicalNotes     ClinicalNote[]
 
   @@index([tenantId, phoneNumber])
   @@index([tenantId, name])
   @@index([doctorId])
   @@map("patients")
+}
+
+model ClinicalNote {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+  patientId String   @db.Uuid
+  authorId  String?  @db.Uuid // Doctor or Staff who wrote it
+  content   String   @db.Text
+  
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  author  User?   @relation("AuthorNotes", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, patientId])
+  @@map("clinical_notes")
 }
 
 model File {

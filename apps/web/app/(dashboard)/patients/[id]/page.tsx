@@ -28,6 +28,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
   const [patient, setPatient] = useState<any>(null);
   const [journeys, setJourneys] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [clinicalNotes, setClinicalNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [schedulingStage, setSchedulingStage] = useState<{id: string, name: string, aptId?: string} | null>(null);
@@ -59,10 +60,12 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         api.get(`/journeys/patient/${params.id}`),
         api.get(`/appointments/patient/${params.id}`),
         api.get(`/billing/payments/patient/${params.id}`),
+        api.get(`/patients/${params.id}/notes`),
       ]);
       setPatient(patientRes.data);
       setJourneys(journeysRes.data);
       setAppointments(appointmentsRes.data);
+      setClinicalNotes(notesRes.data);
 
       // Convert billing array into a map keyed by journeyId
       const billing: Record<string, any> = {};
@@ -101,25 +104,58 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
     setEditingProfile(true);
   };
 
-  const saveProfile = async () => {
+  const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      const nameParts = editName.trim().split(' ');
-      await api.patch(`/patients/${patient.id}`, {
-        firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || '.',
-        phone: editPhone,
-        age: editAge,
-        gender: editGender,
-        whatsappOptIn: editWhatsappOptIn,
-        doctorId: editDoctorId === '' ? null : editDoctorId,
-      });
+      const ageNum = parseInt(editAge);
+      let dateOfBirth = null;
+      if (!isNaN(ageNum)) {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() - ageNum);
+        dateOfBirth = d.toISOString();
+      }
+      
+      const payload: any = {
+        name: editName,
+        phoneNumber: editPhone,
+        gender: editGender || null,
+        dateOfBirth,
+        whatsappOptIn: editWhatsappOptIn
+      };
+      if (currentUserRole === 'STAFF') {
+        payload.doctorId = editDoctorId || 'UNASSIGNED';
+      }
+
+      const res = await api.patch(`/patients/${params.id}`, payload);
+      setPatient(res.data);
       setEditingProfile(false);
       fetchPatientData();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to save');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) return;
+    setSavingNote(true);
+    try {
+      await api.post(`/patients/${params.id}/notes`, { content: newNoteContent });
+      setNewNoteContent('');
+      setIsNoteModalOpen(false);
+      // Refresh notes
+      const res = await api.get(`/patients/${params.id}/notes`);
+      setClinicalNotes(res.data);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save note');
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -719,10 +755,24 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
           <Card>
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Clinical Notes</h2>
-              <span className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-indigo-700 bg-indigo-100 rounded-full">Coming Soon</span>
+              <Button variant="ghost" size="sm" onClick={() => setIsNoteModalOpen(true)}>Add Note</Button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-slate-500 italic">Advanced clinical note-taking with AI summaries is arriving in v2.3.</p>
+              {clinicalNotes.length === 0 ? (
+                <p className="text-sm text-slate-500 italic">No notes have been added yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {clinicalNotes.map(note => (
+                    <div key={note.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-sm text-slate-800 whitespace-pre-wrap mb-2">{note.content}</p>
+                      <div className="flex justify-between items-center text-xs text-slate-400">
+                        <span>By: {note.author ? `${note.author.firstName} ${note.author.lastName} (${note.author.role?.name})` : 'Unknown'}</span>
+                        <span>{new Date(note.createdAt).toLocaleString('en-GB')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -734,6 +784,32 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
           />
         </div>
       </div>
+
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-slate-900">Add Clinical Note</h3>
+              <button onClick={() => setIsNoteModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-6">
+              <textarea 
+                className="w-full h-32 p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm resize-none"
+                placeholder="Type your clinical observation here..."
+                value={newNoteContent}
+                onChange={e => setNewNoteContent(e.target.value)}
+              />
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsNoteModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddNote} disabled={savingNote || !newNoteContent.trim()}>
+                {savingNote ? 'Saving...' : 'Save Note'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -48,4 +48,19 @@ export class PatientsController {
   async archivePatient(@Param('id') id: string, @Req() req: any) {
     return this.patientsService.archive(req.user.tenantId, id);
   }
+
+  // --- Clinical Notes ---
+  @Post(':id/notes')
+  async addClinicalNote(
+    @Param('id') patientId: string, 
+    @Body('content') content: string, 
+    @Req() req: any
+  ) {
+    return this.patientsService.addClinicalNote(req.user.tenantId, patientId, req.user.id, content);
+  }
+
+  @Get(':id/notes')
+  async getClinicalNotes(@Param('id') patientId: string, @Req() req: any) {
+    return this.patientsService.getClinicalNotes(req.user.tenantId, patientId);
+  }
 }

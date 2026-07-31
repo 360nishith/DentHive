@@ -38,4 +38,40 @@ export class PatientsService {
     if (!patient) throw new NotFoundException('Patient not found');
     return patient;
   }
+
+  // --- Clinical Notes ---
+  async addClinicalNote(tenantId: string, patientId: string, authorId: string, content: string) {
+    // Note: Due to global middleware, tenantId and isolated doctor access are already verified
+    return this.prisma.clinicalNote.create({
+      data: {
+        tenantId,
+        patientId,
+        authorId,
+        content
+      }
+    });
+  }
+
+  async getClinicalNotes(tenantId: string, patientId: string) {
+    // Note: Due to global middleware, tenantId and isolated doctor access are already verified
+    return this.prisma.clinicalNote.findMany({
+      where: {
+        patientId
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
 }
+
