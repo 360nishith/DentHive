@@ -80,7 +80,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
       const role = meRes.data.role?.name || meRes.data.role || 'ADMIN';
       setCurrentUserRole(role);
       setCurrentUserId(meRes.data.id);
-      if (role === 'STAFF') {
+      if (role === 'STAFF' || role === 'ADMIN') {
         const uRes = await api.get('/users');
         setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
       }
@@ -122,7 +122,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         dateOfBirth,
         whatsappOptIn: editWhatsappOptIn
       };
-      if (currentUserRole === 'STAFF') {
+      if (currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') {
         payload.doctorId = editDoctorId || 'UNASSIGNED';
       }
 
@@ -305,19 +305,19 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' || currentUserRole === 'DENTIST') && (currentUserRole === 'STAFF' ? doctors.length > 0 : true) && (
+                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' || currentUserRole === 'DENTIST') && (
                   <select
                     value={editDoctorId}
                     onChange={e => setEditDoctorId(e.target.value)}
                     className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   >
-                    {currentUserRole === 'STAFF' ? (
+                    {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') ? (
                       <option value="">Select Doctor...</option>
                     ) : (
                       <option value={currentUserId}>Me</option>
                     )}
                     <option value="">-- Unassigned --</option>
-                    {currentUserRole === 'STAFF' && doctors.map(d => (
+                    {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && doctors.map(d => (
                       <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                     ))}
                   </select>

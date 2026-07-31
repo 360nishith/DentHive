@@ -200,12 +200,12 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                     <Stethoscope className="h-4 w-4 text-slate-400" />
                   </div>
                   <select
-                    required={currentUserRole === 'STAFF'}
+                    required={currentUserRole === 'STAFF' || currentUserRole === 'ADMIN'}
                     value={doctorId}
                     onChange={(e) => setDoctorId(e.target.value)}
                     className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors appearance-none"
                   >
-                    {currentUserRole === 'STAFF' && (
+                    {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN') && (
                       <option value="">Select Doctor...</option>
                     )}
                     <option value="UNASSIGNED">-- Unassigned --</option>
