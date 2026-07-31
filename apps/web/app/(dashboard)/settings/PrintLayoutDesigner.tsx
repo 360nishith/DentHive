@@ -120,6 +120,59 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
     });
   }, [canvasWidth]);
 
+  // Keyboard nudge feature
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedId) return;
+
+      if (e.key === 'Escape') {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        return;
+      }
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        const isEditing = document.activeElement?.tagName === 'INPUT' || document.activeElement?.isContentEditable;
+        // Don't move the box if they are actively typing text, unless they hold Ctrl/Cmd to override
+        if (isEditing && !e.ctrlKey && !e.metaKey) return;
+        
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        
+        setElements(prev => {
+          const newElements = prev.map(el => {
+            if (el.id === selectedId) {
+              let newX = el.x;
+              let newY = el.y;
+              if (e.key === 'ArrowUp') newY -= step;
+              if (e.key === 'ArrowDown') newY += step;
+              if (e.key === 'ArrowLeft') newX -= step;
+              if (e.key === 'ArrowRight') newX += step;
+              
+              const maxW = canvasWidth - (el.width || 20);
+              return { ...el, x: Math.max(0, Math.min(newX, maxW)), y: Math.max(0, newY) };
+            }
+            return el;
+          });
+          
+          setFormData((oldForm: any) => ({
+            ...oldForm,
+            printConfig: {
+              ...oldForm.printConfig,
+              elements: newElements
+            }
+          }));
+          
+          return newElements;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, canvasWidth, setFormData]);
+
   const saveToForm = (newElements: any[]) => {
     setElements(newElements);
     setFormData({
