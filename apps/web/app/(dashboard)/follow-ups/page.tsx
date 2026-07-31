@@ -28,6 +28,7 @@ export default function FollowUpsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [stalledItems, setStalledItems] = useState<any[]>([]);
   const [stalledSort, setStalledSort] = useState<'newest' | 'oldest'>('newest');
+  const [stalledReasonFilter, setStalledReasonFilter] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
   
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -264,14 +265,26 @@ export default function FollowUpsPage() {
             <h3 className="text-amber-800 font-semibold text-sm flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" /> Stalled Patients (Not done with treatment & no future appointment scheduled)
             </h3>
-            <select
-              value={stalledSort}
-              onChange={(e) => setStalledSort(e.target.value as 'newest' | 'oldest')}
-              className="text-xs border-amber-200 bg-white text-amber-900 rounded-md shadow-sm focus:border-amber-500 focus:ring-amber-500"
-            >
-              <option value="newest">Recently Stalled</option>
-              <option value="oldest">Longest Stalled</option>
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={stalledReasonFilter}
+                onChange={(e) => setStalledReasonFilter(e.target.value)}
+                className="text-xs border-amber-200 bg-white text-amber-900 rounded-md shadow-sm focus:border-amber-500 focus:ring-amber-500"
+              >
+                <option value="ALL">All Reasons</option>
+                {Array.from(new Set(stalledItems.map(item => item.stallReason || 'Not Started'))).map(reason => (
+                  <option key={reason} value={reason}>{reason}</option>
+                ))}
+              </select>
+              <select
+                value={stalledSort}
+                onChange={(e) => setStalledSort(e.target.value as 'newest' | 'oldest')}
+                className="text-xs border-amber-200 bg-white text-amber-900 rounded-md shadow-sm focus:border-amber-500 focus:ring-amber-500"
+              >
+                <option value="newest">Recently Stalled</option>
+                <option value="oldest">Longest Stalled</option>
+              </select>
+            </div>
           </div>
           <div className="overflow-x-auto w-full">
             <table className="min-w-full divide-y divide-slate-200">
@@ -292,7 +305,10 @@ export default function FollowUpsPage() {
                   </td>
                 </tr>
               ) : (
-                [...stalledItems].sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled).map((item: any, idx: number) => (
+                [...stalledItems]
+                  .filter(item => stalledReasonFilter === 'ALL' || (item.stallReason || 'Not Started') === stalledReasonFilter)
+                  .sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled)
+                  .map((item: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
