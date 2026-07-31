@@ -229,7 +229,7 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
       const canvasCenterX = canvasWidth / 2;
       
       if (Math.abs(elementCenterX - canvasCenterX) < 15) {
-        finalX = canvasCenterX - (elWidth / 2);
+        // Just show the guide without forcing the snap
         newSnapLines.push({ x: canvasCenterX });
       }
       
@@ -245,9 +245,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         const myYPoints = [finalY, finalY + elHeight, finalY + (elHeight / 2)];
         
         for (let targetY of yTargets) {
-          if (Math.abs(myYPoints[0] - targetY) < 10) { finalY = targetY; newSnapLines.push({ y: targetY }); break; }
-          if (Math.abs(myYPoints[1] - targetY) < 10) { finalY = targetY - elHeight; newSnapLines.push({ y: targetY }); break; }
-          if (Math.abs(myYPoints[2] - targetY) < 10) { finalY = targetY - (elHeight / 2); newSnapLines.push({ y: targetY }); break; }
+          if (Math.abs(myYPoints[0] - targetY) < 10) { newSnapLines.push({ y: targetY }); break; }
+          if (Math.abs(myYPoints[1] - targetY) < 10) { newSnapLines.push({ y: targetY }); break; }
+          if (Math.abs(myYPoints[2] - targetY) < 10) { newSnapLines.push({ y: targetY }); break; }
         }
 
         // X snapping
@@ -255,9 +255,9 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
         const myXPoints = [finalX, finalX + elWidth, finalX + (elWidth / 2)];
 
         for (let targetX of xTargets) {
-          if (Math.abs(myXPoints[0] - targetX) < 10) { finalX = targetX; newSnapLines.push({ x: targetX }); break; }
-          if (Math.abs(myXPoints[1] - targetX) < 10) { finalX = targetX - elWidth; newSnapLines.push({ x: targetX }); break; }
-          if (Math.abs(myXPoints[2] - targetX) < 10) { finalX = targetX - (elWidth / 2); newSnapLines.push({ x: targetX }); break; }
+          if (Math.abs(myXPoints[0] - targetX) < 10) { newSnapLines.push({ x: targetX }); break; }
+          if (Math.abs(myXPoints[1] - targetX) < 10) { newSnapLines.push({ x: targetX }); break; }
+          if (Math.abs(myXPoints[2] - targetX) < 10) { newSnapLines.push({ x: targetX }); break; }
         }
       });
 
