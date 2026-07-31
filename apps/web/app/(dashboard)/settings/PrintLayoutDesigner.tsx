@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus, Move } from 'lucide-react';
+import { Save, Image as ImageIcon, Type, Layout, Loader2, Minus, Move, Copy } from 'lucide-react';
 
 // Isolated component for contentEditable to prevent cursor jumping and state loss on re-renders
 const EditableText = ({ element, onUpdate, onSelect, isSelected }: any) => {
@@ -176,6 +176,13 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
 
   const deleteElement = (id: string) => {
     saveToForm(elements.filter(e => e.id !== id));
+  };
+
+  const duplicateElement = (id: string) => {
+    const el = elements.find(e => e.id === id);
+    if (!el) return;
+    const newEl = { ...el, id: `${el.type}-${Date.now()}`, x: el.x + 20, y: el.y + 20 };
+    saveToForm([...elements, newEl]);
   };
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
@@ -592,8 +599,16 @@ export default function PrintLayoutDesigner({ formData, setFormData, onSave, sav
               )}
               
               <button 
-                onClick={() => deleteElement(el.id)}
+                onClick={(e) => { e.stopPropagation(); duplicateElement(el.id); }}
+                className="absolute -top-3 right-4 bg-indigo-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 text-xs z-50"
+                title="Duplicate"
+              >
+                <Copy size={10} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }}
                 className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 text-xs z-50"
+                title="Delete"
               >
                 ×
               </button>
