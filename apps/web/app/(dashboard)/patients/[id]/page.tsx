@@ -55,7 +55,7 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
 
   const fetchPatientData = async () => {
     try {
-      const [patientRes, journeysRes, appointmentsRes, billingRes] = await Promise.all([
+      const [patientRes, journeysRes, appointmentsRes, billingRes, notesRes] = await Promise.all([
         api.get(`/patients/${params.id}`),
         api.get(`/journeys/patient/${params.id}`),
         api.get(`/appointments/patient/${params.id}`),
