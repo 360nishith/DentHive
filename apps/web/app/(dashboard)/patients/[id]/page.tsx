@@ -80,10 +80,9 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
       const role = meRes.data.role?.name || meRes.data.role || 'ADMIN';
       setCurrentUserRole(role);
       setCurrentUserId(meRes.data.id);
-      if (role === 'STAFF') {
-        const uRes = await api.get('/users');
-        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
-      }
+      
+      const uRes = await api.get('/users');
+      setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
     } catch (err) {
       console.error('Failed to fetch patient details', err);
     } finally {
@@ -120,11 +119,9 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         phoneNumber: editPhone,
         gender: editGender || null,
         dateOfBirth,
-        whatsappOptIn: editWhatsappOptIn
+        whatsappOptIn: editWhatsappOptIn,
+        doctorId: editDoctorId || 'UNASSIGNED'
       };
-      if (currentUserRole === 'STAFF') {
-        payload.doctorId = editDoctorId || 'UNASSIGNED';
-      }
 
       const res = await api.patch(`/patients/${params.id}`, payload);
       setPatient(res.data);
@@ -306,23 +303,19 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-                {(currentUserRole === 'STAFF' || currentUserRole === 'ADMIN' || currentUserRole === 'DENTIST') && (currentUserRole === 'STAFF' ? doctors.length > 0 : true) && (
-                  <select
-                    value={editDoctorId}
-                    onChange={e => setEditDoctorId(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  >
-                    {currentUserRole === 'STAFF' ? (
-                      <option value="">Select Doctor...</option>
-                    ) : (
-                      <option value={currentUserId}>Me</option>
-                    )}
-                    <option value="">-- Unassigned --</option>
-                    {currentUserRole === 'STAFF' && doctors.map(d => (
-                      <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  value={editDoctorId}
+                  onChange={e => setEditDoctorId(e.target.value)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  <option value="">Select Doctor...</option>
+                  <option value="UNASSIGNED">-- Unassigned --</option>
+                  {doctors.map(d => (
+                    <option key={d.id} value={d.id}>
+                      {d.id === currentUserId ? 'Me' : `Dr. ${d.firstName} ${d.lastName}`}
+                    </option>
+                  ))}
+                </select>
                 <label className="flex items-center space-x-2 text-sm text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">
                   <input
                     type="checkbox"
