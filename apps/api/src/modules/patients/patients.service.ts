@@ -134,4 +134,33 @@ export class PatientsService {
     });
     return this.prisma.patient.findFirst({ where: { id: patient.id } });
   }
+
+  // --- Clinical Notes ---
+  async addClinicalNote(tenantId: string, patientId: string, authorId: string, content: string) {
+    return this.prisma.clinicalNote.create({
+      data: {
+        tenantId,
+        patientId,
+        authorId,
+        content
+      }
+    });
+  }
+
+  async getClinicalNotes(tenantId: string, patientId: string) {
+    return this.prisma.clinicalNote.findMany({
+      where: { patientId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 }
