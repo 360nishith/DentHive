@@ -56,7 +56,17 @@ import { PrescriptionsModule } from './modules/prescriptions/prescriptions.modul
           };
         }
         
-        return { connection };
+        return { 
+          connection,
+          defaultJobOptions: {
+            removeOnComplete: {
+              count: 1000 // Safely keep a history of the last 1000 successful jobs (uses < 1MB)
+            },
+            removeOnFail: {
+              count: 100 // Keep the last 100 failed jobs for debugging
+            }
+          }
+        };
       }
     }),
     RedisModule,
