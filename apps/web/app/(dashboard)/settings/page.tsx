@@ -15,7 +15,7 @@ import MedicinesManager from './MedicinesManager';
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [tenant, setTenant] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', upiVpa: '', waPhoneNumberId: '', waAccessToken: '', waAppSecret: '' });
+  const [formData, setFormData] = useState({ name: '', upiVpa: '', waPhoneNumberId: '', waAccessToken: '', waAppSecret: '', contactPhone: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp' | 'staff' | 'billing' | 'danger' | 'print_layout' | 'medicines'>('profile');
@@ -86,6 +86,7 @@ export default function SettingsPage() {
           waPhoneNumberId: tenantRes.data.waPhoneNumberId || '',
           waAccessToken: tenantRes.data.waAccessToken || '',
           waAppSecret: tenantRes.data.waAppSecret || '',
+          contactPhone: tenantRes.data.contactPhone || '',
           logoUrl: tenantRes.data.logoUrl || '',
           defaultPaperSize: tenantRes.data.defaultPaperSize || 'A4',
           printConfig: tenantRes.data.printConfig || { elements: [] }
@@ -354,8 +355,19 @@ export default function SettingsPage() {
                     className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-100 disabled:text-slate-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">UPI VPA</label>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Clinic Contact Phone</label>
+                    <input
+                      type="text"
+                      value={formData.contactPhone}
+                      onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                      placeholder="e.g. +91 98765 43210"
+                      className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This number will be sent to patients in automated WhatsApp messages (e.g. cancellations) so they can call you.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">UPI VPA</label>
                   <input
                     type="text"
                     value={formData.upiVpa}
