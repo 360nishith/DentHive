@@ -81,7 +81,6 @@ export class ReminderService implements OnApplicationBootstrap {
             data: {
               tenantId: fullApt.tenantId,
               patientId: fullApt.patientId,
-              type: 'TEMPLATE',
               direction: 'OUTBOUND',
               status: 'PENDING',
               payload: { template: 'appointment_cancelled' }
