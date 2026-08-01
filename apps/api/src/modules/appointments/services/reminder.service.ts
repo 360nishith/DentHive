@@ -10,7 +10,8 @@ export class ReminderService implements OnApplicationBootstrap {
 
   constructor(
     private prisma: PrismaService,
-    @InjectQueue('whatsapp-reminders') private reminderQueue: Queue
+    @InjectQueue('whatsapp-reminders') private reminderQueue: Queue,
+    @InjectQueue('whatsapp') private whatsappQueue: Queue
   ) {}
 
   @OnEvent('appointment.created')
@@ -53,6 +54,63 @@ export class ReminderService implements OnApplicationBootstrap {
         data: { status: 'CANCELLED' }
       });
       this.logger.log(`Cancelled pending reminders for appointment ${updated.id} because status is ${updated.status}`);
+      
+      // If manually cancelled by doctor, notify the patient
+      if (updated.status === 'CANCELLED' && original.status !== 'CANCELLED') {
+        const fullApt = await this.prisma.appointment.findUnique({
+          where: { id: updated.id },
+          include: { patient: true, tenant: true }
+        });
+        
+        if (fullApt && fullApt.patient.phoneNumber) {
+          // Check if any reminder was ever SENT for this appointment
+          const sentReminder = await this.prisma.appointmentReminder.findFirst({
+            where: { 
+              appointmentId: updated.id,
+              status: { in: ['SENT', 'DELIVERED', 'READ'] }
+            }
+          });
+
+          // If no reminder was ever sent, the patient doesn't know about it via WhatsApp, so don't send a cancellation.
+          if (!sentReminder) {
+            this.logger.log(`Skipping cancellation message for ${updated.id} - no reminder was ever sent.`);
+            return;
+          }
+
+          // Format date for the message
+          const aptDate = new Date(fullApt.scheduledStart).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: 'numeric', month: 'short', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+          });
+          
+          const messageRecord = await this.prisma.whatsAppMessage.create({
+            data: {
+              tenantId: fullApt.tenantId,
+              patientId: fullApt.patientId,
+              type: 'TEMPLATE',
+              direction: 'OUTBOUND',
+              status: 'PENDING',
+              payload: { template: 'appointment_cancelled' }
+            }
+          });
+
+          await this.whatsappQueue.add('send-template', {
+            messageId: messageRecord.id,
+            to: fullApt.patient.phoneNumber,
+            template: 'appointment_cancelled',
+            components: [
+              { type: 'body', parameters: [
+                { type: 'text', text: fullApt.patient.name.split(' ')[0] }, // {{1}} Patient Name
+                { type: 'text', text: fullApt.tenant.name }, // {{2}} Clinic Name
+                { type: 'text', text: aptDate }, // {{3}} Date & Time
+                { type: 'text', text: fullApt.tenant.contactPhone || '' } // {{4}} Clinic Phone Number
+              ]}
+            ]
+          });
+          this.logger.log(`Queued cancellation notification for appointment ${updated.id}`);
+        }
+      }
       return;
     }
 
