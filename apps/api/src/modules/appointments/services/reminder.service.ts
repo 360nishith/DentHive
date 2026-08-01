@@ -76,13 +76,6 @@ export class ReminderService implements OnApplicationBootstrap {
             this.logger.log(`Skipping cancellation message for ${updated.id} - no reminder was ever sent.`);
             return;
           }
-
-          // Format date for the message
-          const aptDate = new Date(fullApt.scheduledStart).toLocaleString('en-IN', {
-            timeZone: 'Asia/Kolkata',
-            day: 'numeric', month: 'short', year: 'numeric',
-            hour: 'numeric', minute: '2-digit', hour12: true
-          });
           
           const messageRecord = await this.prisma.whatsAppMessage.create({
             data: {
@@ -103,8 +96,7 @@ export class ReminderService implements OnApplicationBootstrap {
               { type: 'body', parameters: [
                 { type: 'text', text: fullApt.patient.name.split(' ')[0] }, // {{1}} Patient Name
                 { type: 'text', text: fullApt.tenant.name }, // {{2}} Clinic Name
-                { type: 'text', text: aptDate }, // {{3}} Date & Time
-                { type: 'text', text: fullApt.tenant.contactPhone || '' } // {{4}} Clinic Phone Number
+                { type: 'text', text: fullApt.tenant.contactPhone || '' } // {{3}} Clinic Phone Number
               ]}
             ]
           });
