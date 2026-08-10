@@ -24,8 +24,8 @@ const formatDate = (dateStr: string) => {
 export default function FollowUpsPage() {
   const router = useRouter();
 
-  // Default tab kept as 'logs' for now
-  const [activeTab, setActiveTab] = useState<'logs' | 'stalled'>('logs');
+  // Default tab changed to 'stalled' per user request
+  const [activeTab, setActiveTab] = useState<'logs' | 'stalled'>('stalled');
   const [stalledSort, setStalledSort] = useState<'newest' | 'oldest'>('newest');
   const [stalledReasonFilter, setStalledReasonFilter] = useState<string>('ALL');
   
