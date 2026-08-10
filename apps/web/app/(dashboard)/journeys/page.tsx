@@ -1,37 +1,27 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import api from '../../../lib/axios';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { Activity, Clock, User, Phone, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Activity, Clock, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function JourneysPage() {
   const router = useRouter();
-  const [journeys, setJourneys] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchJourneys = async () => {
-    try {
-      // The backend /journeys endpoint might just get all journeys.
-      const res = await api.get('/journeys');
-      // Filter for only ACTIVE journeys (not COMPLETED or CANCELLED)
-      const active = res.data.filter((j: any) => j.status === 'ACTIVE');
-      setJourneys(active);
-    } catch (err) {
-      console.error('Failed to fetch journeys', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: journeysData, isLoading: loading } = useSWR('/journeys', fetcher, {
+    refreshInterval: 30000,
+    revalidateOnFocus: true
+  });
 
-  useEffect(() => {
-    fetchJourneys();
-  }, []);
+  const journeys = (journeysData || []).filter((j: any) => j.status === 'ACTIVE');
 
-  if (loading) {
+  if (loading && !journeysData) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[50vh]">
         <Clock className="w-6 h-6 text-indigo-500 animate-spin" />
@@ -59,14 +49,14 @@ export default function JourneysPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {journeys.map((journey) => {
+          {journeys.map((journey: any) => {
             // Find current stage
             const currentStage = journey.stages?.find((s: any) => s.id === journey.currentStageId);
             const totalStages = journey.stages?.length || 0;
             const completedStages = journey.stages?.filter((s: any) => s.status === 'COMPLETED').length || 0;
             
             // Check if Stalled (No Scheduled Appointment for current stage)
-            const hasScheduled = currentStage?.appointments?.some((a: any) => a.status === 'SCHEDULED');
+            const hasScheduled = currentStage?.appointments?.some((a: any) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED' || a.status === 'RESCHEDULE_REQUESTED');
             const isStalled = currentStage && !hasScheduled;
 
             return (
