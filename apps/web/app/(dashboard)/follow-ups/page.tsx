@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../../../components/ui/Card';
-import { PhoneCall, CheckCircle2, XCircle, Clock, Loader2, ArrowRight, Calendar, AlertTriangle, MessageCircle } from 'lucide-react';
+import { PhoneCall, CheckCircle2, XCircle, Clock, Loader2, Calendar, AlertTriangle, MessageCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { useRouter } from 'next/navigation';
 import api from '../../../lib/axios';
 import { ScheduleAppointmentModal } from '../../../components/appointments/ScheduleAppointmentModal';
+import useSWR from 'swr';
+import { supabase } from '../../../lib/supabase';
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('en-IN', {
@@ -19,100 +21,60 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-import { supabase } from '../../../lib/supabase';
-
 export default function FollowUpsPage() {
   const router = useRouter();
 
+  // Default tab kept as 'logs' for now
   const [activeTab, setActiveTab] = useState<'logs' | 'stalled'>('logs');
-  const [items, setItems] = useState<any[]>([]);
-  const [stalledItems, setStalledItems] = useState<any[]>([]);
   const [stalledSort, setStalledSort] = useState<'newest' | 'oldest'>('newest');
   const [stalledReasonFilter, setStalledReasonFilter] = useState<string>('ALL');
-  const [loading, setLoading] = useState(true);
   
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
-  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
   
   // Reschedule state
   const [rescheduleApt, setRescheduleApt] = useState<any>(null);
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('10:00');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
-      setCurrentUserRole(role);
+  // 1. Fetch Session & Staff
+  const { data: sessionData } = useSWR('followups_session_data', async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
+    
+    let doctorsList = [];
+    if (role === 'STAFF') {
+      const uRes = await api.get('/users');
+      doctorsList = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
+    }
+    return { role, doctorsList };
+  });
 
+  const currentUserRole = sessionData?.role || 'ADMIN';
+  const doctors = sessionData?.doctorsList || [];
+
+  // 2. Fetch Follow-Ups (Pending & Stalled)
+  const { data: followUpsData, isLoading: loading, mutate: mutateFollowUps } = useSWR(
+    ['followups_data', selectedDoctorId],
+    async ([_key, doctorId]) => {
       let urlSuffix = '';
-      if (selectedDoctorId) {
-        urlSuffix = `?doctorId=${selectedDoctorId}`;
+      if (doctorId) {
+        urlSuffix = `?doctorId=${doctorId}`;
       }
-
       const [pendingRes, stalledRes] = await Promise.all([
         api.get(`/followups/pending${urlSuffix}`),
         api.get(`/followups/stalled${urlSuffix}`)
       ]);
-      setItems(pendingRes.data);
-      setStalledItems(stalledRes.data);
-
-      if (role === 'STAFF') {
-        const uRes = await api.get('/users');
-        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      return {
+        pending: pendingRes.data,
+        stalled: stalledRes.data
+      };
+    },
+    { 
+      refreshInterval: 30000, 
+      revalidateOnFocus: true 
     }
-  };
+  );
 
-  useEffect(() => {
-    loadData();
-
-    const intervalId = setInterval(loadData, 30000);
-
-    const handleFocus = () => loadData();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') loadData();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedDoctorId]);
-
-  const handleReschedule = async () => {
-    if (!newDate || !newTime || !rescheduleApt) return;
-    try {
-      const [hours, minutes] = newTime.split(':').map(Number);
-      const start = new Date(newDate);
-      start.setHours(hours, minutes, 0, 0); 
-      const end = new Date(newDate);
-      end.setHours(hours + 1, minutes, 0, 0);
-      
-      // We will create a new appointment for the current stalled stage
-      await api.post('/appointments', {
-        patientId: rescheduleApt.patientId,
-        treatmentStageId: rescheduleApt.currentStageId,
-        scheduledStart: start.toISOString(),
-        scheduledEnd: end.toISOString()
-      });
-      
-      setRescheduleApt(null);
-      loadData(); // refresh to remove from stalled
-    } catch (e) {
-      alert('Failed to reschedule');
-    }
-  };
+  const items = followUpsData?.pending || [];
+  const stalledItems = followUpsData?.stalled || [];
 
   const handleWhatsAppNudge = (item: any) => {
     if (!item.patientPhone) return alert('No phone number on record for this patient.');
@@ -199,7 +161,7 @@ export default function FollowUpsPage() {
               className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
             >
               <option value="">All Doctors</option>
-              {doctors.map(d => (
+              {doctors.map((d: any) => (
                 <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
               ))}
             </select>
@@ -207,7 +169,7 @@ export default function FollowUpsPage() {
         )}
       </div>
 
-      {loading ? (
+      {loading && !followUpsData ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
         </div>
@@ -272,7 +234,7 @@ export default function FollowUpsPage() {
                 className="text-xs border-amber-200 bg-white text-amber-900 rounded-md shadow-sm focus:border-amber-500 focus:ring-amber-500"
               >
                 <option value="ALL">All Reasons</option>
-                {Array.from(new Set(stalledItems.map(item => item.stallReason || 'Not Started'))).map(reason => (
+                {Array.from(new Set(stalledItems.map((item: any) => item.stallReason || 'Not Started'))).map((reason: any) => (
                   <option key={reason} value={reason}>{reason}</option>
                 ))}
               </select>
@@ -306,8 +268,8 @@ export default function FollowUpsPage() {
                 </tr>
               ) : (
                 [...stalledItems]
-                  .filter(item => stalledReasonFilter === 'ALL' || (item.stallReason || 'Not Started') === stalledReasonFilter)
-                  .sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled)
+                  .filter((item: any) => stalledReasonFilter === 'ALL' || (item.stallReason || 'Not Started') === stalledReasonFilter)
+                  .sort((a: any, b: any) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled)
                   .map((item: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -364,7 +326,7 @@ export default function FollowUpsPage() {
         aptId={rescheduleApt?.latestApptId}
         defaultTime={rescheduleApt?.latestApptDate ? new Date(rescheduleApt.latestApptDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '10:00'}
         onScheduled={() => {
-          loadData();
+          mutateFollowUps(); // Instantly update the SWR cache!
           setRescheduleApt(null);
         }}
       />
