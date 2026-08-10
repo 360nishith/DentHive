@@ -10,110 +10,56 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { ScheduleAppointmentModal } from '../../../components/appointments/ScheduleAppointmentModal';
+import useSWR from 'swr';
+import { supabase } from '../../../lib/supabase';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function AppointmentsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toLocaleDateString('en-GB'));
-  const [allAppointments, setAllAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [rescheduleApt, setRescheduleApt] = useState<any>(null);
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('10:00');
-  const [tenantStatus, setTenantStatus] = useState('ACTIVE');
   const [isTourMode, setIsTourMode] = useState(false);
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
-  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
-  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
-  const fetchAppointments = async () => {
-    try {
-      const now = new Date();
-      // Fetch for a rolling 60-day window
-      const startWindow = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const endWindow = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
-      
-      
-      const { data: { session } } = await import('../../../lib/supabase').then(m => m.supabase.auth.getSession());
-      let role = 'ADMIN';
-      if (session?.user?.app_metadata?.role) role = session.user.app_metadata.role;
-      setCurrentUserRole(role);
-      setCurrentUserEmail(session?.user?.email || '');
-
-      let doctorFilter: any = {};
-      if (selectedDoctorId) {
-        doctorFilter.doctorId = selectedDoctorId;
-      }
-
-      const res = await api.get('/appointments', {
-        params: {
-          start: startWindow.toISOString(),
-          end: endWindow.toISOString(),
-          ...doctorFilter
-        }
-      });
-      // Filter out COMPLETED and CANCELLED appointments as requested
-      const activeApts = res.data.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED');
-      setAllAppointments(activeApts);
-
-      const tenantRes = await api.get('/tenant');
-      setTenantStatus(tenantRes.data.status);
-
-      if (role === 'STAFF') {
-        const uRes = await api.get('/users');
-        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
-      }
-    } catch (err) {
-      console.error('Failed to fetch appointments', err);
-    } finally {
-      setLoading(false);
+  // 1. Fetch Session & Staff
+  const { data: sessionData } = useSWR('appointments_session_data', async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const role = session?.user?.app_metadata?.role || 'ADMIN';
+    const email = session?.user?.email || '';
+    
+    let doctorsList = [];
+    if (role === 'STAFF') {
+      const uRes = await api.get('/users');
+      doctorsList = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
     }
-  };
+    return { role, email, doctorsList };
+  });
 
-  useEffect(() => {
-    fetchAppointments();
+  const currentUserRole = sessionData?.role || 'ADMIN';
+  const currentUserEmail = sessionData?.email || '';
+  const doctors = sessionData?.doctorsList || [];
 
-    const intervalId = setInterval(fetchAppointments, 30000);
+  // 2. Fetch Tenant Status
+  const { data: tenant } = useSWR('/tenant', fetcher);
+  const tenantStatus = tenant?.status || 'ACTIVE';
 
-    const handleFocus = () => fetchAppointments();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchAppointments();
-    };
+  // 3. Fetch Appointments with SWR (Auto-caching, auto-revalidation)
+  const now = new Date();
+  const startWindow = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+  const endWindow = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59).toISOString();
+  
+  const apptsUrl = `/appointments?start=${startWindow}&end=${endWindow}${selectedDoctorId ? `&doctorId=${selectedDoctorId}` : ''}`;
+  const { data: apptsData, isLoading: loading, mutate: mutateAppointments } = useSWR(apptsUrl, fetcher, { 
+    refreshInterval: 30000,
+    revalidateOnFocus: true
+  });
 
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedDoctorId]);
-
-  const handleReschedule = async () => {
-    if (!newDate || !newTime || !rescheduleApt) return;
-    try {
-      const [hours, minutes] = newTime.split(':').map(Number);
-      const start = new Date(newDate);
-      start.setHours(hours, minutes, 0, 0);
-      const end = new Date(newDate);
-      end.setHours(hours + 1, minutes, 0, 0);
-      
-      await api.patch(`/appointments/${rescheduleApt.id}`, {
-        scheduledStart: start.toISOString(),
-        scheduledEnd: end.toISOString(),
-        status: 'SCHEDULED'
-      });
-      setRescheduleApt(null);
-      fetchAppointments();
-    } catch (e) {
-      alert('Failed to reschedule');
-    }
-  };
+  // Filter out COMPLETED and CANCELLED appointments for the main list
+  const allAppointments = (apptsData || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED');
 
   const handleSendMessage = async (patientPhone: string) => {
-    // Sanitize phone number by removing spaces, hyphens, and everything except + and digits
     const cleanPhone = patientPhone.replace(/[^\d+]/g, '');
     window.open(`https://wa.me/${cleanPhone}?text=Hello%2C%20this%20is%20DentalFlow%20Clinic.`, '_blank');
   };
@@ -128,7 +74,7 @@ export default function AppointmentsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !apptsData) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[50vh]">
         <Clock className="w-6 h-6 text-indigo-500 animate-spin" />
@@ -136,7 +82,7 @@ export default function AppointmentsPage() {
     );
   }
 
-  const displayAppointments = allAppointments.filter(apt => {
+  const displayAppointments = allAppointments.filter((apt: any) => {
     const aptDate = new Date(apt.scheduledStart).toLocaleDateString('en-GB');
     if (selectedDate === 'all') return true;
     return aptDate === selectedDate;
@@ -151,7 +97,6 @@ export default function AppointmentsPage() {
   }, {});
 
   // Generate calendar days
-  const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
   const calendarDays = Array.from({ length: 35 }).map((_, i) => {
@@ -160,7 +105,7 @@ export default function AppointmentsPage() {
     const isToday = isCurrentMonth && dayNumber === now.getDate();
     
     // Check if there are appointments on this day
-    const hasAppt = isCurrentMonth && allAppointments.some(apt => {
+    const hasAppt = isCurrentMonth && allAppointments.some((apt: any) => {
       const aptDate = new Date(apt.scheduledStart);
       return aptDate.getDate() === dayNumber && aptDate.getMonth() === now.getMonth();
     });
@@ -187,7 +132,7 @@ export default function AppointmentsPage() {
                 className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
               >
                 <option value="">All Doctors</option>
-                {doctors.map(d => (
+                {doctors.map((d: any) => (
                   <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                 ))}
               </select>
@@ -371,7 +316,7 @@ export default function AppointmentsPage() {
                                 if (confirm('Are you sure you want to cancel this appointment?')) {
                                   try {
                                     await api.patch(`/appointments/${apt.id}`, { status: 'CANCELLED' });
-                                    fetchAppointments();
+                                    mutateAppointments(); // Instantly update SWR cache!
                                   } catch (e) {
                                     alert('Failed to cancel');
                                   }
@@ -455,7 +400,7 @@ export default function AppointmentsPage() {
         stageName={rescheduleApt?.treatmentStage?.name || 'Custom Stage'}
         aptId={rescheduleApt?.id}
         onScheduled={() => {
-          fetchAppointments();
+          mutateAppointments(); // Instantly update SWR cache!
           setRescheduleApt(null);
         }}
       />
