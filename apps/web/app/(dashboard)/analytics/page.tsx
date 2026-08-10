@@ -1,49 +1,37 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { BarChart3, TrendingUp, Users, Calendar, IndianRupee, Activity, Loader2 } from 'lucide-react';
 import api from '../../../lib/axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import useSWR from 'swr';
 
 const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState<any>(null);
-  const [chartData, setChartData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
 
-  const fetchAnalytics = () => {
-    Promise.all([
-      api.get('/billing/revenue'),
-      api.get('/billing/charts')
-    ]).then(([revRes, chartRes]) => {
-      setStats(revRes.data);
-      setChartData(chartRes.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
+  const { data, isLoading: loading } = useSWR(
+    'analytics_data',
+    async () => {
+      const [revRes, chartRes] = await Promise.all([
+        api.get('/billing/revenue'),
+        api.get('/billing/charts')
+      ]);
+      return {
+        stats: revRes.data,
+        chartData: chartRes.data
+      };
+    },
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: true
+    }
+  );
 
-  useEffect(() => {
-    fetchAnalytics();
-
-    const intervalId = setInterval(fetchAnalytics, 30000);
-
-    const handleFocus = () => fetchAnalytics();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchAnalytics();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  const stats = data?.stats;
+  const chartData = data?.chartData;
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -55,7 +43,7 @@ export default function AnalyticsPage() {
         <p className="text-sm text-slate-500 mt-1">High-level clinic performance and growth metrics.</p>
       </div>
 
-      {loading ? (
+      {loading && !data ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
         </div>
