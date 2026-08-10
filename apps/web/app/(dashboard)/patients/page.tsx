@@ -18,6 +18,8 @@ import { AddPatientModal } from '../../../components/patients/AddPatientModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import useSWR from 'swr';
+import { supabase } from '../../../lib/supabase';
 
 interface Patient {
   id: string;
@@ -27,9 +29,10 @@ interface Patient {
   dateOfBirth: string | null;
   status: string;
   createdAt: string;
+  doctor?: any;
 }
 
-import { supabase } from '../../../lib/supabase';
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 function calcAge(dob: string | null): string {
   if (!dob) return '—';
@@ -38,18 +41,55 @@ function calcAge(dob: string | null): string {
 }
 
 export default function PatientsDirectory() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTourMode, setIsTourMode] = useState(false);
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
-  const [currentUserRole, setCurrentUserRole] = useState('ADMIN');
 
-  const [tenantStatus, setTenantStatus] = useState('ACTIVE');
+  // 1. Debounce the search input for SWR
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // 2. Fetch Session & Staff Info
+  const { data: sessionData } = useSWR('patients_session_data', async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
+    
+    let doctorsList = [];
+    if (role === 'STAFF') {
+      const uRes = await api.get('/users');
+      doctorsList = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
+    }
+    return { role, doctorsList };
+  });
+
+  const currentUserRole = sessionData?.role || 'ADMIN';
+  const doctors = sessionData?.doctorsList || [];
+
+  // Determine the effective doctor filter
+  let effectiveDoctorId = selectedDoctorId;
+  if (currentUserRole !== 'STAFF' && selectedDoctorId === '') {
+    effectiveDoctorId = 'MY_PATIENTS'; // Default for dentists viewing their own patients
+  }
+
+  // 3. Fetch Tenant Status (for checking read-only mode)
+  const { data: tenant } = useSWR('/tenant', fetcher);
+  const tenantStatus = tenant?.status || 'ACTIVE';
+
+  // 4. Fetch Patients with SWR (Auto-caching, auto-revalidation)
+  const patientsUrl = `/patients?search=${debouncedSearch}${effectiveDoctorId ? `&doctorId=${effectiveDoctorId}` : ''}`;
+  const { data: patientsRes, isLoading: loading, mutate: mutatePatients } = useSWR(patientsUrl, fetcher, { 
+    refreshInterval: 30000,
+    revalidateOnFocus: true
+  });
+  
+  const patients: Patient[] = patientsRes?.data || [];
 
   const startTour = () => {
     setIsTourMode(true);
@@ -71,68 +111,7 @@ export default function PatientsDirectory() {
       router.replace('/patients');
       setTimeout(startTour, 500);
     }
-  }, [searchParams]);
-
-  const fetchPatients = async () => {
-    setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role || 'ADMIN';
-      setCurrentUserRole(role);
-
-      if (role !== 'STAFF' && selectedDoctorId === '') {
-        setSelectedDoctorId('MY_PATIENTS');
-        return; // Let the useEffect re-trigger with the correct state
-      }
-
-      let url = `/patients?search=${search}`;
-      if (selectedDoctorId) {
-        url += `&doctorId=${selectedDoctorId}`;
-      }
-
-      const res = await api.get(url);
-      setPatients(res.data.data);
-      
-      const tenantRes = await api.get('/tenant');
-      setTenantStatus(tenantRes.data.status);
-
-      if (role === 'STAFF') {
-        const uRes = await api.get('/users');
-        setDoctors(uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN'));
-      }
-    } catch (err) {
-      console.error('Failed to fetch patients', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Debounce search
-    const timer = setTimeout(() => {
-      fetchPatients();
-    }, 300);
-
-    const intervalId = setInterval(() => {
-      // Don't auto-refresh while typing a search to avoid losing focus/state weirdness
-      if (!search) fetchPatients();
-    }, 30000);
-
-    const handleFocus = () => fetchPatients();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchPatients();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [search, selectedDoctorId]);
+  }, [searchParams, router]);
 
   return (
     <div className="p-8 md:p-12 w-full max-w-[1800px] mx-auto animate-in fade-in duration-500">
@@ -183,7 +162,7 @@ export default function PatientsDirectory() {
                     <>
                       <option value="">All Clinic Patients</option>
                       <option value="UNASSIGNED">Unassigned Patients</option>
-                      {doctors.map(d => (
+                      {doctors.map((d: any) => (
                         <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
                       ))}
                     </>
@@ -199,7 +178,7 @@ export default function PatientsDirectory() {
           
           <div className="text-sm font-medium text-slate-500 flex items-center">
             <Users className="w-4 h-4 mr-2" />
-            {patients.length} Patients
+            {patientsRes?.meta?.total || patients.length} Patients
           </div>
         </div>
 
@@ -216,7 +195,7 @@ export default function PatientsDirectory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loading ? (
+              {loading && patients.length === 0 ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-100 rounded-full" /><div className="h-3.5 bg-slate-100 rounded w-32" /></div></td>
@@ -346,7 +325,9 @@ export default function PatientsDirectory() {
         onClose={() => setIsModalOpen(false)} 
         onSuccess={() => {
           setIsModalOpen(false);
-          fetchPatients();
+          // Global mutate for the patients list instantly injects the new patient 
+          // into the table once it's fetched by forcing SWR to re-fetch
+          mutatePatients();
         }}
       />
     </div>
