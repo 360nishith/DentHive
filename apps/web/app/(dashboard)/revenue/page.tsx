@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import api from '../../../lib/axios';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -12,12 +12,13 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 export default function RevenuePage() {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [paymentTarget, setPaymentTarget] = useState<{ journeyId: string; name: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('newest'); // newest, oldest, high-low, low-high
@@ -48,36 +49,11 @@ export default function RevenuePage() {
     }
   }, [searchParams]);
 
-  const fetchStats = async () => {
-    try {
-      const res = await api.get('/billing/revenue');
-      setStats(res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-
-    const intervalId = setInterval(fetchStats, 30000);
-
-    const handleFocus = () => fetchStats();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchStats();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  // Fetch Stats with SWR
+  const { data: stats, isLoading: loading, mutate: mutateStats } = useSWR('/billing/revenue', fetcher, {
+    refreshInterval: 30000,
+    revalidateOnFocus: true
+  });
 
   const filteredOutstanding = useMemo(() => {
     if (!stats?.outstanding) return [];
@@ -112,7 +88,10 @@ export default function RevenuePage() {
           onClose={() => setPaymentTarget(null)}
           journeyId={paymentTarget.journeyId}
           journeyName={paymentTarget.name}
-          onPaymentRecorded={() => { setPaymentTarget(null); fetchStats(); }}
+          onPaymentRecorded={() => { 
+            mutateStats(); // Instantly update SWR cache!
+            setPaymentTarget(null);
+          }}
         />
       )}
 
@@ -122,7 +101,7 @@ export default function RevenuePage() {
         <p className="text-sm text-slate-500 mt-1">Track payments collected and outstanding balances.</p>
       </div>
 
-      {loading ? (
+      {loading && !stats ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
         </div>
@@ -160,159 +139,134 @@ export default function RevenuePage() {
             <Card>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-slate-500">Total Collected</p>
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <CheckCircle className="w-4 h-4 text-purple-600" />
+                  <p className="text-sm font-semibold text-slate-500">Total Outstanding</p>
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-slate-900">{fmt(stats?.total || 0)}</p>
-                <p className="text-xs text-slate-400 mt-1">All time</p>
+                <p className="text-3xl font-bold text-rose-600">{fmt(stats?.totalOutstanding || 0)}</p>
+                <p className="text-xs text-slate-400 mt-1">across {stats?.outstanding?.length || 0} active plans</p>
               </div>
             </Card>
 
-            <Card className="border-red-100">
+            <Card>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-red-500">Outstanding</p>
-                  <div className="p-2 bg-red-50 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                  <p className="text-sm font-semibold text-slate-500">Fully Paid Plans</p>
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-red-600">{fmt(stats?.outstandingTotal || 0)}</p>
-                <p className="text-xs text-slate-400 mt-1">{stats?.outstandingCount || 0} active journey{stats?.outstandingCount !== 1 ? 's' : ''} with dues</p>
+                <p className="text-3xl font-bold text-slate-900">{stats?.fullyPaidCount || 0}</p>
+                <p className="text-xs text-slate-400 mt-1">active zero-balance treatments</p>
               </div>
             </Card>
 
           </div>
 
-          {/* Outstanding Balances Table */}
-          <Card id="tour-rev-outstanding" className="overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  Outstanding Balances
-                </h2>
-                <span className="text-sm text-slate-500">({filteredOutstanding.length})</span>
-              </div>
-              
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search patients, phone, treatment..."
+          {/* Outstanding Balances List */}
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" id="tour-rev-filters">
+            <h2 className="text-xl font-bold text-slate-900">Outstanding Balances</h2>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text" 
+                  placeholder="Search patient or treatment..." 
+                  className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow bg-white"
+                  onChange={e => setSearchQuery(e.target.value)}
                 />
               </div>
-              
-              <div id="tour-rev-filters" className="relative flex flex-col sm:flex-row gap-4">
-                <select 
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow bg-white appearance-none pr-8 cursor-pointer text-slate-700"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="high-low">Balance: High to Low</option>
-                  <option value="low-high">Balance: Low to High</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                  </svg>
-                </div>
-              </div>
+              <select 
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="high-low">Highest Balance</option>
+                <option value="low-high">Lowest Balance</option>
+              </select>
             </div>
+          </div>
 
-            {filteredOutstanding.length === 0 && !isTourMode ? (
-              <div className="p-12 text-center">
-                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-                <p className="font-bold text-slate-900">All cleared!</p>
-                <p className="text-sm text-slate-500 mt-1">No outstanding balances found.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500">
+          <Card className="overflow-hidden" id="tour-rev-outstanding">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Treatment</th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Total Cost</th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Paid So Far</th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Balance Due</th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {filteredOutstanding.length === 0 ? (
                     <tr>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200">Patient</th>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200">Treatment</th>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200">Total</th>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200">Paid</th>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200 text-red-500">Balance Due</th>
-                      <th className="px-6 py-3 font-medium border-b border-slate-200 text-right">Action</th>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                        {searchQuery ? 'No matching balances found.' : 'No outstanding balances!'}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredOutstanding.length === 0 && isTourMode && (
-                      <tr className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-6 py-4">
-                          <button className="font-semibold text-slate-900 hover:text-indigo-600 transition-colors flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-100">
-                              D
+                  ) : (
+                    filteredOutstanding.map((item: any, idx: number) => {
+                      const cost = item.totalCost || 0;
+                      const paid = cost - item.balance;
+                      const pct = cost > 0 ? (paid / cost) * 100 : 0;
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs mr-3">
+                                {item.patient?.name?.charAt(0) || <Users className="w-4 h-4" />}
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => router.push(`/patients/${item.patientId}`)}>
+                                  {item.patient?.name}
+                                </div>
+                                <div className="text-xs text-slate-500">{item.patient?.phoneNumber}</div>
+                              </div>
                             </div>
-                            Demo Patient
-                            <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px]">Demo Data</Badge>
-                          </button>
-                          <p className="text-xs text-slate-400 mt-0.5 ml-9">+91 98765 43210</p>
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">Root Canal</td>
-                        <td className="px-6 py-4 text-slate-600">₹8,000</td>
-                        <td className="px-6 py-4 text-emerald-700 font-medium">₹3,000</td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-red-600">₹5,000</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <Button
-                            id="tour-rev-collect"
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
-                          >
-                            <IndianRupee className="w-3 h-3 mr-1" />
-                            Collect
-                          </Button>
-                        </td>
-                      </tr>
-                    )}
-                    {filteredOutstanding.map((j: any) => (
-                      <tr key={j.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => router.push(`/patients/${j.patientId}`)}
-                            className="font-semibold text-slate-900 hover:text-indigo-600 transition-colors flex items-center gap-2"
-                          >
-                            <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-100">
-                              {j.patient.name.charAt(0)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-slate-700">{item.template?.name || 'Custom Plan'}</div>
+                            <div className="w-24 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden" title={`${Math.round(pct)}% Paid`}>
+                              <div className="bg-emerald-500 h-full" style={{ width: `${pct}%` }} />
                             </div>
-                            {j.patient.name}
-                          </button>
-                          <p className="text-xs text-slate-400 mt-0.5 ml-9">{j.patient.phoneNumber}</p>
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">{j.template.name}</td>
-                        <td className="px-6 py-4 text-slate-600">{fmt(j.totalCost)}</td>
-                        <td className="px-6 py-4 text-emerald-700 font-medium">{fmt(j.paid)}</td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-red-600">{fmt(j.balance)}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <Button
-                            id={j.id === filteredOutstanding[0]?.id ? "tour-rev-collect" : undefined}
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
-                            onClick={() => setPaymentTarget({ journeyId: j.id, name: j.template.name })}
-                          >
-                            <IndianRupee className="w-3 h-3 mr-1" />
-                            Collect
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-500">
+                            {fmt(cost)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-emerald-600">
+                            {fmt(paid)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <span className="text-sm font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md">
+                              {fmt(item.balance)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <Button 
+                              id={idx === 0 ? "tour-rev-collect" : undefined}
+                              variant="default" 
+                              size="sm" 
+                              className="bg-slate-900 text-white hover:bg-slate-800"
+                              onClick={() => setPaymentTarget({ journeyId: item.id, name: item.template?.name || 'Custom Plan' })}
+                            >
+                              Collect
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </>
       )}
