@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   IndianRupee, 
@@ -22,138 +22,87 @@ import { supabase } from '../../../lib/supabase';
 import api from '../../../lib/axios';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import useSWR, { mutate } from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [userName, setUserName] = useState('');
-  const [clinicName, setClinicName] = useState('');
-  const [stats, setStats] = useState({ patients: 0, todayRevenue: 0, todayPayments: 0, outstanding: 0 });
-  const [stalledJourneys, setStalledJourneys] = useState<any[]>([]);
-  const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
   const [stalledSort, setStalledSort] = useState('newest'); // newest, oldest
-  const [userRole, setUserRole] = useState('ADMIN');
   const [isTourMode, setIsTourMode] = useState(false);
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
 
-  useEffect(() => {
-    const loadData = async () => {
-      // Get user info from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const meta = session.user.user_metadata;
-        const appMeta = session.user.app_metadata;
-        let activeRole = 'ADMIN';
-        if (appMeta?.role) {
-          activeRole = appMeta.role;
-          setUserRole(appMeta.role);
-        } else if (meta?.role) {
-          activeRole = meta.role;
-          setUserRole(meta.role);
-        }
+  // 1. Fetch Session & User Profile
+  const { data: sessionData } = useSWR('session_data', async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return { role: 'ADMIN', userName: 'Dr. User' };
+    
+    let activeRole = session.user.app_metadata?.role || session.user.user_metadata?.role || 'ADMIN';
+    let userName = '';
 
-        try {
-          const meRes = await api.get('/users/me');
-          const firstName = meRes.data?.firstName;
-          const lastName = meRes.data?.lastName || '';
-          
-          if (firstName) {
-            const fullName = `${firstName} ${lastName}`.trim();
-            if (activeRole === 'STAFF') {
-              setUserName(fullName);
-            } else {
-              setUserName(`Dr. ${fullName}`);
-            }
-          } else {
-            // Fallback to email
-            const fallback = session.user.email?.split('@')[0] || 'User';
-            const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
-            if (activeRole === 'STAFF') {
-              setUserName(capFallback);
-            } else {
-              setUserName(`Dr. ${capFallback}`);
-            }
-          }
-        } catch (e) {
-          const fallback = session.user.email?.split('@')[0] || 'User';
-          const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
-          if (activeRole === 'STAFF') {
-            setUserName(capFallback);
-          } else {
-            setUserName(`Dr. ${capFallback}`);
-          }
-        }
+    try {
+      const meRes = await api.get('/users/me');
+      const firstName = meRes.data?.firstName;
+      const lastName = meRes.data?.lastName || '';
+      
+      if (firstName) {
+        const fullName = `${firstName} ${lastName}`.trim();
+        userName = activeRole === 'STAFF' ? fullName : `Dr. ${fullName}`;
+      } else {
+        const fallback = session.user.email?.split('@')[0] || 'User';
+        const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
+        userName = activeRole === 'STAFF' ? capFallback : `Dr. ${capFallback}`;
       }
+    } catch (e) {
+      const fallback = session.user.email?.split('@')[0] || 'User';
+      const capFallback = fallback.charAt(0).toUpperCase() + fallback.slice(1);
+      userName = activeRole === 'STAFF' ? capFallback : `Dr. ${capFallback}`;
+    }
+    return { role: activeRole, userName };
+  });
 
-      // Get clinic name from our API
-      try {
-        const res = await api.get('/tenant');
-        if (res.data?.name) setClinicName(res.data.name);
-      } catch (e) {}
+  const userRole = sessionData?.role || 'ADMIN';
+  const userName = sessionData?.userName || '';
 
-      // Get dashboard stats
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        // If staff, don't fetch revenue to avoid 403
-        
-        let doctorFilter = '';
-        if (selectedDoctorId) {
-          doctorFilter = `doctorId=${selectedDoctorId}&`;
-        }
+  // 2. Fetch Tenant (Clinic Name)
+  const { data: tenant } = useSWR('/tenant', fetcher);
+  const clinicName = tenant?.name || '';
 
-        const pRes = api.get(`/patients?${doctorFilter}limit=1`).catch(() => ({ data: { meta: { total: 0 } } }));
-        // Note: stalled journeys and appointments APIs also need to support doctorId for this to fully filter
-        // If the backend doesn't support it for stalled, it might ignore it, but we append it anyway
-        const stalledRes = api.get(`/followups/stalled?${doctorFilter.slice(0,-1)}`).catch(() => ({ data: [] }));
-        const apptRes = api.get(`/appointments?${doctorFilter}start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`).catch(() => ({ data: [] }));
-        
-        let revRes: any = { data: {} };
-        const activeRole = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
-        if (activeRole !== 'STAFF') {
-          revRes = await api.get(`/billing/revenue?${doctorFilter.slice(0,-1)}`).catch(() => ({ data: {} }));
-        }
-        if (activeRole === 'STAFF' && doctors.length === 0) {
-          // If staff, fetch doctors for the filter dropdown
-          api.get('/users').then((uRes) => {
-            const dentistUsers = uRes.data.filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
-            setDoctors(dentistUsers);
-          }).catch(() => {});
-        }
+  // 3. Setup Filters for Data Fetching
+  const doctorFilter = selectedDoctorId ? `doctorId=${selectedDoctorId}&` : '';
+  const doctorFilterNoTrailing = selectedDoctorId ? `doctorId=${selectedDoctorId}` : '';
+  const today = new Date().toISOString().split('T')[0];
+  
+  const patientsUrl = `/patients?${doctorFilter}limit=1`;
+  const stalledUrl = `/followups/stalled${doctorFilterNoTrailing ? `?${doctorFilterNoTrailing}` : ''}`;
+  const apptUrl = `/appointments?${doctorFilter}start=${today}T00:00:00.000Z&end=${today}T23:59:59.999Z`;
+  const revenueUrl = `/billing/revenue${doctorFilterNoTrailing ? `?${doctorFilterNoTrailing}` : ''}`;
 
-        const [p, stalled, appt] = await Promise.all([pRes, stalledRes, apptRes]);
+  // 4. Fetch Dashboard Data with SWR (Auto-caching, auto-revalidation)
+  const { data: pData } = useSWR(patientsUrl, fetcher, { refreshInterval: 30000 });
+  const { data: stalledData } = useSWR(stalledUrl, fetcher, { refreshInterval: 30000 });
+  const { data: apptData } = useSWR(apptUrl, fetcher, { refreshInterval: 30000 });
+  
+  // Conditionally fetch revenue (only if not staff)
+  const { data: revData } = useSWR(userRole !== 'STAFF' ? revenueUrl : null, fetcher, { refreshInterval: 30000 });
+  
+  // Conditionally fetch doctors list (only if staff)
+  const { data: usersData } = useSWR(userRole === 'STAFF' ? '/users' : null, fetcher);
+  const doctors = (usersData || []).filter((u: any) => u.role?.name === 'DENTIST' || u.role?.name === 'ADMIN');
 
-        setStats({
-          patients: p.data?.meta?.total || 0,
-          todayRevenue: revRes.data?.today?.amount || 0,
-          todayPayments: revRes.data?.today?.count || 0,
-          outstanding: revRes.data?.outstandingTotal || 0,
-        });
-        setStalledJourneys(stalled.data || []);
-        // Filter out completed/cancelled ones so we only see upcoming for today
-        setTodayAppointments((appt.data || []).filter((a: any) => a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED'));
-      } catch (e) {}
-    };
-    loadData();
+  // 5. Compute derived states
+  const stats = {
+    patients: pData?.meta?.total || 0,
+    todayRevenue: revData?.today?.amount || 0,
+    todayPayments: revData?.today?.count || 0,
+    outstanding: revData?.outstandingTotal || 0,
+  };
 
-    // Auto-refresh the dashboard every 30 seconds
-    const intervalId = setInterval(loadData, 30000);
-
-    // Refresh immediately when the user switches back to this tab
-    const handleFocus = () => loadData();
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') loadData();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedDoctorId]);
+  const stalledJourneys = stalledData || [];
+  const todayAppointments = (apptData || []).filter((a: any) => 
+    a.status === 'SCHEDULED' || a.status === 'RESCHEDULE_REQUESTED' || a.status === 'CONFIRMED'
+  );
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -179,12 +128,12 @@ export default function Dashboard() {
     tourObj.drive();
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (searchParams.get('tour') === 'true') {
       router.replace('/dashboard');
       setTimeout(startTour, 500);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   return (
     <div className="p-8 md:p-12 w-full max-w-[1800px] mx-auto animate-in fade-in duration-500">
@@ -207,7 +156,7 @@ export default function Dashboard() {
               className="bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer"
             >
               <option value="">All Doctors</option>
-              {doctors.map(d => (
+              {doctors.map((d: any) => (
                 <option key={d.id} value={d.id}>Dr. {d.firstName} {d.lastName}</option>
               ))}
             </select>
@@ -335,7 +284,7 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 )}
-                {[...stalledJourneys].sort((a, b) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled).map((stalled, idx) => (
+                {[...stalledJourneys].sort((a: any, b: any) => stalledSort === 'newest' ? a.daysStalled - b.daysStalled : b.daysStalled - a.daysStalled).map((stalled: any, idx: number) => (
                   <div key={idx} className="p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors flex items-center justify-between">
                     <div>
                       <p className="text-sm font-bold text-slate-900">{stalled.patientName}</p>
@@ -396,7 +345,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
-                {todayAppointments.map((appt, idx) => {
+                {todayAppointments.map((appt: any, idx: number) => {
                   const timeStr = new Date(appt.scheduledStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
                   return (
                     <div key={idx} className="p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors flex items-center justify-between">
@@ -427,7 +376,8 @@ export default function Dashboard() {
                             if (!confirm("Simulate patient cancelling today's appointment? They will be moved to Stalled Patients.")) return;
                             try {
                               await api.patch(`/appointments/${appt.id}`, { status: 'CANCELLED' });
-                              loadData(); // Re-fetch immediately without hard refresh
+                              mutate(apptUrl); // Trigger an instant re-fetch of the appointments cache
+                              mutate(stalledUrl); // Also trigger stalled journeys refresh
                             } catch (e) {}
                           }}
                           className="text-red-600 border-red-200 hover:bg-red-50"
