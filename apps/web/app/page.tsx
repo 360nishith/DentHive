@@ -34,10 +34,10 @@ export default function LandingPage() {
           
           <div className="text-center relative z-10 max-w-3xl mx-auto">
             <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl mb-6">
-              The OS for Modern <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Dental Clinics</span>
+              Run your entire <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">dental clinic</span> from one place
             </h1>
             <p className="text-xl text-slate-600 mb-10 leading-relaxed">
-              Automate your WhatsApp reminders, streamline patient journeys, and supercharge your clinic's revenue with zero manual effort.
+              Manage appointments, automate patient journeys, and supercharge your clinic's revenue with zero manual effort.
             </p>
             <div className="flex justify-center gap-4">
               <a 
