@@ -133,7 +133,7 @@ export class PaymentService {
     const paymentFilter: any = { tenantId, status: 'SUCCESS' };
     if (doctorId) paymentFilter.journey = { patient: { doctorId } };
 
-    const journeyFilter: any = { tenantId, status: { not: 'CANCELLED' } };
+    const journeyFilter: any = { tenantId };
     if (doctorId) journeyFilter.patient = { doctorId };
 
     const activeJourneyFilter: any = { tenantId, status: 'ACTIVE' };
@@ -190,17 +190,20 @@ export class PaymentService {
       })
     ]);
 
-    const outstanding = outstandingJourneys
-      .map(j => {
-        const paid = j.payments.reduce((s, p) => s + p.amount, 0);
-        return { 
-          ...j, 
-          template: j.template ? j.template : { name: 'Custom Journey' },
-          paid, 
-          balance: j.totalCost - paid 
-        };
-      })
-      .filter(j => j.balance > 0)
+    const processedJourneys = outstandingJourneys.map(j => {
+      const paid = j.payments.reduce((s, p) => s + p.amount, 0);
+      return { 
+        ...j, 
+        template: j.template ? j.template : { name: 'Custom Journey' },
+        paid, 
+        balance: j.totalCost - paid 
+      };
+    });
+
+    const fullyPaidCount = processedJourneys.filter(j => j.totalCost > 0 && j.balance <= 0).length;
+
+    const outstanding = processedJourneys
+      .filter(j => j.balance > 0 && j.status !== 'CANCELLED')
       .sort((a, b) => b.balance - a.balance);
 
     return {
@@ -216,6 +219,7 @@ export class PaymentService {
       outstandingCount: outstanding.length,
       outstandingTotal: outstanding.reduce((s, j) => s + j.balance, 0),
       outstanding: outstanding.slice(0, 10), // top 10
+      fullyPaidCount,
       activePatients,
       appointments30d,
       recentPayments
