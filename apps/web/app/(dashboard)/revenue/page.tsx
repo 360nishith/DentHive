@@ -144,8 +144,8 @@ export default function RevenuePage() {
                     <AlertCircle className="w-4 h-4 text-amber-600" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-rose-600">{fmt(stats?.totalOutstanding || 0)}</p>
-                <p className="text-xs text-slate-400 mt-1">across {stats?.outstanding?.length || 0} active plans</p>
+                <p className="text-3xl font-bold text-rose-600">{fmt(stats?.outstandingTotal || 0)}</p>
+                <p className="text-xs text-slate-400 mt-1">across {stats?.outstandingCount || 0} active plans</p>
               </div>
             </Card>
 
