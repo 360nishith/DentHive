@@ -125,9 +125,11 @@ export default function PatientDetails({ params }: { params: { id: string } }) {
         dateOfBirth = d.toISOString();
       }
       
+      const nameParts = editName.trim().split(' ');
       const payload: any = {
-        name: editName,
-        phoneNumber: editPhone,
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(' ') || '',
+        phone: editPhone,
         gender: editGender || null,
         dateOfBirth,
         whatsappOptIn: editWhatsappOptIn,

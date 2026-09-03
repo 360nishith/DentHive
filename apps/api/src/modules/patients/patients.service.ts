@@ -92,17 +92,22 @@ export class PatientsService {
     // Phone deduplication has been removed to allow families (e.g. parent/child) to share phone numbers.
 
     const updateData: any = {};
-    if (dto.firstName || dto.lastName) {
-      const nameParts = patient.name.split(' ');
+    if (dto.firstName || dto.lastName || (dto as any).name) {
+      const nameParts = ((dto as any).name || patient.name).split(' ');
       const newFirst = dto.firstName || nameParts[0];
       const newLast = dto.lastName || nameParts.slice(1).join(' ');
       updateData.name = `${newFirst} ${newLast}`;
     }
-    if (dto.phone) updateData.phoneNumber = dto.phone;
+    if (dto.phone || (dto as any).phoneNumber) {
+      updateData.phoneNumber = dto.phone || (dto as any).phoneNumber;
+    }
     if (dto.gender !== undefined) updateData.gender = dto.gender;
     if (dto.whatsappOptIn !== undefined) updateData.whatsappOptIn = dto.whatsappOptIn;
     if ('doctorId' in dto) updateData.doctorId = dto.doctorId;
-    if (dto.dateOfBirth) updateData.dateOfBirth = new Date(dto.dateOfBirth);
+    
+    if (dto.dateOfBirth !== undefined) {
+      updateData.dateOfBirth = dto.dateOfBirth ? new Date(dto.dateOfBirth) : null;
+    }
     if (dto.age) {
       const dobYear = new Date().getFullYear() - parseInt(dto.age);
       updateData.dateOfBirth = new Date(`${dobYear}-01-01`);
